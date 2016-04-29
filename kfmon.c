@@ -18,9 +18,60 @@
 
 #include "kfmon.h"
 
+// Check that our target mountpoint is indeed mounted...
+static int is_target_mounted(void)
+{
+	// cf. http://program-nix.blogspot.fr/2008/08/c-language-check-filesystem-is-mounted.html
+	FILE *mtab = NULL;
+	struct mntent *part = NULL;
+	int is_mounted = 0;
+
+	if ((mtab = setmntent("/etc/mtab", "r")) != NULL) {
+		while ((part = getmntent(mtab)) != NULL) {
+			if ((part->mnt_fsname != NULL) && (strcmp(part->mnt_fsname, KFMON_TARGET_MOUNTPOINT)) == 0) {
+				is_mounted = 1;
+			}
+		}
+		endmntent(mtab);
+	}
+
+	return is_mounted;
+}
+
+// Monitor mountpoint activity...
+void wait_for_target_mountpoint(void)
+{
+	// cf. https://stackoverflow.com/questions/5070801
+	int mfd = open("/proc/mounts", O_RDONLY, 0);
+	struct pollfd pfd;
+	int rv;
+
+	int changes = 0;
+	pfd.fd = mfd;
+	pfd.events = POLLERR | POLLPRI;
+	pfd.revents = 0;
+	while ((rv = poll(&pfd, 1, 5)) >= 0) {
+		if (pfd.revents & POLLERR) {
+			fprintf(stdout, "Mount points changed. %d.\n", changes++);
+		}
+		pfd.revents = 0;
+
+		// Stop polling once we know our mountpoint is available...
+		if (is_target_mounted()) {
+			fprintf(stdout, "Yay! Target mountpoint is available!\n");
+			break;
+		}
+
+		// If we can't find our mountpoint after that many changes, assume we're screwed...
+		if (changes > 10) {
+			fprintf(stderr, "Too many mountpoint changes without finding our target. Going buh-bye!\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
 /* Read all available inotify events from the file descriptor 'fd'.
    wd is the watch descriptor for the target file */
-
 static void handle_events(int fd, int wd)
 {
 	/* Some systems cannot read integer variables if they are not
@@ -34,9 +85,9 @@ static void handle_events(int fd, int wd)
 	ssize_t len;
 	char *ptr;
 
-	/* Loop while events can be read from inotify file descriptor. */
+	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
-		/* Read some events. */
+		// Read some events.
 		len = read(fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
 			perror("read");
@@ -49,11 +100,11 @@ static void handle_events(int fd, int wd)
 		if (len <= 0)
 			break;
 
-		/* Loop over all events in the buffer */
+		// Loop over all events in the buffer
 		for (ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
 
-			/* Print event type */
+			// Print event type
 			if (event->mask & IN_OPEN)
 				printf("IN_OPEN: ");
 			if (event->mask & IN_UNMOUNT)
@@ -61,7 +112,7 @@ static void handle_events(int fd, int wd)
 			if (event->mask & IN_IGNORED)
 				printf("IN_IGNORED: ");
 
-			/* Print the name of the file */
+			// Print the name of the file
 			if (event->len)
 				printf("%s", event->name);
 		}
@@ -73,54 +124,60 @@ int main(int argc, char* argv[])
 	char buf;
 	int fd, i, poll_num;
 	int wd;
-	nfds_t nfds;
-	struct pollfd fds[1];
+	struct pollfd pfd;
 
-	/* Create the file descriptor for accessing the inotify API */
+	// Create the file descriptor for accessing the inotify API
 	fd = inotify_init1(IN_NONBLOCK);
 	if (fd == -1) {
 		perror("inotify_init1");
 		exit(EXIT_FAILURE);
 	}
 
-	/* Mark target file for 'file was opened' event */
-	wd = inotify_add_watch(fd, KFMON_TARGET_FILE, IN_OPEN);
-	if (wd == -1) {
-		fprintf(stderr, "Cannot watch '%s'\n", KFMON_TARGET_FILE);
-		perror("inotify_add_watch");
-		exit(EXIT_FAILURE);
-	}
-
-	/* Prepare for polling */
-	nfds = 1;
-	/* Inotify input */
-	fds[0].fd = fd;
-	fds[0].events = POLLIN;
-
-	/* Wait for events and/or terminal input */
-	printf("Listening for events.\n");
+	// We pretty much want to loop forever...
 	while (1) {
-		poll_num = poll(fds, nfds, -1);
-		if (poll_num == -1) {
-			if (errno == EINTR)
-				continue;
-			perror("poll");
+		// Make sure our target file is available (i.e., the partition it resides in is mounted)
+		if (!is_target_mounted()) {
+			// If it's not, wait for it to be...
+			wait_for_target_mountpoint();
+		}
+
+		// Mark target file for 'file was opened' event
+		wd = inotify_add_watch(fd, KFMON_TARGET_FILE, IN_OPEN);
+		if (wd == -1) {
+			fprintf(stderr, "Cannot watch '%s'\n", KFMON_TARGET_FILE);
+			perror("inotify_add_watch");
 			exit(EXIT_FAILURE);
 		}
 
-		if (poll_num > 0) {
-			if (fds[0].revents & POLLIN) {
-				/* Inotify events are available */
-				handle_events(fd, wd);
+		// Inotify input
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+
+		// Wait for events
+		printf("Listening for events.\n");
+		while (1) {
+			poll_num = poll(pfd, 1, -1);
+			if (poll_num == -1) {
+				if (errno == EINTR)
+					continue;
+				perror("poll");
+				exit(EXIT_FAILURE);
+			}
+
+			if (poll_num > 0) {
+				if (pfd.revents & POLLIN) {
+					/* Inotify events are available */
+					handle_events(fd, wd);
+				}
 			}
 		}
+
+		printf("Listening for events stopped.\n");
+		free(wd);
 	}
 
-	printf("Listening for events stopped.\n");
-
-	/* Close inotify file descriptor */
+	// Close inotify file descriptor
 	close(fd);
 
-	free(wd);
 	exit(EXIT_SUCCESS);
 }

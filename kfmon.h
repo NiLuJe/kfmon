@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <mntent.h>
+#include <string.h>
 
 // Do an ifdef check to allow overriding those at compile-time...
 #ifndef KFMON_TARGET_MOUNTPOINT
