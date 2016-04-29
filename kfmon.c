@@ -192,7 +192,6 @@ int main(int argc, char* argv[])
 		}
 
 		LOG("Listening for events stopped.");
-		free(wd);
 	}
 
 	// Close inotify file descriptor
