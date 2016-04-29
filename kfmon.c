@@ -90,7 +90,7 @@ static void wait_for_target_mountpoint(void)
 }
 
 /* Read all available inotify events from the file descriptor 'fd'. */
-static void handle_events(int fd)
+static int handle_events(int fd)
 {
 	/* Some systems cannot read integer variables if they are not
 	   properly aligned. On other systems, incorrect alignment may
@@ -102,6 +102,7 @@ static void handle_events(int fd)
 	ssize_t len;
 	char *ptr;
 	int ret;
+	int destroyed_wd = 0;
 
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
@@ -132,14 +133,26 @@ static void handle_events(int fd)
 				sleep(1);
 				LOG("Launching %s . . .", KFMON_TARGET_SCRIPT);
 				ret = system(KFMON_TARGET_SCRIPT);
-				LOG(". . . which retruned: %d", ret);
+				LOG(". . . which returned: %d", ret);
 			}
+			if (event->mask & IN_CLOSE)
+				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
 			if (event->mask & IN_UNMOUNT)
 				LOG("Tripped IN_UNMOUNT for %s", KFMON_TARGET_FILE);
-			if (event->mask & IN_IGNORED)
+			if (event->mask & IN_IGNORED) {
 				LOG("Tripped IN_IGNORED for %s", KFMON_TARGET_FILE);
+				// Remember that the watch was automatically destroyed so we can break from the loop...
+				destroyed_wd = 1;
+			}
 		}
+
+		// If we caught an event indicating that the watch was automatically destroyed, break the loop.
+		if (destroyed_wd)
+			break;
 	}
+
+	// And we have another outer loop to break, so pass that on...
+	return destroyed_wd;
 }
 
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
@@ -158,7 +171,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// We pretty much want to loop forever...
 	while (1) {
-		LOG("Whee! Begin looping :)");
+		LOG("Beginning the main loop.");
 		// Make sure our target file is available (i.e., the partition it resides in is mounted)
 		if (!is_target_mounted()) {
 			LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
@@ -167,7 +180,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		}
 
 		// Mark target file for 'file was opened' event
-		wd = inotify_add_watch(fd, KFMON_TARGET_FILE, IN_OPEN);
+		wd = inotify_add_watch(fd, KFMON_TARGET_FILE, IN_OPEN | IN_CLOSE);
 		if (wd == -1) {
 			LOG("Cannot watch '%s'", KFMON_TARGET_FILE);
 			perror("inotify_add_watch");
@@ -191,13 +204,14 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 			if (poll_num > 0) {
 				if (pfd.revents & POLLIN) {
-					/* Inotify events are available */
-					handle_events(fd);
+					// Inotify events are available
+					if (handle_events(fd))
+						// Go back to the outer loop if we exited early (because the watch was destroyed automatically after unmount)
+						break;
 				}
 			}
 		}
-
-		LOG("Listening for events stopped.");
+		LOG("Stopped listening for events.");
 	}
 
 	// Close inotify file descriptor
