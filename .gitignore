@@ -1,0 +1,4 @@
+# Ignore build output directories
+Release/
+Debug/
+
