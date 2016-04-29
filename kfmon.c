@@ -152,6 +152,7 @@ static int is_target_processed(int update)
 	sqlite3 *db;
 	sqlite3_stmt * stmt;
 	int rc;
+	int idx;
 	int is_processed = 0;
 	int needs_update = 0;
 
@@ -163,9 +164,17 @@ static int is_target_processed(int update)
 	}
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
-	rc = sqlite3_prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = 'file://"KFMON_TARGET_FILE"' AND ContentType = '6');", -1, &stmt, NULL);
+	rc = sqlite3_prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL);
 	if (rc != SQLITE_OK) {
 		LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
+		sqlite3_close(db);
+		return is_processed;
+	}
+
+	idx = sqlite3_bind_parameter_index(stmt, "@id");
+	rc = sqlite3_bind_text(stmt, idx, "file://"KFMON_TARGET_FILE, -1, SQLITE_STATIC);
+	if (rc != SQLITE_OK) {
+		LOG("Can't bind text to parameterized statement: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		return is_processed;
 	}
@@ -182,10 +191,18 @@ static int is_target_processed(int update)
 	// Optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
 		// Check if the DB has already been updated...
-		rc = sqlite3_prepare_v2(db, "SELECT Title FROM content WHERE ContentID = 'file://"KFMON_TARGET_FILE"' AND ContentType = '6';", -1, &stmt, NULL);
+		rc = sqlite3_prepare_v2(db, "SELECT Title FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL);
 
 		if (rc != SQLITE_OK) {
 			LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
+			return is_processed;
+		}
+
+		idx = sqlite3_bind_parameter_index(stmt, "@id");
+		rc = sqlite3_bind_text(stmt, idx, "file://"KFMON_TARGET_FILE, -1, SQLITE_STATIC);
+		if (rc != SQLITE_OK) {
+			LOG("Can't bind text to parameterized statement: %s", sqlite3_errmsg(db));
 			sqlite3_close(db);
 			return is_processed;
 		}
@@ -200,9 +217,38 @@ static int is_target_processed(int update)
 		sqlite3_finalize(stmt);
 	}
 	if (needs_update) {
-		rc = sqlite3_prepare_v2(db, "UPDATE content SET Title = 'KOReader', Attribution = 'KOReader Devs', Description = 'An eBook reader application' WHERE ContentID = 'file://"KFMON_TARGET_FILE"' AND ContentType = '6';", -1, &stmt, NULL);
+		rc = sqlite3_prepare_v2(db, "UPDATE content SET Title = @title, Attribution = @author, Description = @comment WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL);
 		if (rc != SQLITE_OK) {
 			LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
+			return is_processed;
+		}
+
+		idx = sqlite3_bind_parameter_index(stmt, "@title");
+		rc = sqlite3_bind_text(stmt, idx, "KOReader", -1, SQLITE_STATIC);
+		if (rc != SQLITE_OK) {
+			LOG("Can't bind text to parameterized statement: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
+			return is_processed;
+		}
+		idx = sqlite3_bind_parameter_index(stmt, "@author");
+		rc = sqlite3_bind_text(stmt, idx, "KOReader Devs", -1, SQLITE_STATIC);
+		if (rc != SQLITE_OK) {
+			LOG("Can't bind text to parameterized statement: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
+			return is_processed;
+		}
+		idx = sqlite3_bind_parameter_index(stmt, "@comment");
+		rc = sqlite3_bind_text(stmt, idx, "An eBook reader application", -1, SQLITE_STATIC);
+		if (rc != SQLITE_OK) {
+			LOG("Can't bind text to parameterized statement: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
+			return is_processed;
+		}
+		idx = sqlite3_bind_parameter_index(stmt, "@id");
+		rc = sqlite3_bind_text(stmt, idx, "file://"KFMON_TARGET_FILE, -1, SQLITE_STATIC);
+		if (rc != SQLITE_OK) {
+			LOG("Can't bind text to parameterized statement: %s", sqlite3_errmsg(db));
 			sqlite3_close(db);
 			return is_processed;
 		}
