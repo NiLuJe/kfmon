@@ -16,12 +16,16 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <time.h>
 #include <mntent.h>
 #include <string.h>
 
@@ -42,4 +46,4 @@
 char *get_current_time(void);
 static int is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
-static void handle_events(int, int);
+static void handle_events(int);

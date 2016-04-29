@@ -87,9 +87,8 @@ static void wait_for_target_mountpoint(void)
 	}
 }
 
-/* Read all available inotify events from the file descriptor 'fd'.
-   wd is the watch descriptor for the target file */
-static void handle_events(int fd, int wd)
+/* Read all available inotify events from the file descriptor 'fd'. */
+static void handle_events(int fd)
 {
 	/* Some systems cannot read integer variables if they are not
 	   properly aligned. On other systems, incorrect alignment may
@@ -98,9 +97,9 @@ static void handle_events(int fd, int wd)
 	   struct inotify_event. */
 	char buf[4096] __attribute__ ((aligned(__alignof__(struct inotify_event))));
 	const struct inotify_event *event;
-	int i;
 	ssize_t len;
 	char *ptr;
+	int ret;
 
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
@@ -127,8 +126,9 @@ static void handle_events(int fd, int wd)
 				// FIXME: See what happens if we open KFMON_TARGET_FILE from inside KOReader itself...
 				//	  We block on system(), so we can't do anything much from here...
 				//	  We should at least update KOReader's startup script so it doesn't run multiple concurrent instances of itself.
-				LOG("Launching %s", KFMON_TARGET_SCRIPT);
-				system(KFMON_TARGET_SCRIPT);
+				LOG("Launching %s . . .", KFMON_TARGET_SCRIPT);
+				ret = system(KFMON_TARGET_SCRIPT);
+				LOG(". . . which retruned: %d", ret);
 			}
 			if (event->mask & IN_UNMOUNT)
 				LOG("Tripped IN_UNMOUNT for %s", KFMON_TARGET_FILE);
@@ -138,10 +138,9 @@ static void handle_events(int fd, int wd)
 	}
 }
 
-int main(int argc, char* argv[])
+int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
-	char buf;
-	int fd, i, poll_num;
+	int fd, poll_num;
 	int wd;
 	struct pollfd pfd;
 
@@ -175,7 +174,7 @@ int main(int argc, char* argv[])
 		// Wait for events
 		LOG("Listening for events.");
 		while (1) {
-			poll_num = poll(pfd, 1, -1);
+			poll_num = poll(&pfd, 1, -1);
 			if (poll_num == -1) {
 				if (errno == EINTR)
 					continue;
@@ -186,7 +185,7 @@ int main(int argc, char* argv[])
 			if (poll_num > 0) {
 				if (pfd.revents & POLLIN) {
 					/* Inotify events are available */
-					handle_events(fd, wd);
+					handle_events(fd);
 				}
 			}
 		}

@@ -8,7 +8,8 @@ SRCS=kfmon.c
 default: all
 
 # We want to link to sqlite3 explicitly statically
-LIBS=-l:libsqlite3.a
+#LIBS=-l:libsqlite3.a
+LIBS=-lsqlite3
 
 ifeq "$(DEBUG)" "true"
 	OUT_DIR=Debug
