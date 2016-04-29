@@ -53,10 +53,10 @@ static int daemonize(void)
 
 	// Redirect stdin & stdout to /dev/null
 	if ((fd = open("/dev/null", O_RDWR)) != -1) {
-		(void)dup2(fd, fileno(stdin));
-		(void)dup2(fd, fileno(stdout));
+		dup2(fd, fileno(stdin));
+		dup2(fd, fileno(stdout));
 		if (fd > 2)
-			(void)close (fd);
+			close (fd);
 	} else {
 		fprintf(stderr, "Failed to redirect stdint & stdout to /dev/null\n");
 		return -1;
@@ -64,9 +64,9 @@ static int daemonize(void)
 
 	// Redirect stderr to our logfile
 	if ((fd = open(KFMON_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0600)) != -1) {
-		(void)dup2(fd, fileno(stderr));
+		dup2(fd, fileno(stderr));
 		if (fd > 2)
-			(void)close (fd);
+			close (fd);
 	} else {
 		fprintf(stderr, "Failed to redirect stderr to logfile '%s'\n", KFMON_LOGFILE);
 		return -1;
