@@ -39,7 +39,7 @@ static int is_target_mounted(void)
 }
 
 // Monitor mountpoint activity...
-void wait_for_target_mountpoint(void)
+static void wait_for_target_mountpoint(void)
 {
 	// cf. https://stackoverflow.com/questions/5070801
 	int mfd = open("/proc/mounts", O_RDONLY, 0);
@@ -105,16 +105,18 @@ static void handle_events(int fd, int wd)
 			event = (const struct inotify_event *) ptr;
 
 			// Print event type
-			if (event->mask & IN_OPEN)
-				printf("IN_OPEN: ");
+			if (event->mask & IN_OPEN) {
+				printf("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
+				// FIXME: See what happens if we open KFMON_TARGET_FILE from inside KOReader itself...
+				//	  We block on system(), so we can't do anything much from here...
+				//	  We should at least update KOReader's startup script so it doesn't run multiple concurrent instances of itself.
+				printf("Launching %s", KFMON_TARGET_SCRIPT);
+				system(KFMON_TARGET_SCRIPT);
+			}
 			if (event->mask & IN_UNMOUNT)
-				printf("IN_UNMOUNT: ");
+				printf("Tripped IN_UNMOUNT for %s", KFMON_TARGET_FILE);
 			if (event->mask & IN_IGNORED)
-				printf("IN_IGNORED: ");
-
-			// Print the name of the file
-			if (event->len)
-				printf("%s", event->name);
+				printf("Tripped IN_IGNORED for %s", KFMON_TARGET_FILE);
 		}
 	}
 }

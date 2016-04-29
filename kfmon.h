@@ -36,6 +36,6 @@
 #define KFMON_TARGET_SCRIPT KFMON_TARGET_MOUNTPOINT "/.adds/koreader/koreader.sh"
 #endif
 
-
-
+static int is_target_mounted(void);
+static void wait_for_target_mountpoint(void);
 static void handle_events(int, int);
