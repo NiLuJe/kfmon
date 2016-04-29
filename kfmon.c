@@ -45,6 +45,7 @@ static int is_target_mounted(void)
 
 	if ((mtab = setmntent("/proc/mounts", "r")) != NULL) {
 		while ((part = getmntent(mtab)) != NULL) {
+			//LOG("Checking fs %s mounted on %s", part->mnt_fsname, part->mnt_dir);
 			if ((part->mnt_dir != NULL) && (strcmp(part->mnt_dir, KFMON_TARGET_MOUNTPOINT)) == 0) {
 				is_mounted = 1;
 				break;
@@ -71,14 +72,14 @@ static void wait_for_target_mountpoint(void)
 	while ((rv = poll(&pfd, 1, 5)) >= 0) {
 		if (pfd.revents & POLLERR) {
 			LOG("Mountpoints changed (iteration nr. %d)", changes++);
+
+			// Stop polling once we know our mountpoint is available...
+			if (is_target_mounted()) {
+				LOG("Yay! Target mountpoint is available!");
+				break;
+			}
 		}
 		pfd.revents = 0;
-
-		// Stop polling once we know our mountpoint is available...
-		if (is_target_mounted()) {
-			LOG("Yay! Target mountpoint is available!");
-			break;
-		}
 
 		// If we can't find our mountpoint after that many changes, assume we're screwed...
 		if (changes > 10) {
@@ -127,6 +128,8 @@ static void handle_events(int fd)
 				// FIXME: See what happens if we open KFMON_TARGET_FILE from inside KOReader itself...
 				//	  We block on system(), so we can't do anything much from here...
 				//	  We should at least update KOReader's startup script so it doesn't run multiple concurrent instances of itself.
+				// Wait for a bit in case Nickel has some stupid crap to do...
+				sleep(1);
 				LOG("Launching %s . . .", KFMON_TARGET_SCRIPT);
 				ret = system(KFMON_TARGET_SCRIPT);
 				LOG(". . . which retruned: %d", ret);
@@ -146,6 +149,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	struct pollfd pfd;
 
 	// Create the file descriptor for accessing the inotify API
+	LOG("Initializing inotify.");
 	fd = inotify_init1(IN_NONBLOCK);
 	if (fd == -1) {
 		perror("inotify_init1");
@@ -154,6 +158,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// We pretty much want to loop forever...
 	while (1) {
+		LOG("Whee! Begin looping :)");
 		// Make sure our target file is available (i.e., the partition it resides in is mounted)
 		if (!is_target_mounted()) {
 			LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
