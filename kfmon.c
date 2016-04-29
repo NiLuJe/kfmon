@@ -90,7 +90,7 @@ static void wait_for_target_mountpoint(void)
 }
 
 /* Read all available inotify events from the file descriptor 'fd'. */
-static int handle_events(int fd)
+static int handle_events(int fd, int wd)
 {
 	/* Some systems cannot read integer variables if they are not
 	   properly aligned. On other systems, incorrect alignment may
@@ -144,6 +144,21 @@ static int handle_events(int fd)
 				// Remember that the watch was automatically destroyed so we can break from the loop...
 				destroyed_wd = 1;
 			}
+			if (event->mask & IN_Q_OVERFLOW) {
+				if (event->len) {
+					LOG("Huh oh... Tripped IN_Q_OVERFLOW for %s", event->name);
+				}
+				else {
+					LOG("Huh oh... Tripped IN_Q_OVERFLOW");
+				}
+				// Destroy our only watch, and break the loop
+				if (inotify_rm_watch(fd, wd) == -1)
+				{
+					// That's too bad, but may not be fatal, so warn only...
+					perror("inotify_rm_watch");
+				}
+				destroyed_wd = 1;
+			}
 		}
 
 		// If we caught an event indicating that the watch was automatically destroyed, break the loop.
@@ -161,17 +176,18 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	int wd;
 	struct pollfd pfd;
 
-	// Create the file descriptor for accessing the inotify API
-	LOG("Initializing inotify.");
-	fd = inotify_init1(IN_NONBLOCK);
-	if (fd == -1) {
-		perror("inotify_init1");
-		exit(EXIT_FAILURE);
-	}
-
 	// We pretty much want to loop forever...
 	while (1) {
 		LOG("Beginning the main loop.");
+
+		// Create the file descriptor for accessing the inotify API
+		LOG("Initializing inotify.");
+		fd = inotify_init1(IN_NONBLOCK);
+		if (fd == -1) {
+			perror("inotify_init1");
+			exit(EXIT_FAILURE);
+		}
+
 		// Make sure our target file is available (i.e., the partition it resides in is mounted)
 		if (!is_target_mounted()) {
 			LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
@@ -205,17 +221,17 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			if (poll_num > 0) {
 				if (pfd.revents & POLLIN) {
 					// Inotify events are available
-					if (handle_events(fd))
+					if (handle_events(fd, wd))
 						// Go back to the main loop if we exited early (because the watch was destroyed automatically after an unmount)
 						break;
 				}
 			}
 		}
 		LOG("Stopped listening for events.");
-	}
 
-	// Close inotify file descriptor
-	close(fd);
+		// Close inotify file descriptor
+		close(fd);
+	}
 
 	exit(EXIT_SUCCESS);
 }
