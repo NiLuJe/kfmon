@@ -35,7 +35,7 @@ static int daemonize(void)
 	if (setsid() == -1)
 		return -1;
 
-	// Double fork, for... reasons?
+	// Double fork, for... reasons!
 	signal(SIGHUP, SIG_IGN);
 	switch (fork()) {
 		case -1:
