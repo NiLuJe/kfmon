@@ -90,7 +90,7 @@ static void wait_for_target_mountpoint(void)
 }
 
 // Check if our target file has been processed by Nickel...
-static int is_target_processed(void)
+static int is_target_processed(int update)
 {
 	sqlite3 *db;
 	sqlite3_stmt * stmt;
@@ -101,7 +101,7 @@ static int is_target_processed(void)
 	if (rc != SQLITE_OK) {
 		LOG("Can't open SQL DB: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
-		return 1;
+		return 0;
 	}
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
@@ -109,7 +109,7 @@ static int is_target_processed(void)
 	if (rc != SQLITE_OK) {
 		LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
-		return 1;
+		return 0;
 	}
 
 	rc = sqlite3_step(stmt);
@@ -120,6 +120,26 @@ static int is_target_processed(void)
 	}
 
 	sqlite3_finalize(stmt);
+
+	// Optionally, update the Title, Author & Comment fields to make them more useful...
+	if (is_processed && update) {
+		rc = sqlite3_prepare_v2(db, "UPDATE content SET Title = 'KOReader', Attribution = 'KOReader Devs', Description = 'An eBook reader application' WHERE ContentID = 'file://"KFMON_TARGET_FILE"' AND ContentType = '6';", -1, &stmt, NULL);
+		if (rc != SQLITE_OK) {
+			LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
+			return is_processed;
+		}
+
+		rc = sqlite3_step(stmt);
+		if (rc != SQLITE_DONE) {
+			LOG("UPDATE SQL query failed: %s", sqlite3_errmsg(db));
+		} else {
+			LOG("Successfully updated DB data for the target PNG");
+		}
+
+		sqlite3_finalize(stmt);
+	}
+
 	sqlite3_close(db);
 
 	return is_processed;
@@ -168,7 +188,7 @@ static int handle_events(int fd, int wd)
 				// Wait for a bit in case Nickel has some stupid crap to do...
 				sleep(1);
 				// Check that our target file has already been processed by Nickel before launching anything...
-				if (is_target_processed()) {
+				if (is_target_processed(1)) {
 					LOG("Launching %s . . .", KFMON_TARGET_SCRIPT);
 					ret = system(KFMON_TARGET_SCRIPT);
 					LOG(". . . which returned: %d", ret);
