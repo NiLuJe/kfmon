@@ -206,7 +206,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				if (pfd.revents & POLLIN) {
 					// Inotify events are available
 					if (handle_events(fd))
-						// Go back to the outer loop if we exited early (because the watch was destroyed automatically after unmount)
+						// Go back to the main loop if we exited early (because the watch was destroyed automatically after an unmount)
 						break;
 				}
 			}
