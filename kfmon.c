@@ -16,20 +16,12 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <errno.h>
-#include <poll.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/inotify.h>
-#include <unistd.h>
+#include "kfmon.h"
 
 /* Read all available inotify events from the file descriptor 'fd'.
-   wd is the table of watch descriptors for the directories in argv.
-   argc is the length of wd and argv.
-   argv is the list of watched directories.
-   Entry 0 of wd and argv is unused. */
+   wd is the watch descriptor for the target file */
 
-static void handle_events(int fd, int *wd, int argc, char* argv[])
+static void handle_events(int fd, int wd)
 {
 	/* Some systems cannot read integer variables if they are not
 	   properly aligned. On other systems, incorrect alignment may
@@ -44,7 +36,7 @@ static void handle_events(int fd, int *wd, int argc, char* argv[])
 
 	/* Loop while events can be read from inotify file descriptor. */
 	for (;;) {
-	/* Read some events. */
+		/* Read some events. */
 		len = read(fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
 			perror("read");
@@ -64,28 +56,14 @@ static void handle_events(int fd, int *wd, int argc, char* argv[])
 			/* Print event type */
 			if (event->mask & IN_OPEN)
 				printf("IN_OPEN: ");
-			if (event->mask & IN_CLOSE_NOWRITE)
-				printf("IN_CLOSE_NOWRITE: ");
-			if (event->mask & IN_CLOSE_WRITE)
-				printf("IN_CLOSE_WRITE: ");
-
-			/* Print the name of the watched directory */
-			for (i = 1; i < argc; ++i) {
-				if (wd[i] == event->wd) {
-					printf("%s/", argv[i]);
-					break;
-				}
-			}
+			if (event->mask & IN_UNMOUNT)
+				printf("IN_UNMOUNT: ");
+			if (event->mask & IN_IGNORED)
+				printf("IN_IGNORED: ");
 
 			/* Print the name of the file */
 			if (event->len)
 				printf("%s", event->name);
-
-			/* Print type of filesystem object */
-			if (event->mask & IN_ISDIR)
-				printf(" [directory]\n");
-			else
-				printf(" [file]\n");
 		}
 	}
 }
@@ -94,16 +72,9 @@ int main(int argc, char* argv[])
 {
 	char buf;
 	int fd, i, poll_num;
-	int *wd;
+	int wd;
 	nfds_t nfds;
-	struct pollfd fds[2];
-
-	if (argc < 2) {
-		printf("Usage: %s PATH [PATH ...]\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-
-	printf("Press ENTER key to terminate.\n");
+	struct pollfd fds[1];
 
 	/* Create the file descriptor for accessing the inotify API */
 	fd = inotify_init1(IN_NONBLOCK);
@@ -112,35 +83,19 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	/* Allocate memory for watch descriptors */
-	wd = calloc(argc, sizeof(int));
-	if (wd == NULL) {
-		perror("calloc");
+	/* Mark target file for 'file was opened' event */
+	wd = inotify_add_watch(fd, KFMON_TARGET_FILE, IN_OPEN);
+	if (wd == -1) {
+		fprintf(stderr, "Cannot watch '%s'\n", KFMON_TARGET_FILE);
+		perror("inotify_add_watch");
 		exit(EXIT_FAILURE);
 	}
 
-	/* Mark directories for events
-	   - file was opened
-	   - file was closed */
-	for (i = 1; i < argc; i++) {
-		wd[i] = inotify_add_watch(fd, argv[i], IN_OPEN | IN_CLOSE);
-		if (wd[i] == -1) {
-			fprintf(stderr, "Cannot watch '%s'\n", argv[i]);
-			perror("inotify_add_watch");
-			exit(EXIT_FAILURE);
-		}
-	}
-
 	/* Prepare for polling */
-	nfds = 2;
-
-	/* Console input */
-	fds[0].fd = STDIN_FILENO;
-	fds[0].events = POLLIN;
-
+	nfds = 1;
 	/* Inotify input */
-	fds[1].fd = fd;
-	fds[1].events = POLLIN;
+	fds[0].fd = fd;
+	fds[0].events = POLLIN;
 
 	/* Wait for events and/or terminal input */
 	printf("Listening for events.\n");
@@ -155,15 +110,8 @@ int main(int argc, char* argv[])
 
 		if (poll_num > 0) {
 			if (fds[0].revents & POLLIN) {
-				/* Console input is available. Empty stdin and quit */
-				while (read(STDIN_FILENO, &buf, 1) > 0 && buf != '\n')
-					continue;
-				break;
-			}
-
-			if (fds[1].revents & POLLIN) {
 				/* Inotify events are available */
-				handle_events(fd, wd, argc, argv);
+				handle_events(fd, wd);
 			}
 		}
 	}
