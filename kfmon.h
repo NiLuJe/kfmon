@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/inotify.h>
+#include <signal.h>
 #include <unistd.h>
 #include <time.h>
 #include <mntent.h>
@@ -42,9 +43,13 @@
 #endif
 //#define KOBO_DB_PATH "/mnt/onboard/.kobo/KoboReader.sqlite"
 #define KOBO_DB_PATH "/home/niluje/Kindle/Staging/KoboReader.sqlite"
+//#define KFMON_LOGFILE "/usr/local/kfmon/kfmon.log"
+#define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
 
-// Log everything to stderr (which will eventually points to a logfile ;p)
+// Log everything to stderr (which actually points to our logfile)
 #define LOG(fmt, ...) fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);
+
+static int daemonize(void);
 
 char *get_current_time(void);
 

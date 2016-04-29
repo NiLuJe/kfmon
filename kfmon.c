@@ -18,6 +18,63 @@
 
 #include "kfmon.h"
 
+// Because daemon() only appeared in glibc 2.21
+static int daemonize(void)
+{
+	int fd;
+
+	switch (fork()) {
+		case -1:
+			return -1;
+		case 0:
+			break;
+		default:
+			_exit(0);
+	}
+
+	if (setsid() == -1)
+		return -1;
+
+	// Double fork, for... reasons?
+	signal(SIGHUP, SIG_IGN);
+	switch (fork()) {
+		case -1:
+			return -1;
+		case 0:
+			break;
+		default:
+			_exit(0);
+	}
+
+	if (chdir("/") == -1)
+		return -1;
+
+	umask(0);
+
+	// Redirect stdin & stdout to /dev/null
+	if ((fd = open("/dev/null", O_RDWR)) != -1) {
+		(void)dup2(fd, fileno(stdin));
+		(void)dup2(fd, fileno(stdout));
+		if (fd > 2)
+			(void)close (fd);
+	} else {
+		fprintf(stderr, "Failed to redirect stdint & stdout to /dev/null\n");
+		return -1;
+	}
+
+	// Redirect stderr to our logfile
+	if ((fd = open(KFMON_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0600)) != -1) {
+		(void)dup2(fd, fileno(stderr));
+		if (fd > 2)
+			(void)close (fd);
+	} else {
+		fprintf(stderr, "Failed to redirect stderr to logfile '%s'\n", KFMON_LOGFILE);
+		return -1;
+	}
+
+	return 0;
+}
+
 // Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
 char *get_current_time(void)
 {
@@ -102,7 +159,7 @@ static int is_target_processed(int update)
 	if (rc != SQLITE_OK) {
 		LOG("Can't open SQL DB: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
-		return 0;
+		return is_processed;
 	}
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
@@ -110,7 +167,7 @@ static int is_target_processed(int update)
 	if (rc != SQLITE_OK) {
 		LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
-		return 0;
+		return is_processed;
 	}
 
 	rc = sqlite3_step(stmt);
@@ -255,6 +312,12 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	int fd, poll_num;
 	int wd;
 	struct pollfd pfd;
+
+	// Fly, little daemon!
+	if (daemonize() != 0) {
+		fprintf(stderr, "Failed to daemonize!\n");
+		exit(EXIT_FAILURE);
+	}
 
 	// We pretty much want to loop forever...
 	while (1) {
