@@ -1,0 +1,2 @@
+# Runs early at boot... (onboard *might* be mounted at that point)
+KERNEL=="loop0", RUN+="/usr/local/kfmon/bin/kfmon"
