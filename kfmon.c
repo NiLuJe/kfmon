@@ -48,7 +48,6 @@ static int is_target_mounted(void)
 			//LOG("Checking fs %s mounted on %s", part->mnt_fsname, part->mnt_dir);
 			if ((part->mnt_dir != NULL) && (strcmp(part->mnt_dir, KFMON_TARGET_MOUNTPOINT)) == 0) {
 				is_mounted = 1;
-				endmntent(mtab);
 				break;
 			}
 		}
