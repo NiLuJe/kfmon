@@ -43,10 +43,11 @@ static int is_target_mounted(void)
 	struct mntent *part = NULL;
 	int is_mounted = 0;
 
-	if ((mtab = setmntent("/etc/mtab", "r")) != NULL) {
+	if ((mtab = setmntent("/proc/mounts", "r")) != NULL) {
 		while ((part = getmntent(mtab)) != NULL) {
-			if ((part->mnt_fsname != NULL) && (strcmp(part->mnt_fsname, KFMON_TARGET_MOUNTPOINT)) == 0) {
+			if ((part->mnt_dir != NULL) && (strcmp(part->mnt_dir, KFMON_TARGET_MOUNTPOINT)) == 0) {
 				is_mounted = 1;
+				break;
 			}
 		}
 		endmntent(mtab);
@@ -69,7 +70,7 @@ static void wait_for_target_mountpoint(void)
 	pfd.revents = 0;
 	while ((rv = poll(&pfd, 1, 5)) >= 0) {
 		if (pfd.revents & POLLERR) {
-			LOG("Mount points changed. %d.", changes++);
+			LOG("Mountpoints changed (iteration nr. %d)", changes++);
 		}
 		pfd.revents = 0;
 
@@ -155,6 +156,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	while (1) {
 		// Make sure our target file is available (i.e., the partition it resides in is mounted)
 		if (!is_target_mounted()) {
+			LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
 			// If it's not, wait for it to be...
 			wait_for_target_mountpoint();
 		}
