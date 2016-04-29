@@ -36,6 +36,10 @@
 #define KFMON_TARGET_SCRIPT KFMON_TARGET_MOUNTPOINT "/.adds/koreader/koreader.sh"
 #endif
 
+// Log everything to stderr (which will eventually points to a logfile ;p)
+#define LOG(fmt, ...) fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);
+
+char *get_current_time(void);
 static int is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 static void handle_events(int, int);

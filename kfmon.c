@@ -18,6 +18,23 @@
 
 #include "kfmon.h"
 
+// Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
+char *get_current_time(void)
+{
+	// cf. strftime(3) & https://stackoverflow.com/questions/7411301
+	time_t t;
+	struct tm *lt;
+
+	t = time(NULL);
+	lt = localtime(&t);
+
+	// Needs to be static to avoid dealing with painful memory handling...
+	static char sz_time[24];
+	strftime(sz_time, sizeof(sz_time), "%Y-%m-%d @ %H:%M:%S", lt);
+
+	return sz_time;
+}
+
 // Check that our target mountpoint is indeed mounted...
 static int is_target_mounted(void)
 {
@@ -52,19 +69,19 @@ static void wait_for_target_mountpoint(void)
 	pfd.revents = 0;
 	while ((rv = poll(&pfd, 1, 5)) >= 0) {
 		if (pfd.revents & POLLERR) {
-			fprintf(stdout, "Mount points changed. %d.\n", changes++);
+			LOG("Mount points changed. %d.", changes++);
 		}
 		pfd.revents = 0;
 
 		// Stop polling once we know our mountpoint is available...
 		if (is_target_mounted()) {
-			fprintf(stdout, "Yay! Target mountpoint is available!\n");
+			LOG("Yay! Target mountpoint is available!");
 			break;
 		}
 
 		// If we can't find our mountpoint after that many changes, assume we're screwed...
 		if (changes > 10) {
-			fprintf(stderr, "Too many mountpoint changes without finding our target. Going buh-bye!\n");
+			LOG("Too many mountpoint changes without finding our target. Going buh-bye!");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -106,17 +123,17 @@ static void handle_events(int fd, int wd)
 
 			// Print event type
 			if (event->mask & IN_OPEN) {
-				printf("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
+				LOG("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
 				// FIXME: See what happens if we open KFMON_TARGET_FILE from inside KOReader itself...
 				//	  We block on system(), so we can't do anything much from here...
 				//	  We should at least update KOReader's startup script so it doesn't run multiple concurrent instances of itself.
-				printf("Launching %s", KFMON_TARGET_SCRIPT);
+				LOG("Launching %s", KFMON_TARGET_SCRIPT);
 				system(KFMON_TARGET_SCRIPT);
 			}
 			if (event->mask & IN_UNMOUNT)
-				printf("Tripped IN_UNMOUNT for %s", KFMON_TARGET_FILE);
+				LOG("Tripped IN_UNMOUNT for %s", KFMON_TARGET_FILE);
 			if (event->mask & IN_IGNORED)
-				printf("Tripped IN_IGNORED for %s", KFMON_TARGET_FILE);
+				LOG("Tripped IN_IGNORED for %s", KFMON_TARGET_FILE);
 		}
 	}
 }
@@ -146,7 +163,7 @@ int main(int argc, char* argv[])
 		// Mark target file for 'file was opened' event
 		wd = inotify_add_watch(fd, KFMON_TARGET_FILE, IN_OPEN);
 		if (wd == -1) {
-			fprintf(stderr, "Cannot watch '%s'\n", KFMON_TARGET_FILE);
+			LOG("Cannot watch '%s'", KFMON_TARGET_FILE);
 			perror("inotify_add_watch");
 			exit(EXIT_FAILURE);
 		}
@@ -156,7 +173,7 @@ int main(int argc, char* argv[])
 		pfd.events = POLLIN;
 
 		// Wait for events
-		printf("Listening for events.\n");
+		LOG("Listening for events.");
 		while (1) {
 			poll_num = poll(pfd, 1, -1);
 			if (poll_num == -1) {
@@ -174,7 +191,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		printf("Listening for events stopped.\n");
+		LOG("Listening for events stopped.");
 		free(wd);
 	}
 
