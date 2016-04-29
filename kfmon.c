@@ -114,7 +114,7 @@ static int is_target_processed(void)
 
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
-		LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
+		LOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
 		if (sqlite3_column_int(stmt, 0) == 1)
 			is_processed = 1;
 	}
