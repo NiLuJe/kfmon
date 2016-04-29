@@ -51,7 +51,6 @@ char *get_current_time(void);
 static int is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static int sqlite_callback(void *, int, char **, char **);
 static int is_target_processed(void);
 
 static int handle_events(int, int);

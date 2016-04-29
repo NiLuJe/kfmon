@@ -89,38 +89,40 @@ static void wait_for_target_mountpoint(void)
 	}
 }
 
-static int sqlite_callback(void *foo __attribute__ ((unused)), int argc, char **argv, char **azColName)
-{
-	int i;
-	for (i = 0; i < argc; i++) {
-		LOG("%s = %s", azColName[i], argv[i] ? argv[i] : "NULL");
-	}
-	return 0;
-}
-
 // Check if our target file has been processed by Nickel...
 static int is_target_processed(void)
 {
 	sqlite3 *db;
-	char *zErrMsg = 0;
+	sqlite3_stmt * stmt;
 	int rc;
+	int is_processed = 0;
 
 	rc = sqlite3_open(KOBO_DB_PATH , &db);
-	if (rc) {
-		LOG("Can't open Nickel database: %s", sqlite3_errmsg(db));
+	if (rc != SQLITE_OK) {
+		LOG("Can't open SQL DB: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		return 1;
 	}
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
-	rc = sqlite3_exec(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = 'file://"KFMON_TARGET_FILE"' AND ContentType = '6');", sqlite_callback, 0, &zErrMsg);
+	rc = sqlite3_prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = 'file://"KFMON_TARGET_FILE"' AND ContentType = '6');", -1, &stmt, NULL);
 	if (rc != SQLITE_OK) {
-		LOG("SQL error: %s", zErrMsg);
-		sqlite3_free(zErrMsg);
+		LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
+		sqlite3_close(db);
+		return 1;
 	}
+
+	rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW) {
+		LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
+		if (sqlite3_column_int(stmt, 0) == 1)
+			is_processed = 1;
+	}
+
+	sqlite3_finalize(stmt);
 	sqlite3_close(db);
 
-	return 0;
+	return is_processed;
 }
 
 /* Read all available inotify events from the file descriptor 'fd'. */
@@ -166,10 +168,13 @@ static int handle_events(int fd, int wd)
 				// Wait for a bit in case Nickel has some stupid crap to do...
 				sleep(1);
 				// Check that our target file has already been processed by Nickel before launching anything...
-				is_target_processed();
-				LOG("Launching %s . . .", KFMON_TARGET_SCRIPT);
-				ret = system(KFMON_TARGET_SCRIPT);
-				LOG(". . . which returned: %d", ret);
+				if (is_target_processed()) {
+					LOG("Launching %s . . .", KFMON_TARGET_SCRIPT);
+					ret = system(KFMON_TARGET_SCRIPT);
+					LOG(". . . which returned: %d", ret);
+				} else {
+					LOG("Target script '%s' appears not to have been processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_SCRIPT);
+				}
 			}
 			if (event->mask & IN_CLOSE)
 				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
@@ -183,8 +188,7 @@ static int handle_events(int fd, int wd)
 			if (event->mask & IN_Q_OVERFLOW) {
 				if (event->len) {
 					LOG("Huh oh... Tripped IN_Q_OVERFLOW for %s", event->name);
-				}
-				else {
+				} else {
 					LOG("Huh oh... Tripped IN_Q_OVERFLOW");
 				}
 				// Destroy our only watch, and break the loop
