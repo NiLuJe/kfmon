@@ -96,6 +96,7 @@ static int is_target_processed(int update)
 	sqlite3_stmt * stmt;
 	int rc;
 	int is_processed = 0;
+	int needs_update = 0;
 
 	rc = sqlite3_open(KOBO_DB_PATH , &db);
 	if (rc != SQLITE_OK) {
@@ -123,6 +124,25 @@ static int is_target_processed(int update)
 
 	// Optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
+		// Check if the DB has already been updated...
+		rc = sqlite3_prepare_v2(db, "SELECT Title FROM content WHERE ContentID = 'file://"KFMON_TARGET_FILE"' AND ContentType = '6';", -1, &stmt, NULL);
+
+		if (rc != SQLITE_OK) {
+			LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
+			return is_processed;
+		}
+
+		rc = sqlite3_step(stmt);
+		if (rc == SQLITE_ROW) {
+			LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
+			if (strcmp((const char *)sqlite3_column_text(stmt, 0), "KOReader") != 0)
+				needs_update = 1;
+		}
+
+		sqlite3_finalize(stmt);
+	}
+	if (needs_update) {
 		rc = sqlite3_prepare_v2(db, "UPDATE content SET Title = 'KOReader', Attribution = 'KOReader Devs', Description = 'An eBook reader application' WHERE ContentID = 'file://"KFMON_TARGET_FILE"' AND ContentType = '6';", -1, &stmt, NULL);
 		if (rc != SQLITE_OK) {
 			LOG("Can't prepare SQL statement: %s", sqlite3_errmsg(db));
