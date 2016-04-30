@@ -156,7 +156,12 @@ static int is_target_processed(int update)
 	int is_processed = 0;
 	int needs_update = 0;
 
-	CALL_SQLITE(open(KOBO_DB_PATH , &db));
+	if (update) {
+		CALL_SQLITE(open(KOBO_DB_PATH , &db));
+	} else {
+		// Open the DB ro to be extra-safe...
+		CALL_SQLITE(open_v2(KOBO_DB_PATH , &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL));
+	}
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
 	CALL_SQLITE(prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
