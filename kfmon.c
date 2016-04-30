@@ -260,7 +260,6 @@ static int handle_events(int fd, int wd)
 	ssize_t len;
 	char *ptr;
 	static int destroyed_wd = 0;
-	static int spawn_something = 1;
 	static int pending_processing = 0;
 
 	// Loop while events can be read from inotify file descriptor.
@@ -285,24 +284,9 @@ static int handle_events(int fd, int wd)
 			// Print event type
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
-				// Check if our last spawn (if we have one) is still alive...
-				if (last_spawn_pid > 0) {
-					// NOTE: Our child process should automatically be reaped thanks to our SIGCHLD handling...
-					//	 That leaves the good old kill sig 0 to check if it's still alive!
-					if (kill(last_spawn_pid, 0) == 0) {
-						// Still alive! Pass.
-						spawn_something = 0;
-						LOG("Last spawn (%d) is still alive, continue handling events . . .", last_spawn_pid);
-						continue;
-					} else {
-						// It's dead! Forget about it, and mark us as ready to spawn another!
-						last_spawn_pid = 0;
-						spawn_something = 1;
-					}
-				}
-
 				// Clunky potential detection of Nickel processing...
-				if (spawn_something) {
+				if (last_spawn_pid == 0) {
+					// Only check if we're ready to spawn something...
 					if (!is_target_processed(0)) {
 						// It's not processed on OPEN, flag as pending...
 						pending_processing = 1;
@@ -315,7 +299,7 @@ static int handle_events(int fd, int wd)
 			}
 			if (event->mask & IN_CLOSE) {
 				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
-				if (spawn_something) {
+				if (last_spawn_pid == 0) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
 					//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
@@ -366,6 +350,25 @@ static int handle_events(int fd, int wd)
 	return destroyed_wd;
 }
 
+// Handle SIGCHLD to reap processes and update our last_spawn_pid tracker ASAP
+void reaper(int sig  __attribute__ ((unused))) {
+	pid_t cpid;
+	int wstatus;
+	int saved_errno = errno;
+	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
+		// NOTE: We shouldn't ever reap an untracked pid (despite waiting for *all* children), but log both just in case...
+		LOG("Reaped our last spawn (reaped: %d vs. stored: %d)", cpid, last_spawn_pid);
+		if (WIFEXITED(wstatus)) {
+			LOG("It exited with status %d", WEXITSTATUS(wstatus));
+		} else if (WIFSIGNALED(wstatus)) {
+			LOG("It was killed by signal %d", WTERMSIG(wstatus));
+		}
+		// Reset our spawn pid tracker to announce that we're ready to spawn something new
+		last_spawn_pid = 0;
+	}
+	errno = saved_errno;
+}
+
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
 	int fd, poll_num;
@@ -378,9 +381,13 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		exit(EXIT_FAILURE);
 	}
 
-	// Automatically reap child processes (cf. NOTES in wait(2))
-	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-		perror("signal");
+	// Keep track of the reaping of our children
+	struct sigaction sa;
+	sa.sa_handler = &reaper;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+	if (sigaction(SIGCHLD, &sa, 0) == -1) {
+		perror("sigaction");
 		exit(EXIT_FAILURE);
 	}
 
