@@ -42,10 +42,10 @@
 #ifndef KFMON_TARGET_SCRIPT
 #define KFMON_TARGET_SCRIPT KFMON_TARGET_MOUNTPOINT "/.adds/koreader/koreader.sh"
 #endif
-//#define KOBO_DB_PATH "/mnt/onboard/.kobo/KoboReader.sqlite"
-#define KOBO_DB_PATH "/home/niluje/Kindle/Staging/KoboReader.sqlite"
-//#define KFMON_LOGFILE "/usr/local/kfmon/kfmon.log"
-#define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
+#define KOBO_DB_PATH "/mnt/onboard/.kobo/KoboReader.sqlite"
+//#define KOBO_DB_PATH "/home/niluje/Kindle/Staging/KoboReader.sqlite"
+#define KFMON_LOGFILE "/usr/local/kfmon/kfmon.log"
+//#define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
 
 // Log everything to stderr (which actually points to our logfile)
 #define LOG(fmt, ...) fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);
