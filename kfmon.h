@@ -61,20 +61,6 @@
 	}						\
 }							\
 
-#define CALL_SQLITE_EXPECT(f, x)			\
-{							\
-	int i;						\
-	i = sqlite3_ ## f;				\
-	if (i != SQLITE_ ## x) {			\
-		LOG("%s failed with status %d: %s",	\
-			#f, i, sqlite3_errmsg(db));	\
-		return is_processed;			\
-	} else {					\
-		LOG("%s was successful",		\
-			#f);				\
-	}						\
-}							\
-
 static int daemonize(void);
 
 char *get_current_time(void);
