@@ -300,7 +300,7 @@ static int handle_events(int fd, int wd)
 								// Still alive! Pass.
 								spawn_something = 0;
 								LOG("Last spawn (%d) is still alive, continue handling events . . .", last_spawn_pid);
-								// This *should* apply to the outer for loop...
+								// This applies to the outer for loop :)
 								continue;
 							default:
 								// NOTE: I don't think we can ever get a mismatch here, but log both anyway...
