@@ -259,9 +259,9 @@ static int handle_events(int fd, int wd)
 	const struct inotify_event *event;
 	ssize_t len;
 	char *ptr;
-	int destroyed_wd = 0;
-	int spawn_something = 1;
-	int pending_processing = 0;
+	static int destroyed_wd = 0;
+	static int spawn_something = 1;
+	static int pending_processing = 0;
 
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
