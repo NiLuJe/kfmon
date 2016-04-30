@@ -49,11 +49,13 @@ strip: all
 	$(STRIP) $(STRIP_OPTS) $(OUT_DIR)/kfmon
 
 kobo: strip
-	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard Kobo/etc/udev/rules.d
+	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard/.kobo Kobo/etc/udev/rules.d
 	ln -sf $(CURDIR)/resources/koreader.png Kobo/mnt/onboard/koreader.png
 	ln -sf $(CURDIR)/Release/kfmon Kobo/usr/local/kfmon/bin/kfmon
 	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
-	cd Kobo && tar -cvzhf KoboRoot.tgz usr mnt etc && cd ..
+	cd Kobo && tar -cvzhf KoboRoot.tgz usr etc && cd ..
+	ln -sf $(CURDIR)/Kobo/KoboRoot.tgz Kobo/mnt/onboard/.kobo/KoboRoot.tgz
+	cd Kobo/mnt/onboard && zip -r ../../KFMon.zip . && cd ../../..
 
 debug:
 	$(MAKE) all DEBUG=true
