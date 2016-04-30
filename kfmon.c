@@ -173,6 +173,8 @@ static int is_target_processed(int update)
 
 	sqlite3_finalize(stmt);
 
+	// FIXME: Here be dragons! Thos works in theory, but has a high risk of trashing the DB if we do that when nickel is running (which we are).
+	//	  Right now, nothing calls us with update set to 1, so we're safe.
 	// Optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
 		// Check if the DB has already been updated...
@@ -282,7 +284,9 @@ static int handle_events(int fd, int wd)
 				// Wait for a bit in case Nickel has some stupid crap to do...
 				sleep(1);
 				// Check that our target file has already been processed by Nickel before launching anything...
-				if (is_target_processed(1)) {
+				// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
+				//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
+				if (is_target_processed(0)) {
 					// Do we want to spawn something?
 					int spawn_something = 1;
 					// Check if our last spawn (if we have one) is still alive...
