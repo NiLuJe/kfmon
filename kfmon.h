@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <sys/inotify.h>
 #include <signal.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <time.h>
 #include <mntent.h>
@@ -69,5 +70,9 @@ static int is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
 static int is_target_processed(int);
+
+// Ugly global. Used to remember the pid of our last spawn...
+pid_t last_spawn_pid = 0;
+static pid_t spawn(const char **);
 
 static int handle_events(int, int);

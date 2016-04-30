@@ -217,6 +217,29 @@ static int is_target_processed(int update)
 	return is_processed;
 }
 
+/* Spawn a process and returns its pid...
+ * Knowing that pid is all I care about, leave the popen()-like piping alone
+ * Massiively inspired from popen2() implementations from https://stackoverflow.com/questions/548063 */
+static pid_t spawn(const char **command)
+{
+	pid_t pid;
+
+	pid = fork();
+
+	if (pid < 0)
+		return pid;
+	else if (pid == 0) {
+		// Sweet child o' mine!
+		execvp(*command, command);
+		perror("execvp");
+		exit(1);
+	}
+
+	// We don't want to block, so handle the wait() later...
+
+	return pid;
+}
+
 /* Read all available inotify events from the file descriptor 'fd'. */
 static int handle_events(int fd, int wd)
 {
@@ -229,7 +252,6 @@ static int handle_events(int fd, int wd)
 	const struct inotify_event *event;
 	ssize_t len;
 	char *ptr;
-	int ret;
 	int destroyed_wd = 0;
 
 	// Loop while events can be read from inotify file descriptor.
@@ -261,9 +283,37 @@ static int handle_events(int fd, int wd)
 				sleep(1);
 				// Check that our target file has already been processed by Nickel before launching anything...
 				if (is_target_processed(1)) {
-					LOG("Launching %s . . .", KFMON_TARGET_SCRIPT);
-					ret = system(KFMON_TARGET_SCRIPT);
-					LOG(". . . which returned: %d", ret);
+					// Do we want to spawn something?
+					int spawn_something = 1;
+					// Check if our last spawn (if we have one) is still alive...
+					if (last_spawn_pid > 0) {
+						LOG("Checking if our last spawn (%d) is still alive . . .", last_spawn_pid);
+						// Use our good old kill 0 trick to check if the process still exists :)
+						if (kill(last_spawn_pid, 0) == 0) {
+							// Still alive! Pass.
+							spawn_something = 0;
+							LOG("It is, continue handling events . . .");
+							continue;
+						} else {
+							// It's dead, reap it to avoid zombies...
+							// NOTE: Reaping only on OPEN is not optimal, granted, but it's better than nothing...
+							LOG("Reaping our last spawn (%d) . . .", last_spawn_pid);
+							int child_status;
+							while (wait(&child_status) != last_spawn_pid)
+								;
+							// And forget about it once it's gone :)
+							last_spawn_pid = 0;
+						}
+					}
+					if (spawn_something) {
+						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
+						// We're using execvp()...
+						const char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
+						last_spawn_pid = spawn(cmd);
+						LOG(". . . with pid: %d", last_spawn_pid);
+					} else {
+						LOG("Our last spawn (%d) is still alive!", last_spawn_pid);
+					}
 				} else {
 					LOG("Target script '%s' appears not to have been processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_SCRIPT);
 				}
