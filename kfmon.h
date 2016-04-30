@@ -41,13 +41,39 @@
 #ifndef KFMON_TARGET_SCRIPT
 #define KFMON_TARGET_SCRIPT KFMON_TARGET_MOUNTPOINT "/.adds/koreader/koreader.sh"
 #endif
-#define KOBO_DB_PATH "/mnt/onboard/.kobo/KoboReader.sqlite"
-//#define KOBO_DB_PATH "/home/niluje/Kindle/Staging/KoboReader.sqlite"
-#define KFMON_LOGFILE "/usr/local/kfmon/kfmon.log"
-//#define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
+//#define KOBO_DB_PATH "/mnt/onboard/.kobo/KoboReader.sqlite"
+#define KOBO_DB_PATH "/home/niluje/Kindle/Staging/KoboReader.sqlite"
+//#define KFMON_LOGFILE "/usr/local/kfmon/kfmon.log"
+#define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
 
 // Log everything to stderr (which actually points to our logfile)
 #define LOG(fmt, ...) fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);
+
+// SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
+#define CALL_SQLITE(f)					\
+{							\
+	int i;						\
+	i = sqlite3_ ## f;				\
+	if (i != SQLITE_OK) {				\
+		LOG("%s failed with status %d: %s",	\
+			#f, i, sqlite3_errmsg(db));	\
+		return is_processed;			\
+	}						\
+}							\
+
+#define CALL_SQLITE_EXPECT(f, x)			\
+{							\
+	int i;						\
+	i = sqlite3_ ## f;				\
+	if (i != SQLITE_ ## x) {			\
+		LOG("%s failed with status %d: %s",	\
+			#f, i, sqlite3_errmsg(db));	\
+		return is_processed;			\
+	} else {					\
+		LOG("%s was successful",		\
+			#f);				\
+	}						\
+}							\
 
 static int daemonize(void);
 
