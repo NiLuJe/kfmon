@@ -232,7 +232,7 @@ static pid_t spawn(char **command)
 		// Sweet child o' mine!
 		execvp(*command, command);
 		perror("execvp");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	// We don't want to block, so we handle the wait() later...
@@ -295,6 +295,7 @@ static int handle_events(int fd, int wd)
 						switch (child_pid) {
 							case -1:
 								perror("waitpid");
+								exit(EXIT_FAILURE);
 							case 0:
 								// Still alive! Pass.
 								spawn_something = 0;
@@ -304,6 +305,12 @@ static int handle_events(int fd, int wd)
 							default:
 								// NOTE: I don't think we can ever get a mismatch here, but log both anyway...
 								LOG("Reaped our last spawn (reaped: %d vs. stored: %d)!", child_pid, last_spawn_pid);
+								// Log what happened to said child proces...
+								if (WIFEXITED(child_status)) {
+									LOG("It exited with status %d", WEXITSTATUS(child_status));
+								} else if (WIFSIGNALED(child_status)) {
+									LOG("It was killed by signal %d", WTERMSIG(child_status));
+								}
 								// And now we can forget about it!
 								last_spawn_pid = 0;
 						}
