@@ -48,6 +48,13 @@ kfmon: $(OBJS)
 strip: all
 	$(STRIP) $(STRIP_OPTS) $(OUT_DIR)/kfmon
 
+kobo: strip
+	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard Kobo/etc/udev/rules.d
+	ln -sf $(CURDIR)/resources/koreader.png Kobo/mnt/onboard/koreader.png
+	ln -sf $(CURDIR)/Release/kfmon Kobo/usr/local/kfmon/bin/kfmon
+	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
+	cd Kobo && tar -cvzhf KoboRoot.tgz usr mnt etc && cd ..
+
 debug:
 	$(MAKE) all DEBUG=true
 
@@ -56,5 +63,6 @@ clean:
 	rm -rf Release/kfmon
 	rm -rf Debug/*.o
 	rm -rf Debug/kfmon
+	rm -rf Kobo
 
-.PHONY: all clean default outdir kfmon strip debug
+.PHONY: all clean default outdir kfmon kobo strip debug
