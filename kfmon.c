@@ -235,7 +235,7 @@ static pid_t spawn(const char **command)
 		exit(1);
 	}
 
-	// We don't want to block, so handle the wait() later...
+	// We don't want to block, so we handle the wait() later...
 
 	return pid;
 }
@@ -287,22 +287,25 @@ static int handle_events(int fd, int wd)
 					int spawn_something = 1;
 					// Check if our last spawn (if we have one) is still alive...
 					if (last_spawn_pid > 0) {
+						int child_status;
 						LOG("Checking if our last spawn (%d) is still alive . . .", last_spawn_pid);
-						// Use our good old kill 0 trick to check if the process still exists :)
-						if (kill(last_spawn_pid, 0) == 0) {
-							// Still alive! Pass.
-							spawn_something = 0;
-							LOG("It is, continue handling events . . .");
-							continue;
-						} else {
-							// It's dead, reap it to avoid zombies...
-							// NOTE: Reaping only on OPEN is not optimal, granted, but it's better than nothing...
-							LOG("Reaping our last spawn (%d) . . .", last_spawn_pid);
-							int child_status;
-							while (wait(&child_status) != last_spawn_pid)
-								;
-							// And forget about it once it's gone :)
-							last_spawn_pid = 0;
+						// Check without blocking if our child hasn't already exited, and reap it to avoid zombies if it has.
+						// NOTE: Reaping only on OPEN is not optimal, granted, but it's better than nothing...
+						pid_t child_pid = waitpid(last_spawn_pid, &child_status, WNOHANG);
+						switch (child_pid) {
+							case -1:
+								perror("waitpid");
+							case 0:
+								// Still alive! Pass.
+								spawn_something = 0;
+								LOG("Last spawn (%d) is still alive, continue handling events . . .", last_spawn_pid);
+								// This *should* apply to the outer for loop...
+								continue;
+							default:
+								// NOTE: I don't think we can ever get a mismatch here, but log both anyway...
+								LOG("Reaped our last spawn (reaped: %d vs. stored: %d)!", child_pid, last_spawn_pid);
+								// And now we can forget about it!
+								last_spawn_pid = 0;
 						}
 					}
 					if (spawn_something) {
