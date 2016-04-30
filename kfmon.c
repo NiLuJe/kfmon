@@ -321,7 +321,7 @@ static int handle_events(int fd, int wd)
 					//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
 					if (!pending_processing && is_target_processed(0)) {
 						// Wait for (more than) a bit in case Nickel has some stupid crap to do...
-						sleep(3);
+						sleep(5);
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
 						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
