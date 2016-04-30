@@ -30,7 +30,7 @@ EXTRA_CFLAGS+=-Wconversion
 
 # FIXME: Figure out where we'll end up putting SQLite3 ;p
 CPPFLAGS?=-Iincludes
-LDFLAGS?=-Llib
+LDFLAGS?=-Llib -Wl,--as-needed
 
 OBJS:=$(SRCS:%.c=$(OUT_DIR)/%.o)
 
