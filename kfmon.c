@@ -283,58 +283,55 @@ static int handle_events(int fd, int wd)
 			// Print event type
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
-				// FIXME: See what happens if we open KFMON_TARGET_FILE from inside KOReader itself...
-				//	  We block on system(), so we can't do anything much from here...
-				//	  We should at least update KOReader's startup script so it doesn't run multiple concurrent instances of itself.
-				// Wait for a bit in case Nickel has some stupid crap to do...
-				sleep(1);
-				// Check that our target file has already been processed by Nickel before launching anything...
-				// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
-				//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
-				if (is_target_processed(0)) {
-					// Do we want to spawn something?
-					int spawn_something = 1;
-					// Check if our last spawn (if we have one) is still alive...
-					if (last_spawn_pid > 0) {
-						int child_status;
-						LOG("Checking if our last spawn (%d) is still alive . . .", last_spawn_pid);
-						// Check without blocking if our child hasn't already exited, and reap it to avoid zombies if it has.
-						// NOTE: Reaping only on OPEN is not optimal, granted, but it's better than nothing...
-						pid_t child_pid = waitpid(last_spawn_pid, &child_status, WNOHANG);
-						switch (child_pid) {
-							case -1:
-								perror("waitpid");
-								exit(EXIT_FAILURE);
-							case 0:
-								// Still alive! Pass.
-								spawn_something = 0;
-								LOG("Last spawn (%d) is still alive, continue handling events . . .", last_spawn_pid);
-								// This applies to the outer for loop :)
-								continue;
-							default:
-								// NOTE: I don't think we can ever get a mismatch here, but log both anyway...
-								LOG("Reaped our last spawn (reaped: %d vs. stored: %d)!", child_pid, last_spawn_pid);
-								// Log what happened to said child proces...
-								if (WIFEXITED(child_status)) {
-									LOG("It exited with status %d", WEXITSTATUS(child_status));
-								} else if (WIFSIGNALED(child_status)) {
-									LOG("It was killed by signal %d", WTERMSIG(child_status));
-								}
-								// And now we can forget about it!
-								last_spawn_pid = 0;
-						}
+				// Do we want to spawn something?
+				int spawn_something = 1;
+				// Check if our last spawn (if we have one) is still alive...
+				if (last_spawn_pid > 0) {
+					int child_status;
+					LOG("Checking if our last spawn (%d) is still alive . . .", last_spawn_pid);
+					// Check without blocking if our child hasn't already exited, and reap it to avoid zombies if it has.
+					// NOTE: Reaping only on OPEN is not optimal, granted, but it's better than nothing...
+					pid_t child_pid = waitpid(last_spawn_pid, &child_status, WNOHANG);
+					switch (child_pid) {
+						case -1:
+							perror("waitpid");
+							exit(EXIT_FAILURE);
+						case 0:
+							// Still alive! Pass.
+							spawn_something = 0;
+							LOG("Last spawn (%d) is still alive, continue handling events . . .", last_spawn_pid);
+							// This applies to the outer for loop :)
+							continue;
+						default:
+							// NOTE: I don't think we can ever get a mismatch here, but log both anyway...
+							LOG("Reaped our last spawn (reaped: %d vs. stored: %d)!", child_pid, last_spawn_pid);
+							// Log what happened to said child proces...
+							if (WIFEXITED(child_status)) {
+								LOG("It exited with status %d", WEXITSTATUS(child_status));
+							} else if (WIFSIGNALED(child_status)) {
+								LOG("It was killed by signal %d", WTERMSIG(child_status));
+							}
+							// And now we can forget about it!
+							last_spawn_pid = 0;
 					}
-					if (spawn_something) {
+				}
+				if (spawn_something) {
+					// Wait for a bit in case Nickel has some stupid crap to do...
+					sleep(1);
+					// Check that our target file has already been processed by Nickel before launching anything...
+					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
+					//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
+					if (is_target_processed(0)) {
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
 						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
 						last_spawn_pid = spawn(cmd);
 						LOG(". . . with pid: %d", last_spawn_pid);
 					} else {
-						LOG("Our last spawn (%d) is still alive!", last_spawn_pid);
+						LOG("Target script '%s' appears not to have been processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_SCRIPT);
 					}
 				} else {
-					LOG("Target script '%s' appears not to have been processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_SCRIPT);
+					LOG("Our last spawn (%d) is still alive!", last_spawn_pid);
 				}
 			}
 			if (event->mask & IN_CLOSE)
