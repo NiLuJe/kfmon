@@ -260,6 +260,8 @@ static int handle_events(int fd, int wd)
 	ssize_t len;
 	char *ptr;
 	int destroyed_wd = 0;
+	int spawn_something = 1;
+	int pending_processing = 0;
 
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
@@ -283,11 +285,6 @@ static int handle_events(int fd, int wd)
 			// Print event type
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
-			}
-			if (event->mask & IN_CLOSE) {
-				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
-				// Do we want to spawn something?
-				int spawn_something = 1;
 				// Check if our last spawn (if we have one) is still alive...
 				if (last_spawn_pid > 0) {
 					// NOTE: Our child process should automatically be reaped thanks to our SIGCHLD handling...
@@ -298,15 +295,31 @@ static int handle_events(int fd, int wd)
 						LOG("Last spawn (%d) is still alive, continue handling events . . .", last_spawn_pid);
 						continue;
 					} else {
-						// It's dead! Forget about it.
+						// It's dead! Forget about it, and mark us as ready to spawn another!
 						last_spawn_pid = 0;
+						spawn_something = 1;
 					}
 				}
+
+				// Clunky potential detection of Nickel processing...
 				if (spawn_something) {
-					// Check that our target file has already been processed by Nickel before launching anything...
+					if (!is_target_processed(0)) {
+						// It's not processed on OPEN, flag as pending...
+						pending_processing = 1;
+						LOG("Flagged target script '%s' as pending processing . . .", KFMON_TARGET_FILE);
+					} else {
+						// It's already processed, we're good!
+						pending_processing = 0;
+					}
+				}
+			}
+			if (event->mask & IN_CLOSE) {
+				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
+				if (spawn_something) {
+					// Check that our target file has already fully been processed by Nickel before launching anything...
 					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
 					//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
-					if (is_target_processed(0)) {
+					if (!pending_processing && is_target_processed(0)) {
 						// Wait for (more than) a bit in case Nickel has some stupid crap to do...
 						sleep(3);
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
