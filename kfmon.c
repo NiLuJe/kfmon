@@ -287,32 +287,17 @@ static int handle_events(int fd, int wd)
 				int spawn_something = 1;
 				// Check if our last spawn (if we have one) is still alive...
 				if (last_spawn_pid > 0) {
-					int child_status;
 					LOG("Checking if our last spawn (%d) is still alive . . .", last_spawn_pid);
-					// Check without blocking if our child hasn't already exited, and reap it to avoid zombies if it has.
-					// NOTE: Reaping only on OPEN is not optimal, granted, but it's better than nothing...
-					pid_t child_pid = waitpid(last_spawn_pid, &child_status, WNOHANG);
-					switch (child_pid) {
-						case -1:
-							perror("waitpid");
-							exit(EXIT_FAILURE);
-						case 0:
-							// Still alive! Pass.
-							spawn_something = 0;
-							LOG("Last spawn (%d) is still alive, continue handling events . . .", last_spawn_pid);
-							// This applies to the outer for loop :)
-							continue;
-						default:
-							// NOTE: I don't think we can ever get a mismatch here, but log both anyway...
-							LOG("Reaped our last spawn (reaped: %d vs. stored: %d)!", child_pid, last_spawn_pid);
-							// Log what happened to said child proces...
-							if (WIFEXITED(child_status)) {
-								LOG("It exited with status %d", WEXITSTATUS(child_status));
-							} else if (WIFSIGNALED(child_status)) {
-								LOG("It was killed by signal %d", WTERMSIG(child_status));
-							}
-							// And now we can forget about it!
-							last_spawn_pid = 0;
+					// NOTE: Our child processes should automatically be reaped thanks to our SIGCHLD handling...
+					//	 That leaves the good old kill sig 0 to check if they're alive!
+					if (kill(last_spawn_pid, 0) == 0) {
+						// Still alive! Pass.
+						spawn_something = 0;
+						LOG("Last spawn (%d) is still alive, continue handling events . . .", last_spawn_pid);
+						continue;
+					} else {
+						// It's dead! Forget about it.
+						last_spawn_pid = 0;
 					}
 				}
 				if (spawn_something) {
@@ -377,6 +362,12 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	// Fly, little daemon!
 	if (daemonize() != 0) {
 		fprintf(stderr, "Failed to daemonize!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// Automatically reap child processes (cf. NOTES in wait(2))
+	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
+		perror("signal");
 		exit(EXIT_FAILURE);
 	}
 

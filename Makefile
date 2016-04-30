@@ -7,16 +7,21 @@ SRCS=kfmon.c
 
 default: all
 
-# We want to link to sqlite3 explicitly statically
-LIBS=-l:libsqlite3.a -lpthread -ldl -lm
-#LIBS=-lsqlite3
+# NOTE: For some weird reason, tabs suddenly confuse the hell out of make outside of targets...
+ifdef NILUJE
+    LIBS=-lsqlite3
+    EXTRA_CFLAGS+=-DNILUJE
+else
+    # We want to link to sqlite3 explicitly statically
+    LIBS=-l:libsqlite3.a -lpthread -ldl -lm
+endif
 
 ifeq "$(DEBUG)" "true"
-	OUT_DIR=Debug
-	CFLAGS:=$(DEBUG_CFLAGS)
+    OUT_DIR=Debug
+    CFLAGS:=$(DEBUG_CFLAGS)
 else
-	OUT_DIR=Release
-	CFLAGS?=$(OPT_CFLAGS)
+    OUT_DIR=Release
+    CFLAGS?=$(OPT_CFLAGS)
 endif
 
 # Moar warnings!
@@ -60,6 +65,9 @@ kobo: strip
 debug:
 	$(MAKE) all DEBUG=true
 
+niluje:
+	$(MAKE) all NILUJE=true
+
 clean:
 	rm -rf Release/*.o
 	rm -rf Release/kfmon
@@ -67,4 +75,4 @@ clean:
 	rm -rf Debug/kfmon
 	rm -rf Kobo
 
-.PHONY: all clean default outdir kfmon kobo strip debug
+.PHONY: all clean default outdir kfmon kobo strip debug niluje
