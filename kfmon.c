@@ -63,6 +63,7 @@ static int daemonize(void)
 	}
 
 	// Redirect stderr to our logfile
+	// FIXME: Switch to | O_TRUNC once things have settled down to alleviate potential storage space issues...
 	if ((fd = open(KFMON_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0600)) != -1) {
 		dup2(fd, fileno(stderr));
 		if (fd > 2)
@@ -147,7 +148,7 @@ static void wait_for_target_mountpoint(void)
 }
 
 // Check if our target file has been processed by Nickel...
-static int is_target_processed(int update)
+static int is_target_processed(int update, int wait_for_db)
 {
 	sqlite3 *db;
 	sqlite3_stmt * stmt;
@@ -219,6 +220,22 @@ static int is_target_processed(int update)
 		sqlite3_finalize(stmt);
 	}
 
+	// Cheap check to wait for pending COMMITs
+	if (wait_for_db) {
+		// If there's a rollback journal for the DB, wait for it to go away...
+		// NOTE: This assumes the DB was opened with the default journal_mode, DELETE
+		int count = 0;
+		while (access(KOBO_DB_PATH"-journal", F_OK) == 0) {
+			LOG("Found a SQLite rollback journal, waiting for it to go away (iteration nr. %d) . . .", count++);
+			usleep(250 * 1000);
+			// NOTE: Don't wait more than 15s
+			if (count > 60) {
+				LOG("Waited for the SQLite rollback journal to go away for far too long, going on anyway.");
+				break;
+			}
+		}
+	}
+
 	sqlite3_close(db);
 
 	return is_processed;
@@ -287,7 +304,7 @@ static int handle_events(int fd, int wd)
 				// Clunky potential detection of Nickel processing...
 				if (last_spawn_pid == 0) {
 					// Only check if we're ready to spawn something...
-					if (!is_target_processed(0)) {
+					if (!is_target_processed(0, 0)) {
 						// It's not processed on OPEN, flag as pending...
 						pending_processing = 1;
 						LOG("Flagged target script '%s' as pending processing . . .", KFMON_TARGET_FILE);
@@ -303,9 +320,7 @@ static int handle_events(int fd, int wd)
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
 					//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
-					if (!pending_processing && is_target_processed(0)) {
-						// Wait for (more than) a bit in case Nickel has some stupid crap to do...
-						sleep(5);
+					if (!pending_processing && is_target_processed(0, 1)) {
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
 						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};

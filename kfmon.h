@@ -73,7 +73,7 @@ char *get_current_time(void);
 static int is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static int is_target_processed(int);
+static int is_target_processed(int, int);
 
 // Ugly global. Used to remember the pid of our last spawn...
 pid_t last_spawn_pid = 0;
