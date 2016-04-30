@@ -73,6 +73,6 @@ static int is_target_processed(int);
 
 // Ugly global. Used to remember the pid of our last spawn...
 pid_t last_spawn_pid = 0;
-static pid_t spawn(const char **);
+static pid_t spawn(char **);
 
 static int handle_events(int, int);

@@ -220,7 +220,7 @@ static int is_target_processed(int update)
 /* Spawn a process and returns its pid...
  * Knowing that pid is all I care about, leave the popen()-like piping alone
  * Massiively inspired from popen2() implementations from https://stackoverflow.com/questions/548063 */
-static pid_t spawn(const char **command)
+static pid_t spawn(char **command)
 {
 	pid_t pid;
 
@@ -311,7 +311,7 @@ static int handle_events(int fd, int wd)
 					if (spawn_something) {
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
-						const char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
+						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
 						last_spawn_pid = spawn(cmd);
 						LOG(". . . with pid: %d", last_spawn_pid);
 					} else {
