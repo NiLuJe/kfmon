@@ -283,6 +283,9 @@ static int handle_events(int fd, int wd)
 			// Print event type
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
+			}
+			if (event->mask & IN_CLOSE) {
+				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
 				// Do we want to spawn something?
 				int spawn_something = 1;
 				// Check if our last spawn (if we have one) is still alive...
@@ -300,12 +303,12 @@ static int handle_events(int fd, int wd)
 					}
 				}
 				if (spawn_something) {
-					// Wait for a bit in case Nickel has some stupid crap to do...
-					sleep(1);
 					// Check that our target file has already been processed by Nickel before launching anything...
 					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
 					//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
 					if (is_target_processed(0)) {
+						// Wait for (more than) a bit in case Nickel has some stupid crap to do...
+						sleep(3);
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
 						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
@@ -318,8 +321,6 @@ static int handle_events(int fd, int wd)
 					LOG("Our last spawn (%d) is still alive!", last_spawn_pid);
 				}
 			}
-			if (event->mask & IN_CLOSE)
-				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
 			if (event->mask & IN_UNMOUNT)
 				LOG("Tripped IN_UNMOUNT for %s", KFMON_TARGET_FILE);
 			if (event->mask & IN_IGNORED) {
