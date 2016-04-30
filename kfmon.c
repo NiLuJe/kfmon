@@ -287,9 +287,8 @@ static int handle_events(int fd, int wd)
 				int spawn_something = 1;
 				// Check if our last spawn (if we have one) is still alive...
 				if (last_spawn_pid > 0) {
-					LOG("Checking if our last spawn (%d) is still alive . . .", last_spawn_pid);
-					// NOTE: Our child processes should automatically be reaped thanks to our SIGCHLD handling...
-					//	 That leaves the good old kill sig 0 to check if they're alive!
+					// NOTE: Our child process should automatically be reaped thanks to our SIGCHLD handling...
+					//	 That leaves the good old kill sig 0 to check if it's still alive!
 					if (kill(last_spawn_pid, 0) == 0) {
 						// Still alive! Pass.
 						spawn_something = 0;
