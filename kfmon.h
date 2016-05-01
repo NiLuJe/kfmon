@@ -30,6 +30,7 @@
 #include <time.h>
 #include <mntent.h>
 #include <string.h>
+#include <linux/limits.h>
 #include <sqlite3.h>
 
 // Do an ifdef check to allow overriding those at compile-time...
@@ -73,6 +74,7 @@ char *get_current_time(void);
 static int is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
+static unsigned int qhash(const char *, size_t);
 static int is_target_processed(int, int);
 
 // Ugly global. Used to remember the pid of our last spawn...

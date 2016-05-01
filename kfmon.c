@@ -147,6 +147,20 @@ static void wait_for_target_mountpoint(void)
 	}
 }
 
+// Implementation of Qt4's QtHash (cf. qhash @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L35)
+static unsigned int qhash(const char *bytes, size_t length) {
+	unsigned int h = 0x00000000;
+	unsigned int i;
+
+	for(i = 0; i < length; i++) {
+		h = (h << 4) + bytes[i];
+		h ^= (h & 0xf0000000) >> 23;
+		h &= 0x0fffffff;
+	}
+
+	return h;
+}
+
 // Check if our target file has been processed by Nickel...
 static int is_target_processed(int update, int wait_for_db)
 {
@@ -178,6 +192,38 @@ static int is_target_processed(int update, int wait_for_db)
 	}
 
 	sqlite3_finalize(stmt);
+
+	// Now that we know the book exists, we also want to check if the thumbnails do... to avoid getting triggered from the thumbnail creation.
+	if (is_processed) {
+		// Assume they haven't been processed until we can confirm it...
+		is_processed = 0;
+
+		// We'll need the ImageID first...
+		CALL_SQLITE(prepare_v2(db, "SELECT ImageID FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
+
+		idx = sqlite3_bind_parameter_index(stmt, "@id");
+		CALL_SQLITE(bind_text(stmt, idx, "file://"KFMON_TARGET_FILE, -1, SQLITE_STATIC));
+
+		rc = sqlite3_step(stmt);
+		if (rc == SQLITE_ROW) {
+			//LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
+			const char *image_id = strdup((const char*)sqlite3_column_text(stmt, 0));
+
+			// Then we need the proper hashes Nickel devises...
+			// cf. images_path @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L2374
+			unsigned int hash = qhash(image_id, strlen(image_id));
+			unsigned int dir1 = hash & (0xff * 1);
+			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
+
+			char images_path[PATH_MAX];
+			snprintf(images_path, PATH_MAX, "%s/.kobo-images/%d/%d", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
+			LOG("Checking for thumbnails in '%s'", images_path);
+
+			//free(image_id);
+		}
+
+		sqlite3_finalize(stmt);
+	}
 
 	// FIXME: Here be dragons! Thos works in theory, but has a high risk of trashing the DB if we do that when nickel is running (which we are).
 	//	  Right now, nothing calls us with update set to 1, so we're safe.
@@ -221,7 +267,7 @@ static int is_target_processed(int update, int wait_for_db)
 	}
 
 	// Cheap check to wait for pending COMMITs
-	if (wait_for_db) {
+	if (is_processed && wait_for_db) {
 		// If there's a rollback journal for the DB, wait for it to go away...
 		// NOTE: This assumes the DB was opened with the default journal_mode, DELETE
 		int count = 0;
