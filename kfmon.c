@@ -186,6 +186,8 @@ static int is_target_processed(int update, int wait_for_db)
 	}
 
 	// Wait at most for 400ms on OPEN & 800ms on CLOSE if we ever hit a locked database during any of our proceedings...
+	// NOTE: Those timings appear to work reasonably well on my H2O with a 50MB Nickel DB... (i.e., it trips on OPEN when Nickel is moderately busy, but if everything's quiet, we're good).
+	//	 Time will tell if that's a good middle-ground or not ;).
 	sqlite3_busy_timeout(db, 400 * (wait_for_db + 1));
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
@@ -429,7 +431,8 @@ static int handle_events(int fd, int wd)
 						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (UNBLOCK)");
 					} else {
-						LOG("Target icon '%s' appears not to have been fully processed by Nickel yet, don't launch anything.", KFMON_TARGET_FILE);
+						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
+						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", KFMON_TARGET_FILE);
 					}
 				} else {
 					LOG("Our last spawn (%d) is still alive!", last_spawned_pid);
