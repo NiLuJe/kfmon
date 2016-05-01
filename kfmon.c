@@ -244,6 +244,9 @@ static int is_target_processed(int update, int wait_for_db)
 			}
 
 			// Then the Homescreen tile...
+			// FIXME: This one might be a tad confusing...
+			//	 If the icon has never been processed, this will only happen the first time we close the KOReader PNG... (i.e., the moment it pops up as the 'last opened' tile).
+			//	 And that triggers a set of OPEN & CLOSE, meaning we can quite possibly run on book *exit* that first time...
 			char tile_path[PATH_MAX];
 			snprintf(tile_path, PATH_MAX, "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
 			if (access(tile_path, F_OK) == 0) {
