@@ -178,16 +178,15 @@ static int is_target_processed(int update, int wait_for_db)
 	int is_processed = 0;
 	int needs_update = 0;
 
-	// Wait for a bit to avoid hitting a locked DB...
-	// FIXME: Properly handle SQLITE_BUSY instead (via sqlite3_busy_timeout?)... (400 * (wait_for_db+1))
-	usleep(750 * 1000);
-
 	if (update) {
 		CALL_SQLITE(open_v2(KOBO_DB_PATH , &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX, NULL));
 	} else {
 		// Open the DB ro to be extra-safe...
 		CALL_SQLITE(open_v2(KOBO_DB_PATH , &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL));
 	}
+
+	// Wait at most for 400ms on OPEN & 800ms on CLOSE if we ever hit a locked database during any of our proceedings...
+	sqlite3_busy_timeout(db, 400 * (wait_for_db + 1));
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
 	CALL_SQLITE(prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
@@ -275,7 +274,7 @@ static int is_target_processed(int update, int wait_for_db)
 		sqlite3_finalize(stmt);
 	}
 
-	// FIXME: Here be dragons! This works in theory, but has risks confusing Nickel's handling of the DB if we do that when nickel is running (which we are).
+	// FIXME: Here be dragons! This works in theory, but risks confusing Nickel's handling of the DB if we do that when nickel is running (which we are).
 	//	  Right now, nothing calls us with update set to 1, so we're safe.
 	// Optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
@@ -316,7 +315,7 @@ static int is_target_processed(int update, int wait_for_db)
 		sqlite3_finalize(stmt);
 	}
 
-	// Cheap check to wait for pending COMMITs
+	// A rather crappy check to wait for pending COMMITs...
 	if (is_processed && wait_for_db) {
 		// If there's a rollback journal for the DB, wait for it to go away...
 		// NOTE: This assumes the DB was opened with the default journal_mode, DELETE
@@ -324,8 +323,8 @@ static int is_target_processed(int update, int wait_for_db)
 		while (access(KOBO_DB_PATH"-journal", F_OK) == 0) {
 			LOG("Found a SQLite rollback journal, waiting for it to go away (iteration nr. %d) . . .", count++);
 			usleep(250 * 1000);
-			// NOTE: Don't wait more than 15s
-			if (count > 60) {
+			// NOTE: Don't wait more than 7.5s
+			if (count > 30) {
 				LOG("Waited for the SQLite rollback journal to go away for far too long, going on anyway.");
 				break;
 			}
