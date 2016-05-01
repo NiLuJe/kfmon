@@ -350,7 +350,7 @@ static pid_t spawn(char **command)
 	else if (pid == 0) {
 		// Sweet child o' mine!
 		execvp(*command, command);
-		perror("execvp");
+		perror("[KFMon] execvp");
 		exit(EXIT_FAILURE);
 	}
 
@@ -379,7 +379,7 @@ static int handle_events(int fd, int wd)
 		// Read some events.
 		len = read(fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
-			perror("read");
+			perror("[KFMon] read");
 			exit(EXIT_FAILURE);
 		}
 
@@ -445,7 +445,7 @@ static int handle_events(int fd, int wd)
 				if (inotify_rm_watch(fd, wd) == -1)
 				{
 					// That's too bad, but may not be fatal, so warn only...
-					perror("inotify_rm_watch");
+					perror("[KFMon] inotify_rm_watch");
 				}
 				destroyed_wd = 1;
 			}
@@ -487,7 +487,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// Being launched via udev leaves us with a negative nice value, fix that.
 	if (nice(2) == -1) {
-		perror("nice");
+		perror("[KFMon] nice");
 		exit(EXIT_FAILURE);
 	}
 
@@ -503,7 +503,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
 	if (sigaction(SIGCHLD, &sa, 0) == -1) {
-		perror("sigaction");
+		perror("[KFMon] sigaction");
 		exit(EXIT_FAILURE);
 	}
 
@@ -515,7 +515,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		LOG("Initializing inotify.");
 		fd = inotify_init1(IN_NONBLOCK);
 		if (fd == -1) {
-			perror("inotify_init1");
+			perror("[KFMon] inotify_init1");
 			exit(EXIT_FAILURE);
 		}
 
@@ -529,8 +529,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		// Mark target file for 'file was opened' event
 		wd = inotify_add_watch(fd, KFMON_TARGET_FILE, IN_OPEN | IN_CLOSE);
 		if (wd == -1) {
-			LOG("Cannot watch '%s'", KFMON_TARGET_FILE);
-			perror("inotify_add_watch");
+			LOG("Cannot watch '%s'! Giving up.", KFMON_TARGET_FILE);
+			perror("[KFMon] inotify_add_watch");
 			exit(EXIT_FAILURE);
 			// NOTE: This effectively means we exit when the target file doesn't exist, which is not a bad thing, per se...
 			//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
@@ -547,7 +547,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			if (poll_num == -1) {
 				if (errno == EINTR)
 					continue;
-				perror("poll");
+				perror("[KFMon] poll");
 				exit(EXIT_FAILURE);
 			}
 
