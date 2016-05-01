@@ -179,6 +179,7 @@ static int is_target_processed(int update, int wait_for_db)
 	int needs_update = 0;
 
 	// Wait for a bit to avoid hitting a locked DB...
+	// FIXME: Properly handle SQLITE_BUSY instead (via sqlite3_busy_timeout?)...
 	usleep(750 * 1000);
 
 	if (update) {
