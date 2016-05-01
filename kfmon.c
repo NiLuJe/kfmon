@@ -269,7 +269,7 @@ static int is_target_processed(int update, int wait_for_db)
 		sqlite3_finalize(stmt);
 	}
 
-	// FIXME: Here be dragons! Thos works in theory, but has a high risk of trashing the DB if we do that when nickel is running (which we are).
+	// FIXME: Here be dragons! This works in theory, but has risks confusing Nickel's handling of the DB if we do that when nickel is running (which we are).
 	//	  Right now, nothing calls us with update set to 1, so we're safe.
 	// Optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
@@ -409,7 +409,7 @@ static int handle_events(int fd, int wd)
 				if (last_spawn_pid == 0) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
-					//	  but it apparently has a high risk of trashing the DB... ^^. So, don't do it ;p.
+					//	  but it risks confusing the hell out of Nickel, since we'd be doing it while it's running, so don't do it.
 					if (!pending_processing && is_target_processed(0, 1)) {
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
@@ -527,6 +527,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			LOG("Cannot watch '%s'", KFMON_TARGET_FILE);
 			perror("inotify_add_watch");
 			exit(EXIT_FAILURE);
+			// NOTE: This effectively means we exit when the target file doesn't exist, which is not a bad thing, per se...
+			//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
 		}
 
 		// Inotify input
