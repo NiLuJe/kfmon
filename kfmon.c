@@ -178,6 +178,9 @@ static int is_target_processed(int update, int wait_for_db)
 	int is_processed = 0;
 	int needs_update = 0;
 
+	// Wait for a bit to avoid hitting a locked DB...
+	usleep(500 * 1000);
+
 	if (update) {
 		CALL_SQLITE(open(KOBO_DB_PATH , &db));
 	} else {
@@ -457,8 +460,9 @@ void reaper(int sig  __attribute__ ((unused))) {
 	pid_t cpid;
 	int wstatus;
 	int saved_errno = errno;
-	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
-		// NOTE: We shouldn't ever reap an untracked pid (despite waiting for *all* children), but log both just in case...
+	// Only wait on our last recorded spawned children, to avoid deadlocks...
+	while ((cpid = waitpid((pid_t)last_spawn_pid, &wstatus, WNOHANG)) > 0) {
+		// NOTE: We shouldn't ever get a pid mismatch here, but log both just in case...
 		LOG("Reaped our last spawn (reaped: %d vs. stored: %d)", cpid, last_spawn_pid);
 		if (WIFEXITED(wstatus)) {
 			LOG("It exited with status %d", WEXITSTATUS(wstatus));
