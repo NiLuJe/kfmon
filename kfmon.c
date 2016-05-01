@@ -480,6 +480,12 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	int wd;
 	struct pollfd pfd;
 
+	// Being launched via udev leaves us with a negative nice value, fix that.
+	if (nice(2) == -1) {
+		perror("nice");
+		exit(EXIT_FAILURE);
+	}
+
 	// Fly, little daemon!
 	if (daemonize() != 0) {
 		fprintf(stderr, "Failed to daemonize!\n");
