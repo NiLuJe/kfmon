@@ -179,14 +179,13 @@ static int is_target_processed(int update, int wait_for_db)
 	int needs_update = 0;
 
 	// Wait for a bit to avoid hitting a locked DB...
-	// FIXME: Properly handle SQLITE_BUSY instead (via sqlite3_busy_timeout?)...
+	// FIXME: Properly handle SQLITE_BUSY instead (via sqlite3_busy_timeout?)... (400 * (wait_for_db+1))
 	usleep(750 * 1000);
 
 	if (update) {
-		CALL_SQLITE(open(KOBO_DB_PATH , &db));
+		CALL_SQLITE(open_v2(KOBO_DB_PATH , &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX, NULL));
 	} else {
 		// Open the DB ro to be extra-safe...
-		// FIXME: Do we really need to go fully paranoid w/ SQLITE_OPEN_FULLMUTEX?
 		CALL_SQLITE(open_v2(KOBO_DB_PATH , &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL));
 	}
 
