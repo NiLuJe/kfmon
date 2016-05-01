@@ -148,7 +148,7 @@ static void wait_for_target_mountpoint(void)
 }
 
 // Implementation of Qt4's QtHash (cf. qhash @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L35)
-static unsigned int qhash(const char *bytes, size_t length) {
+static unsigned int qhash(const unsigned char *bytes, size_t length) {
 	unsigned int h = 0x00000000;
 	unsigned int i;
 
@@ -207,19 +207,17 @@ static int is_target_processed(int update, int wait_for_db)
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			//LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
-			const char *image_id = strdup((const char*)sqlite3_column_text(stmt, 0));
+			const unsigned char *image_id = sqlite3_column_text(stmt, 0);
 
 			// Then we need the proper hashes Nickel devises...
 			// cf. images_path @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L2374
-			unsigned int hash = qhash(image_id, strlen(image_id));
+			unsigned int hash = qhash(image_id, strlen((const char*)image_id));
 			unsigned int dir1 = hash & (0xff * 1);
 			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
 
 			char images_path[PATH_MAX];
 			snprintf(images_path, PATH_MAX, "%s/.kobo-images/%d/%d", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
 			LOG("Checking for thumbnails in '%s'", images_path);
-
-			//free(image_id);
 		}
 
 		sqlite3_finalize(stmt);
