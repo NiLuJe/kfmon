@@ -394,7 +394,7 @@ static int handle_events(int fd, int wd)
 					if (!is_target_processed(0, 0)) {
 						// It's not processed on OPEN, flag as pending...
 						pending_processing = 1;
-						LOG("Flagged target script '%s' as pending processing . . .", KFMON_TARGET_FILE);
+						LOG("Flagged target icon '%s' as pending processing . . .", KFMON_TARGET_FILE);
 					} else {
 						// It's already processed, we're good!
 						pending_processing = 0;
@@ -414,7 +414,7 @@ static int handle_events(int fd, int wd)
 						last_spawn_pid = spawn(cmd);
 						LOG(". . . with pid: %d", last_spawn_pid);
 					} else {
-						LOG("Target script '%s' appears not to have been fully processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_SCRIPT);
+						LOG("Target icon '%s' appears not to have been fully processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_FILE);
 					}
 				} else {
 					LOG("Our last spawn (%d) is still alive!", last_spawn_pid);
