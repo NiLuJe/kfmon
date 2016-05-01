@@ -460,8 +460,7 @@ void reaper(int sig  __attribute__ ((unused))) {
 	pid_t cpid;
 	int wstatus;
 	int saved_errno = errno;
-	// Only wait on our last recorded spawned children, to avoid deadlocks...
-	while ((cpid = waitpid((pid_t)last_spawn_pid, &wstatus, WNOHANG)) > 0) {
+	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
 		// NOTE: We shouldn't ever get a pid mismatch here, but log both just in case...
 		LOG("Reaped our last spawn (reaped: %d vs. stored: %d)", cpid, last_spawn_pid);
 		if (WIFEXITED(wstatus)) {
