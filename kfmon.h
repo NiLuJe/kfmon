@@ -79,7 +79,6 @@ static int is_target_processed(int, int);
 
 // Ugly global. Used to remember the pid of our last spawn...
 pid_t last_spawned_pid = 0;
-pid_t last_reaped_pid = 0;
 static pid_t spawn(char **);
 void reaper(int);
 

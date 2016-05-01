@@ -409,14 +409,6 @@ static int handle_events(int fd, int wd)
 			}
 			if (event->mask & IN_CLOSE) {
 				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
-				// Try to recover from pid mismatches in case of races between spawn() & reaper()...
-				if (last_spawned_pid != 0 && (last_spawned_pid != last_reaped_pid)) {
-					LOG("Hu oh... Detected a race between spawn() & reaper(), trying to resolve it . . .", last_spawned_pid);
-					// Check if our last spawn is actually still alive with our good old kill -0 trick...
-					if (kill(last_spawned_pid, 0) == 0) {
-						// NOT TODO because there's actually a much better solution ;p
-					}
-				}
 				if (last_spawned_pid == 0) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
@@ -425,7 +417,16 @@ static int handle_events(int fd, int wd)
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
 						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
+						// NOTE: Block our SIGCHLD handler until execvp() actually returns, to make sure it'll have an up-to-date last_spawned_pid
+						//	 Avoids races if execvp() returns really fast, which is not that uncommon for simple shell scripts.
+						sigset_t sigset;
+						sigemptyset (&sigset);
+						sigaddset(&sigset, SIGCHLD);
+						if (sigprocmask(SIG_BLOCK, &sigset, NULL) == -1)
+							perror("[KFMon] sigprocmask (BLOCK)");
 						last_spawned_pid = spawn(cmd);
+						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1)
+							perror("[KFMon] sigprocmask (UNBLOCK)");
 						LOG(". . . with pid: %d", last_spawned_pid);
 					} else {
 						LOG("Target icon '%s' appears not to have been fully processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_FILE);
@@ -472,7 +473,7 @@ void reaper(int sig  __attribute__ ((unused))) {
 	int wstatus;
 	int saved_errno = errno;
 	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
-		// NOTE: If our spawn exited early, this handler might run *before* last_spawn_pid is actually updated, so log both to catch mismatches...
+		// NOTE: We shouldn't ever get a pid mismatch here, but log both just in case...
 		LOG("Reaped our last spawn (reaped: %d vs. stored: %d)", cpid, last_spawned_pid);
 		if (WIFEXITED(wstatus)) {
 			LOG("It exited with status %d", WEXITSTATUS(wstatus));
@@ -481,7 +482,6 @@ void reaper(int sig  __attribute__ ((unused))) {
 		}
 		// Reset our spawn pid tracker to announce that we're ready to spawn something new
 		last_spawned_pid = 0;
-		last_reaped_pid = cpid;
 	}
 	errno = saved_errno;
 }
