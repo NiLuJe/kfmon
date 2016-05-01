@@ -179,7 +179,7 @@ static int is_target_processed(int update, int wait_for_db)
 	int needs_update = 0;
 
 	// Wait for a bit to avoid hitting a locked DB...
-	usleep(500 * 1000);
+	usleep(750 * 1000);
 
 	if (update) {
 		CALL_SQLITE(open(KOBO_DB_PATH , &db));
