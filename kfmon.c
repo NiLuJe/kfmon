@@ -395,7 +395,7 @@ static int handle_events(int fd, int wd)
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
 				// Clunky potential detection of Nickel processing...
-				if (last_spawn_pid == 0) {
+				if (last_spawned_pid == 0) {
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(0, 0)) {
 						// It's not processed on OPEN, flag as pending...
@@ -409,7 +409,15 @@ static int handle_events(int fd, int wd)
 			}
 			if (event->mask & IN_CLOSE) {
 				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
-				if (last_spawn_pid == 0) {
+				// Try to recover from pid mismatches in case of races between spawn() & reaper()...
+				if (last_spawned_pid != 0 && (last_spawned_pid != last_reaped_pid)) {
+					LOG("Hu oh... Detected a race between spawn() & reaper(), trying to resolve it . . .", last_spawned_pid);
+					// Check if our last spawn is actually still alive with our good old kill -0 trick...
+					if (kill(last_spawned_pid, 0) == 0) {
+						// NOT TODO because there's actually a much better solution ;p
+					}
+				}
+				if (last_spawned_pid == 0) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
 					//	  but it risks confusing the hell out of Nickel, since we'd be doing it while it's running, so don't do it.
@@ -417,13 +425,13 @@ static int handle_events(int fd, int wd)
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
 						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
-						last_spawn_pid = spawn(cmd);
-						LOG(". . . with pid: %d", last_spawn_pid);
+						last_spawned_pid = spawn(cmd);
+						LOG(". . . with pid: %d", last_spawned_pid);
 					} else {
 						LOG("Target icon '%s' appears not to have been fully processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_FILE);
 					}
 				} else {
-					LOG("Our last spawn (%d) is still alive!", last_spawn_pid);
+					LOG("Our last spawn (%d) is still alive!", last_spawned_pid);
 				}
 			}
 			if (event->mask & IN_UNMOUNT)
@@ -464,15 +472,16 @@ void reaper(int sig  __attribute__ ((unused))) {
 	int wstatus;
 	int saved_errno = errno;
 	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
-		// NOTE: We shouldn't ever get a pid mismatch here, but log both just in case...
-		LOG("Reaped our last spawn (reaped: %d vs. stored: %d)", cpid, last_spawn_pid);
+		// NOTE: If our spawn exited early, this handler might run *before* last_spawn_pid is actually updated, so log both to catch mismatches...
+		LOG("Reaped our last spawn (reaped: %d vs. stored: %d)", cpid, last_spawned_pid);
 		if (WIFEXITED(wstatus)) {
 			LOG("It exited with status %d", WEXITSTATUS(wstatus));
 		} else if (WIFSIGNALED(wstatus)) {
 			LOG("It was killed by signal %d", WTERMSIG(wstatus));
 		}
 		// Reset our spawn pid tracker to announce that we're ready to spawn something new
-		last_spawn_pid = 0;
+		last_spawned_pid = 0;
+		last_reaped_pid = cpid;
 	}
 	errno = saved_errno;
 }
@@ -499,6 +508,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	struct sigaction sa;
 	sa.sa_handler = &reaper;
 	sigemptyset(&sa.sa_mask);
+	// We don't care about SIGSTOP & SIGCONT
 	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
 	if (sigaction(SIGCHLD, &sa, 0) == -1) {
 		perror("[KFMon] sigaction");
