@@ -336,9 +336,9 @@ static int is_target_processed(int update, int wait_for_db)
 	return is_processed;
 }
 
-/* Spawn a process and returns its pid...
- * Knowing that pid is all I care about, leave the popen()-like piping alone
- * Massiively inspired from popen2() implementations from https://stackoverflow.com/questions/548063 */
+/* Spawn a process and return its pid...
+ * Massively inspired from popen2() implementations from https://stackoverflow.com/questions/548063
+ * Except that getting that pid is all I care about, so forget about the popen-like piping ;). */
 static pid_t spawn(char **command)
 {
 	pid_t pid;
@@ -353,13 +353,12 @@ static pid_t spawn(char **command)
 		perror("[KFMon] execvp");
 		exit(EXIT_FAILURE);
 	}
-
-	// We don't want to block, so we handle the wait() later...
+	// We have a shiny SIGCHLD handler to reap this process when it dies, so we're done here.
 
 	return pid;
 }
 
-/* Read all available inotify events from the file descriptor 'fd'. */
+// Read all available inotify events from the file descriptor 'fd'.
 static int handle_events(int fd, int wd)
 {
 	/* Some systems cannot read integer variables if they are not
@@ -371,7 +370,7 @@ static int handle_events(int fd, int wd)
 	const struct inotify_event *event;
 	ssize_t len;
 	char *ptr;
-	static int destroyed_wd = 0;
+	int destroyed_wd = 0;
 	static int pending_processing = 0;
 
 	// Loop while events can be read from inotify file descriptor.
@@ -391,12 +390,13 @@ static int handle_events(int fd, int wd)
 
 		// Loop over all events in the buffer
 		for (ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
+			// NOTE: This trips -Wcast-align on ARM, but it works, and saves us some code ;).
 			event = (const struct inotify_event *) ptr;
 
 			// Print event type
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
-				// Clunky potential detection of Nickel processing...
+				// Clunky detection of potential Nickel processing...
 				if (last_spawned_pid == 0) {
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(0, 0)) {
@@ -431,8 +431,8 @@ static int handle_events(int fd, int wd)
 						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (UNBLOCK)");
 					} else {
-						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
 						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", KFMON_TARGET_FILE);
+						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
 					}
 				} else {
 					LOG("Our last spawn (%d) is still alive!", last_spawned_pid);
@@ -470,7 +470,7 @@ static int handle_events(int fd, int wd)
 	return destroyed_wd;
 }
 
-// Handle SIGCHLD to reap processes and update our last_spawn_pid tracker ASAP
+// Handle SIGCHLD to reap processes and update our last_spawned_pid tracker ASAP
 void reaper(int sig  __attribute__ ((unused))) {
 	pid_t cpid;
 	int wstatus;
@@ -483,7 +483,7 @@ void reaper(int sig  __attribute__ ((unused))) {
 		} else if (WIFSIGNALED(wstatus)) {
 			LOG("It was killed by signal %d", WTERMSIG(wstatus));
 		}
-		// Reset our spawn pid tracker to announce that we're ready to spawn something new
+		// Reset our pid tracker to announce that we're ready to spawn something new
 		last_spawned_pid = 0;
 	}
 	errno = saved_errno;
@@ -566,7 +566,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				if (pfd.revents & POLLIN) {
 					// Inotify events are available
 					if (handle_events(fd, wd))
-						// Go back to the main loop if we exited early (because the watch was destroyed automatically after an unmount)
+						// Go back to the main loop if we exited early (because the watch was destroyed automatically after an unmount or an unlink, for instance)
 						break;
 				}
 			}
