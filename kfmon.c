@@ -208,10 +208,11 @@ static int is_target_processed(int update, int wait_for_db)
 		if (rc == SQLITE_ROW) {
 			//LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
 			const unsigned char *image_id = sqlite3_column_text(stmt, 0);
+			size_t len = (size_t)sqlite3_column_bytes(stmt, 0);
 
 			// Then we need the proper hashes Nickel devises...
 			// cf. images_path @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L2374
-			unsigned int hash = qhash(image_id, strlen((const char*)image_id));
+			unsigned int hash = qhash(image_id, len);
 			unsigned int dir1 = hash & (0xff * 1);
 			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
 
