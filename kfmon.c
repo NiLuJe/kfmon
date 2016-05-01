@@ -63,8 +63,15 @@ static int daemonize(void)
 	}
 
 	// Redirect stderr to our logfile
-	// FIXME: Switch to | O_TRUNC once things have settled down to alleviate potential storage space issues...
-	if ((fd = open(KFMON_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0600)) != -1) {
+	int flags = O_WRONLY | O_CREAT | O_APPEND;
+	// Check if we need to truncate our log because it has grown too much...
+	struct stat st;
+	if ((stat(KFMON_LOGFILE, &st) == 0) && (S_ISREG(st.st_mode))) {
+		// Truncate if > 1MB
+		if (st.st_size > 1*1024*1024)
+			flags |= O_TRUNC;
+	}
+	if ((fd = open(KFMON_LOGFILE, flags, 0600)) != -1) {
 		dup2(fd, fileno(stderr));
 		if (fd > 2)
 			close (fd);
@@ -194,6 +201,7 @@ static int is_target_processed(int update, int wait_for_db)
 	sqlite3_finalize(stmt);
 
 	// Now that we know the book exists, we also want to check if the thumbnails do... to avoid getting triggered from the thumbnail creation.
+	// NOTE: Again, this assumes FW >= 2.9.0
 	if (is_processed) {
 		// Assume they haven't been processed until we can confirm it...
 		is_processed = 0;
