@@ -425,9 +425,9 @@ static int handle_events(int fd, int wd)
 						if (sigprocmask(SIG_BLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (BLOCK)");
 						last_spawned_pid = spawn(cmd);
+						LOG(". . . with pid: %d", last_spawned_pid);
 						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (UNBLOCK)");
-						LOG(". . . with pid: %d", last_spawned_pid);
 					} else {
 						LOG("Target icon '%s' appears not to have been fully processed by Nickel yet, don't launch anything . . .", KFMON_TARGET_FILE);
 					}
