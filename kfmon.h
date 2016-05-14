@@ -107,7 +107,7 @@ static int daemonize(void);
 
 char *get_current_time(void);
 
-static int is_target_mounted(void);
+static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
 static int daemon_handler(void *, const char *, const char *, const char *);
@@ -120,11 +120,11 @@ DaemonConfig daemon_config = {0};
 WatchConfig watch_config[WATCH_MAX] = {0};
 
 static unsigned int qhash(const unsigned char *, size_t);
-static int is_target_processed(int, int);
+static bool is_target_processed(bool, bool);
 
 // Ugly global. Used to remember the pid of our last spawns...
 pid_t last_spawned_pid = 0;
 static pid_t spawn(char **);
 void reaper(int);
 
-static int handle_events(int, int);
+static bool handle_events(int, int);

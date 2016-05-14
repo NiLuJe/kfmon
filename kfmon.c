@@ -101,12 +101,12 @@ char *get_current_time(void)
 }
 
 // Check that our target mountpoint is indeed mounted...
-static int is_target_mounted(void)
+static bool is_target_mounted(void)
 {
 	// cf. http://program-nix.blogspot.fr/2008/08/c-language-check-filesystem-is-mounted.html
 	FILE *mtab = NULL;
 	struct mntent *part = NULL;
-	int is_mounted = 0;
+	bool is_mounted = false;
 
 	if ((mtab = setmntent("/proc/mounts", "r")) != NULL) {
 		while ((part = getmntent(mtab)) != NULL) {
@@ -114,7 +114,7 @@ static int is_target_mounted(void)
 			LOG("Checking fs %s mounted on %s", part->mnt_fsname, part->mnt_dir);
 #endif
 			if ((part->mnt_dir != NULL) && (strcmp(part->mnt_dir, KFMON_TARGET_MOUNTPOINT)) == 0) {
-				is_mounted = 1;
+				is_mounted = true;
 				break;
 			}
 		}
@@ -281,14 +281,14 @@ static unsigned int qhash(const unsigned char *bytes, size_t length) {
 }
 
 // Check if our target file has been processed by Nickel...
-static int is_target_processed(int update, int wait_for_db)
+static bool is_target_processed(bool update, bool wait_for_db)
 {
 	sqlite3 *db;
 	sqlite3_stmt * stmt;
 	int rc;
 	int idx;
-	int is_processed = 0;
-	int needs_update = 0;
+	bool is_processed = false;
+	bool needs_update = false;
 
 	if (update) {
 		CALL_SQLITE(open_v2(KOBO_DB_PATH , &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX, NULL));
@@ -314,7 +314,7 @@ static int is_target_processed(int update, int wait_for_db)
 		LOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
 #endif
 		if (sqlite3_column_int(stmt, 0) == 1)
-			is_processed = 1;
+			is_processed = true;
 	}
 
 	sqlite3_finalize(stmt);
@@ -323,7 +323,7 @@ static int is_target_processed(int update, int wait_for_db)
 	// NOTE: Again, this assumes FW >= 2.9.0
 	if (is_processed) {
 		// Assume they haven't been processed until we can confirm it...
-		is_processed = 0;
+		is_processed = false;
 
 		// We'll need the ImageID first...
 		CALL_SQLITE(prepare_v2(db, "SELECT ImageID FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
@@ -386,7 +386,7 @@ static int is_target_processed(int update, int wait_for_db)
 
 			// Only give a greenlight if we got all three!
 			if (thumbnails_num >= 3)
-				is_processed = 1;
+				is_processed = true;
 		}
 
 		sqlite3_finalize(stmt);
@@ -408,7 +408,7 @@ static int is_target_processed(int update, int wait_for_db)
 			LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
 #endif
 			if (strcmp((const char *)sqlite3_column_text(stmt, 0), "KOReader") != 0)
-				needs_update = 1;
+				needs_update = true;
 		}
 
 		sqlite3_finalize(stmt);
@@ -479,7 +479,7 @@ static pid_t spawn(char **command)
 }
 
 // Read all available inotify events from the file descriptor 'fd'.
-static int handle_events(int fd, int wd)
+static bool handle_events(int fd, int wd)
 {
 	/* Some systems cannot read integer variables if they are not
 	   properly aligned. On other systems, incorrect alignment may
@@ -490,8 +490,8 @@ static int handle_events(int fd, int wd)
 	const struct inotify_event *event;
 	ssize_t len;
 	char *ptr;
-	int destroyed_wd = 0;
-	static int pending_processing = 0;
+	bool destroyed_wd = false;
+	static bool pending_processing = false;
 
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
@@ -519,13 +519,13 @@ static int handle_events(int fd, int wd)
 				// Clunky detection of potential Nickel processing...
 				if (last_spawned_pid == 0) {
 					// Only check if we're ready to spawn something...
-					if (!is_target_processed(0, 0)) {
+					if (!is_target_processed(false, false)) {
 						// It's not processed on OPEN, flag as pending...
-						pending_processing = 1;
+						pending_processing = true;
 						LOG("Flagged target icon '%s' as pending processing ...", KFMON_TARGET_FILE);
 					} else {
 						// It's already processed, we're good!
-						pending_processing = 0;
+						pending_processing = false;
 					}
 				}
 			}
@@ -535,7 +535,7 @@ static int handle_events(int fd, int wd)
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
 					//	  but it risks confusing the hell out of Nickel, since we'd be doing it while it's running, so don't do it.
-					if (!pending_processing && is_target_processed(0, 1)) {
+					if (!pending_processing && is_target_processed(false, true)) {
 						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
 						// We're using execvp()...
 						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
@@ -563,7 +563,7 @@ static int handle_events(int fd, int wd)
 			if (event->mask & IN_IGNORED) {
 				LOG("Tripped IN_IGNORED for %s", KFMON_TARGET_FILE);
 				// Remember that the watch was automatically destroyed so we can break from the loop...
-				destroyed_wd = 1;
+				destroyed_wd = true;
 			}
 			if (event->mask & IN_Q_OVERFLOW) {
 				if (event->len) {
@@ -577,7 +577,7 @@ static int handle_events(int fd, int wd)
 					// That's too bad, but may not be fatal, so warn only...
 					perror("[KFMon] inotify_rm_watch");
 				}
-				destroyed_wd = 1;
+				destroyed_wd = true;
 			}
 		}
 
