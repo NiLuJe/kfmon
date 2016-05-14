@@ -163,6 +163,8 @@ static int daemon_handler(void *user, const char *section, const char *key, cons
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	if (MATCH("daemon", "db_timeout")) {
 		pconfig->db_timeout = atoi(value);
+	} else if (MATCH("daemon", "use_syslog")) {
+		pconfig->use_syslog = atoi(value);
 	} else {
 		return 0;	// unknown section/name, error
 	}
@@ -234,7 +236,7 @@ static int load_config() {
 							// Flag as a failure...
 							rval = -1;
 						}
-						LOG("Daemon config loaded from '%s': db_timeout=%d", p->fts_name, daemon_config.db_timeout);
+						LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 					} else {
 						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]) < 0) {
 							LOG("Failed to parse watch config file '%s'!", p->fts_name);
@@ -255,7 +257,7 @@ static int load_config() {
 
 #ifdef NILUJE
 	// Let's recap...
-	LOG("Daemon config recap: db_timeout=%d", daemon_config.db_timeout);
+	LOG("Daemon config recap: db_timeout=%d, use_syslog=%d", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int i = 0; i < watch_count; i++) {
 		LOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", i, watch_config[i].filename, watch_config[i].action, watch_config[i].do_db_update, watch_config[i].db_title, watch_config[i].db_author, watch_config[i].db_comment);
 	}
@@ -641,6 +643,23 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		LOG("Failed to load config!");
 		exit(EXIT_FAILURE);
 	}
+
+	// Squish stderr if we want to log to the syslog... (can't do that w/ the rest in daemonize, since we don't have our config yet at that point)
+	if (daemon_config.use_syslog) {
+		// Redirect stderr (which is now actually our log file) to /dev/null
+		if ((fd = open("/dev/null", O_RDWR)) != -1) {
+			dup2(fd, fileno(stderr));
+			if (fd > 2)
+				close (fd);
+		} else {
+			fprintf(stderr, "Failed to redirect stderr to /dev/null\n");
+			return -1;
+		}
+
+		// And connect to the system logger...
+		openlog("kfmon", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_DAEMON);
+	}
+
 
 	// We pretty much want to loop forever...
 	while (1) {

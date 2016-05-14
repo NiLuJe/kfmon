@@ -17,6 +17,7 @@
 */
 
 #include <sys/types.h>
+#include <stdbool.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -32,6 +33,7 @@
 #include <mntent.h>
 #include <string.h>
 #include <linux/limits.h>
+#include <syslog.h>
 #include <sqlite3.h>
 #include "inih/ini.h"
 
@@ -57,12 +59,20 @@
 #endif
 
 // Log everything to stderr (which actually points to our logfile)
-#define LOG(fmt, ...) fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);
+#define LOG(fmt, ...)										\
+{												\
+	if (daemon_config.use_syslog) {								\
+		syslog(LOG_INFO, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);		\
+	} else {										\
+		fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);	\
+	}											\
+}												\
 
 // What the daemon config should look like
 typedef struct
 {
     int db_timeout;
+    bool use_syslog;
 } DaemonConfig;
 
 // What a watch config should look like
@@ -71,7 +81,7 @@ typedef struct
 {
     char filename[PATH_MAX];
     char action[PATH_MAX];
-    int do_db_update;
+    bool do_db_update;
     char db_title[DB_SZ_MAX];
     char db_author[DB_SZ_MAX];
     char db_comment[DB_SZ_MAX];
