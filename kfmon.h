@@ -62,7 +62,7 @@
 #define LOG(fmt, ...)										\
 {												\
 	if (daemon_config.use_syslog) {								\
-		syslog(LOG_INFO, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);		\
+		syslog(LOG_INFO, fmt "\n", ## __VA_ARGS__);					\
 	} else {										\
 		fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);	\
 	}											\
