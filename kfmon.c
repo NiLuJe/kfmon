@@ -236,23 +236,23 @@ static int load_config() {
 						}
 						LOG("Daemon config loaded from '%s': db_timeout=%d", p->fts_name, daemon_config.db_timeout);
 					} else {
-						// One more potential watch...
-						watch_count++;
 						// Make sure the defaults are sane and our strncpy usage won't blow up later on...
-						memset(watch_config[watch_count-1].filename, 0, PATH_MAX);
-						memset(watch_config[watch_count-1].action, 0, PATH_MAX);
-						watch_config[watch_count-1].do_db_update = 0;
-						memset(watch_config[watch_count-1].db_title, 0, DB_SZ_MAX);
-						memset(watch_config[watch_count-1].db_author, 0, DB_SZ_MAX);
-						memset(watch_config[watch_count-1].db_comment, 0, DB_SZ_MAX);
-						watch_config[watch_count-1].last_spawned_pid = 0;
+						memset(watch_config[watch_count].filename, 0, PATH_MAX);
+						memset(watch_config[watch_count].action, 0, PATH_MAX);
+						watch_config[watch_count].do_db_update = 0;
+						memset(watch_config[watch_count].db_title, 0, DB_SZ_MAX);
+						memset(watch_config[watch_count].db_author, 0, DB_SZ_MAX);
+						memset(watch_config[watch_count].db_comment, 0, DB_SZ_MAX);
+						watch_config[watch_count].last_spawned_pid = 0;
 
-						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count-1]) < 0) {
+						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]) < 0) {
 							LOG("Failed to parse watch config file '%s'!", p->fts_name);
 							// Flag as a failure...
 							rval = -1;
 						}
-						LOG("Watch config nr. %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_count, p->fts_name, watch_config[watch_count-1].filename, watch_config[watch_count-1].action, watch_config[watch_count-1].do_db_update, watch_config[watch_count-1].db_title, watch_config[watch_count-1].db_author, watch_config[watch_count-1].db_comment);
+						LOG("Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_count, p->fts_name, watch_config[watch_count].filename, watch_config[watch_count].action, watch_config[watch_count].do_db_update, watch_config[watch_count].db_title, watch_config[watch_count].db_author, watch_config[watch_count].db_comment);
+						// One more potential watch...
+						watch_count++;
 					}
 				}
 				break;

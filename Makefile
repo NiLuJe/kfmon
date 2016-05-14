@@ -16,6 +16,7 @@ else
     LIBS=-l:libsqlite3.a -lpthread -ldl -lm
 endif
 
+# NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
 ifeq "$(DEBUG)" "true"
     OUT_DIR=Debug
     CFLAGS:=$(DEBUG_CFLAGS)

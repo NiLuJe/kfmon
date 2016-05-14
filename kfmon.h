@@ -78,7 +78,7 @@ typedef struct
     pid_t last_spawned_pid;
 } WatchConfig;
 
-// Hardcode the max amounbt of watches
+// Hardcode the max amount of watches we handle
 #define WATCH_MAX 16
 
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
