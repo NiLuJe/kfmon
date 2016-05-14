@@ -154,6 +154,47 @@ static void wait_for_target_mountpoint(void)
 	}
 }
 
+// Load our config files...
+static int load_config(DaemonConfig *daemon_config, WatchConfig **watch_config)
+{
+	// Our config files live in the target mountpoint...
+	if (!is_target_mounted()) {
+		LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
+		// If it's not, wait for it to be...
+		wait_for_target_mountpoint();
+	}
+
+	// Walk the config directory to pickup our ini files... (c.f., https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
+	FTS *ftsp;
+	FTSENT *p, *chp;
+	// We only need to walk a single directory...
+	char *cfg_path[] = {KFMON_CONFIGPATH, NULL};
+
+	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) == NULL) {
+		perror("[KFMon] fts_open");
+		return -1;
+	}
+	// Initialize ftsp with as many toplevel entries as possible.
+	chp = fts_children(ftsp, 0);
+	if (chp == NULL) {
+		// No files to traverse!
+		LOG("Config directory '%s' appears to be empty, aborting!", KFMON_CONFIGPATH);
+		fts_close(ftsp);
+		return -1;
+	}
+	while ((p = fts_read(ftsp)) != NULL) {
+		switch (p->fts_info) {
+			case FTS_F:
+				fprintf(stderr, "f %s\n", p->fts_path);
+				break;
+			default:
+				break;
+		}
+	}
+	fts_close(ftsp);
+	return 0;
+}
+
 // Implementation of Qt4's QtHash (cf. qhash @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L35)
 static unsigned int qhash(const unsigned char *bytes, size_t length) {
 	unsigned int h = 0x00000000;
@@ -515,6 +556,15 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
 	if (sigaction(SIGCHLD, &sa, 0) == -1) {
 		perror("[KFMon] sigaction");
+		exit(EXIT_FAILURE);
+	}
+
+	// Load our configs
+	DaemonConfig daemon_config;
+	// We're going to need an array of those to support multiple watches...
+	WatchConfig *watch_config;
+	if (load_config(&daemon_config, &watch_config) == -1) {
+		LOG("Failed to load config!");
 		exit(EXIT_FAILURE);
 	}
 

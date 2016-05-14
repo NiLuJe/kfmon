@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <fts.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +33,7 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <sqlite3.h>
+#include "inih/ini.h"
 
 // Do an ifdef check to allow overriding those at compile-time...
 #ifndef KFMON_TARGET_MOUNTPOINT
@@ -45,15 +47,34 @@
 #endif
 // Use my debug paths on demand...
 #ifndef NILUJE
-#define KOBO_DB_PATH "/mnt/onboard/.kobo/KoboReader.sqlite"
+#define KOBO_DB_PATH KFMON_TARGET_MOUNTPOINT "/.kobo/KoboReader.sqlite"
 #define KFMON_LOGFILE "/usr/local/kfmon/kfmon.log"
+#define KFMON_CONFIGPATH KFMON_TARGET_MOUNTPOINT "/.adds/kfmon/config"
 #else
 #define KOBO_DB_PATH "/home/niluje/Kindle/Staging/KoboReader.sqlite"
 #define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
+#define KFMON_CONFIGPATH "/home/niluje/Kindle/Staging/kfmon"
 #endif
 
 // Log everything to stderr (which actually points to our logfile)
 #define LOG(fmt, ...) fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);
+
+// What the daemon config should look like
+typedef struct
+{
+    int db_timeout;
+} DaemonConfig;
+
+// What a watch config should look like
+typedef struct
+{
+    const char* filename;
+    const char* action;
+    int do_db_update;
+    const char* db_title;
+    const char* db_author;
+    const char* db_comment;
+} WatchConfig;
 
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
 #define CALL_SQLITE(f)					\
@@ -73,6 +94,8 @@ char *get_current_time(void);
 
 static int is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
+
+static int load_config(DaemonConfig *, WatchConfig **);
 
 static unsigned int qhash(const unsigned char *, size_t);
 static int is_target_processed(int, int);
