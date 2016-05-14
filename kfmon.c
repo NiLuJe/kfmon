@@ -154,9 +154,44 @@ static void wait_for_target_mountpoint(void)
 	}
 }
 
+// Handle parsing the main KFMon config
+static int daemon_handler(void *user, const char *section, const char *key, const char *value) {
+	DaemonConfig *pconfig = (DaemonConfig *)user;
+
+	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
+	if (MATCH("daemon", "db_timeout")) {
+		pconfig->db_timeout = atoi(value);
+	} else {
+		return 0;	// unknown section/name, error
+	}
+	return 1;
+}
+
+// Handle parsing a watch config
+static int watch_handler(void *user, const char *section, const char *key, const char *value) {
+	WatchConfig *pconfig = (WatchConfig *)user;
+
+	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
+	if (MATCH("watch", "filename")) {
+		pconfig->filename = strdup(value);
+	} else if (MATCH("watch", "action")) {
+		pconfig->action = strdup(value);
+	} else if (MATCH("watch", "do_db_update")) {
+		pconfig->do_db_update = atoi(value);
+	} else if (MATCH("watch", "db_title")) {
+		pconfig->db_title = strdup(value);
+	} else if (MATCH("watch", "db_author")) {
+		pconfig->db_author = strdup(value);
+	} else if (MATCH("watch", "db_comment")) {
+		pconfig->db_comment = strdup(value);
+	} else {
+		return 0;	// unknown section/name, error
+	}
+	return 1;
+}
+
 // Load our config files...
-static int load_config(DaemonConfig *daemon_config, WatchConfig **watch_config)
-{
+static int load_config(DaemonConfig *daemon_config, WatchConfig watch_config[16]) {
 	// Our config files live in the target mountpoint...
 	if (!is_target_mounted()) {
 		LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
@@ -169,6 +204,7 @@ static int load_config(DaemonConfig *daemon_config, WatchConfig **watch_config)
 	FTSENT *p, *chp;
 	// We only need to walk a single directory...
 	char *cfg_path[] = {KFMON_CONFIGPATH, NULL};
+	int rval = 0;
 
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) == NULL) {
 		perror("[KFMon] fts_open");
@@ -185,14 +221,65 @@ static int load_config(DaemonConfig *daemon_config, WatchConfig **watch_config)
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
-				fprintf(stderr, "f %s\n", p->fts_path);
+				// Check if it's a .ini...
+				if (strncasecmp(p->fts_name+(p->fts_namelen-4), ".ini", 4) == 0) {
+					LOG("Trying to load config file '%s' . . .", p->fts_path);
+					// The main config has to be parsed slightly differently...
+					if (strncasecmp(p->fts_name, "kfmon.ini", 4) == 0) {
+						// Pointers are fun!
+						DaemonConfig *my_daemon_config = daemon_config;
+						if (ini_parse(p->fts_path, daemon_handler, my_daemon_config) < 0) {
+							LOG("Failed to parse main config file '%s'!", p->fts_name);
+							// Flag as a failure...
+							rval = -1;
+						}
+						LOG("Daemon config loaded from '%s': db_timeout=%d", p->fts_name, daemon_config->db_timeout);
+					} else {
+						// We have a bit of memory handling to play with first...
+						//watch_config = (WatchConfig *)realloc(watch_config, ++watch_count * sizeof *watch_config);
+						/*
+						WatchConfig *tmp = realloc(watch_config, ++watch_count * sizeof *watch_config);
+						if (tmp) {
+							watch_config = tmp;
+						}
+						*/
+						// Pointers are fun!
+						WatchConfig my_watch_config = watch_config[watch_count];
+						watch_count++;
+						// Make sure the defaults are sane...
+						my_watch_config.filename = NULL;
+						my_watch_config.action = NULL;
+						my_watch_config.do_db_update = 0;
+						my_watch_config.db_title = NULL;
+						my_watch_config.db_author = NULL;
+						my_watch_config.db_comment = NULL;
+						//my_watch_config->last_spawned_pid = 0;
+
+						if (ini_parse(p->fts_path, watch_handler, &my_watch_config) < 0) {
+							LOG("Failed to parse watch config file '%s'!", p->fts_name);
+							// Flag as a failure...
+							rval = -1;
+						}
+						LOG("Watch config nr. %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_count, p->fts_name, my_watch_config.filename, my_watch_config.action, my_watch_config.do_db_update, my_watch_config.db_title, my_watch_config.db_author, my_watch_config.db_comment);
+					}
+				}
 				break;
 			default:
 				break;
 		}
 	}
 	fts_close(ftsp);
-	return 0;
+
+	// Don't forget to grow & zero our global array of pids, too...
+	last_spawned_pids = (pid_t *)calloc(watch_count, sizeof(pid_t));
+
+	// Debug
+	for (unsigned int i = 0; i < watch_count; i++) {
+		LOG("iteration nr. %d", i);
+		LOG("Watch config nr. %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", i, watch_config[i].filename, watch_config[i].action, watch_config[i].do_db_update, watch_config[i].db_title, watch_config[i].db_author, watch_config[i].db_comment);
+	}
+
+	return rval;
 }
 
 // Implementation of Qt4's QtHash (cf. qhash @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L35)
@@ -562,8 +649,9 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	// Load our configs
 	DaemonConfig daemon_config;
 	// We're going to need an array of those to support multiple watches...
-	WatchConfig *watch_config;
-	if (load_config(&daemon_config, &watch_config) == -1) {
+	//WatchConfig *watch_config = malloc(sizeof *watch_config);
+	WatchConfig watch_config[16];
+	if (load_config(&daemon_config, watch_config) == -1) {
 		LOG("Failed to load config!");
 		exit(EXIT_FAILURE);
 	}

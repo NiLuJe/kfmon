@@ -3,7 +3,7 @@ STRIP?=strip
 DEBUG_CFLAGS=-O0 -fno-omit-frame-pointer -pipe -g
 OPT_CFLAGS=-O2 -fomit-frame-pointer -pipe
 
-SRCS=kfmon.c
+SRCS=kfmon.c inih/ini.c
 
 default: all
 
@@ -43,7 +43,7 @@ $(OUT_DIR)/%.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
 
 outdir:
-	mkdir -p $(OUT_DIR)
+	mkdir -p $(OUT_DIR)/inih
 
 all: outdir kfmon
 
@@ -68,9 +68,14 @@ debug:
 niluje:
 	$(MAKE) all NILUJE=true
 
+nilujed:
+	$(MAKE) all NILUJE=true DEBUG=true
+
 clean:
+	rm -rf Release/inih/*.o
 	rm -rf Release/*.o
 	rm -rf Release/kfmon
+	rm -rf Debug/inih/*.o
 	rm -rf Debug/*.o
 	rm -rf Debug/kfmon
 	rm -rf Kobo

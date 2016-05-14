@@ -74,6 +74,7 @@ typedef struct
     const char* db_title;
     const char* db_author;
     const char* db_comment;
+    //pid_t last_spawned_pid;
 } WatchConfig;
 
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
@@ -95,12 +96,17 @@ char *get_current_time(void);
 static int is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static int load_config(DaemonConfig *, WatchConfig **);
+static int daemon_handler(void *, const char *, const char *, const char *);
+static int watch_handler(void *, const char *, const char *, const char *);
+static int load_config(DaemonConfig *, WatchConfig[16]);
+// Ugly global. Remember how many watches we set up...
+size_t watch_count = 0;
 
 static unsigned int qhash(const unsigned char *, size_t);
 static int is_target_processed(int, int);
 
-// Ugly global. Used to remember the pid of our last spawn...
+// Ugly global. Used to remember the pid of our last spawns...
+pid_t *last_spawned_pids;
 pid_t last_spawned_pid = 0;
 static pid_t spawn(char **);
 void reaper(int);
