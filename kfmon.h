@@ -106,8 +106,8 @@ static int load_config(void);
 // Ugly global. Remember how many watches we set up...
 size_t watch_count = 0;
 // Make our config global, because I'm terrible at C.
-DaemonConfig daemon_config;
-WatchConfig watch_config[WATCH_MAX];
+DaemonConfig daemon_config = {0};
+WatchConfig watch_config[WATCH_MAX] = {0};
 
 static unsigned int qhash(const unsigned char *, size_t);
 static int is_target_processed(int, int);

@@ -236,15 +236,6 @@ static int load_config() {
 						}
 						LOG("Daemon config loaded from '%s': db_timeout=%d", p->fts_name, daemon_config.db_timeout);
 					} else {
-						// Make sure the defaults are sane and our strncpy usage won't blow up later on...
-						memset(watch_config[watch_count].filename, 0, PATH_MAX);
-						memset(watch_config[watch_count].action, 0, PATH_MAX);
-						watch_config[watch_count].do_db_update = 0;
-						memset(watch_config[watch_count].db_title, 0, DB_SZ_MAX);
-						memset(watch_config[watch_count].db_author, 0, DB_SZ_MAX);
-						memset(watch_config[watch_count].db_comment, 0, DB_SZ_MAX);
-						watch_config[watch_count].last_spawned_pid = 0;
-
 						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]) < 0) {
 							LOG("Failed to parse watch config file '%s'!", p->fts_name);
 							// Flag as a failure...
