@@ -66,16 +66,20 @@ typedef struct
 } DaemonConfig;
 
 // What a watch config should look like
+#define DB_SZ_MAX 128
 typedef struct
 {
-    const char* filename;
-    const char* action;
+    char filename[PATH_MAX];
+    char action[PATH_MAX];
     int do_db_update;
-    const char* db_title;
-    const char* db_author;
-    const char* db_comment;
-    //pid_t last_spawned_pid;
+    char db_title[DB_SZ_MAX];
+    char db_author[DB_SZ_MAX];
+    char db_comment[DB_SZ_MAX];
+    pid_t last_spawned_pid;
 } WatchConfig;
+
+// Hardcode the max amounbt of watches
+#define WATCH_MAX 16
 
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
 #define CALL_SQLITE(f)					\
@@ -98,15 +102,17 @@ static void wait_for_target_mountpoint(void);
 
 static int daemon_handler(void *, const char *, const char *, const char *);
 static int watch_handler(void *, const char *, const char *, const char *);
-static int load_config(DaemonConfig *, WatchConfig[16]);
+static int load_config(void);
 // Ugly global. Remember how many watches we set up...
 size_t watch_count = 0;
+// Make our config global, because I'm terrible at C.
+DaemonConfig daemon_config;
+WatchConfig watch_config[WATCH_MAX];
 
 static unsigned int qhash(const unsigned char *, size_t);
 static int is_target_processed(int, int);
 
 // Ugly global. Used to remember the pid of our last spawns...
-pid_t *last_spawned_pids;
 pid_t last_spawned_pid = 0;
 static pid_t spawn(char **);
 void reaper(int);

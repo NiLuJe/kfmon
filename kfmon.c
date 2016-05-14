@@ -110,7 +110,9 @@ static int is_target_mounted(void)
 
 	if ((mtab = setmntent("/proc/mounts", "r")) != NULL) {
 		while ((part = getmntent(mtab)) != NULL) {
-			//LOG("Checking fs %s mounted on %s", part->mnt_fsname, part->mnt_dir);
+#ifdef NILUJE
+			LOG("Checking fs %s mounted on %s", part->mnt_fsname, part->mnt_dir);
+#endif
 			if ((part->mnt_dir != NULL) && (strcmp(part->mnt_dir, KFMON_TARGET_MOUNTPOINT)) == 0) {
 				is_mounted = 1;
 				break;
@@ -172,18 +174,19 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	WatchConfig *pconfig = (WatchConfig *)user;
 
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
+	// NOTE: Crappy strncpy() usage, but those char arrays are zeroed first (hence the MAX-1 len to ensure that we're NULL terminated)...
 	if (MATCH("watch", "filename")) {
-		pconfig->filename = strdup(value);
+		strncpy(pconfig->filename, value, PATH_MAX-1);
 	} else if (MATCH("watch", "action")) {
-		pconfig->action = strdup(value);
+		strncpy(pconfig->action, value, PATH_MAX-1);
 	} else if (MATCH("watch", "do_db_update")) {
 		pconfig->do_db_update = atoi(value);
 	} else if (MATCH("watch", "db_title")) {
-		pconfig->db_title = strdup(value);
+		strncpy(pconfig->db_title, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_author")) {
-		pconfig->db_author = strdup(value);
+		strncpy(pconfig->db_author, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_comment")) {
-		pconfig->db_comment = strdup(value);
+		strncpy(pconfig->db_comment, value, DB_SZ_MAX-1);
 	} else {
 		return 0;	// unknown section/name, error
 	}
@@ -191,7 +194,7 @@ static int watch_handler(void *user, const char *section, const char *key, const
 }
 
 // Load our config files...
-static int load_config(DaemonConfig *daemon_config, WatchConfig watch_config[16]) {
+static int load_config() {
 	// Our config files live in the target mountpoint...
 	if (!is_target_mounted()) {
 		LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
@@ -226,41 +229,30 @@ static int load_config(DaemonConfig *daemon_config, WatchConfig watch_config[16]
 					LOG("Trying to load config file '%s' . . .", p->fts_path);
 					// The main config has to be parsed slightly differently...
 					if (strncasecmp(p->fts_name, "kfmon.ini", 4) == 0) {
-						// Pointers are fun!
-						DaemonConfig *my_daemon_config = daemon_config;
-						if (ini_parse(p->fts_path, daemon_handler, my_daemon_config) < 0) {
+						if (ini_parse(p->fts_path, daemon_handler, &daemon_config) < 0) {
 							LOG("Failed to parse main config file '%s'!", p->fts_name);
 							// Flag as a failure...
 							rval = -1;
 						}
-						LOG("Daemon config loaded from '%s': db_timeout=%d", p->fts_name, daemon_config->db_timeout);
+						LOG("Daemon config loaded from '%s': db_timeout=%d", p->fts_name, daemon_config.db_timeout);
 					} else {
-						// We have a bit of memory handling to play with first...
-						//watch_config = (WatchConfig *)realloc(watch_config, ++watch_count * sizeof *watch_config);
-						/*
-						WatchConfig *tmp = realloc(watch_config, ++watch_count * sizeof *watch_config);
-						if (tmp) {
-							watch_config = tmp;
-						}
-						*/
-						// Pointers are fun!
-						WatchConfig my_watch_config = watch_config[watch_count];
+						// One more potential watch...
 						watch_count++;
-						// Make sure the defaults are sane...
-						my_watch_config.filename = NULL;
-						my_watch_config.action = NULL;
-						my_watch_config.do_db_update = 0;
-						my_watch_config.db_title = NULL;
-						my_watch_config.db_author = NULL;
-						my_watch_config.db_comment = NULL;
-						//my_watch_config->last_spawned_pid = 0;
+						// Make sure the defaults are sane and our strncpy usage won't blow up later on...
+						memset(watch_config[watch_count-1].filename, 0, PATH_MAX);
+						memset(watch_config[watch_count-1].action, 0, PATH_MAX);
+						watch_config[watch_count-1].do_db_update = 0;
+						memset(watch_config[watch_count-1].db_title, 0, DB_SZ_MAX);
+						memset(watch_config[watch_count-1].db_author, 0, DB_SZ_MAX);
+						memset(watch_config[watch_count-1].db_comment, 0, DB_SZ_MAX);
+						watch_config[watch_count-1].last_spawned_pid = 0;
 
-						if (ini_parse(p->fts_path, watch_handler, &my_watch_config) < 0) {
+						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count-1]) < 0) {
 							LOG("Failed to parse watch config file '%s'!", p->fts_name);
 							// Flag as a failure...
 							rval = -1;
 						}
-						LOG("Watch config nr. %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_count, p->fts_name, my_watch_config.filename, my_watch_config.action, my_watch_config.do_db_update, my_watch_config.db_title, my_watch_config.db_author, my_watch_config.db_comment);
+						LOG("Watch config nr. %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_count, p->fts_name, watch_config[watch_count-1].filename, watch_config[watch_count-1].action, watch_config[watch_count-1].do_db_update, watch_config[watch_count-1].db_title, watch_config[watch_count-1].db_author, watch_config[watch_count-1].db_comment);
 					}
 				}
 				break;
@@ -270,14 +262,13 @@ static int load_config(DaemonConfig *daemon_config, WatchConfig watch_config[16]
 	}
 	fts_close(ftsp);
 
-	// Don't forget to grow & zero our global array of pids, too...
-	last_spawned_pids = (pid_t *)calloc(watch_count, sizeof(pid_t));
-
-	// Debug
+#ifdef NILUJE
+	// Let's recap...
+	LOG("Daemon config recap: db_timeout=%d", daemon_config.db_timeout);
 	for (unsigned int i = 0; i < watch_count; i++) {
-		LOG("iteration nr. %d", i);
-		LOG("Watch config nr. %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", i, watch_config[i].filename, watch_config[i].action, watch_config[i].do_db_update, watch_config[i].db_title, watch_config[i].db_author, watch_config[i].db_comment);
+		LOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", i, watch_config[i].filename, watch_config[i].action, watch_config[i].do_db_update, watch_config[i].db_title, watch_config[i].db_author, watch_config[i].db_comment);
 	}
+#endif
 
 	return rval;
 }
@@ -326,7 +317,9 @@ static int is_target_processed(int update, int wait_for_db)
 
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
-		//LOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
+#ifdef NILUJE
+		LOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
+#endif
 		if (sqlite3_column_int(stmt, 0) == 1)
 			is_processed = 1;
 	}
@@ -347,7 +340,9 @@ static int is_target_processed(int update, int wait_for_db)
 
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-			//LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
+#ifdef NILUJE
+			LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
+#endif
 			const unsigned char *image_id = sqlite3_column_text(stmt, 0);
 			size_t len = (size_t)sqlite3_column_bytes(stmt, 0);
 
@@ -359,7 +354,9 @@ static int is_target_processed(int update, int wait_for_db)
 
 			char images_path[PATH_MAX];
 			snprintf(images_path, PATH_MAX, "%s/.kobo-images/%d/%d", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
-			//LOG("Checking for thumbnails in '%s' . . .", images_path);
+#ifdef NILUJE
+			LOG("Checking for thumbnails in '%s' . . .", images_path);
+#endif
 
 			// Count the number of processed thumbnails we find...
 			int thumbnails_num = 0;
@@ -414,7 +411,9 @@ static int is_target_processed(int update, int wait_for_db)
 
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-			//LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
+#ifdef NILUJE
+			LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
+#endif
 			if (strcmp((const char *)sqlite3_column_text(stmt, 0), "KOReader") != 0)
 				needs_update = 1;
 		}
@@ -647,11 +646,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	}
 
 	// Load our configs
-	DaemonConfig daemon_config;
-	// We're going to need an array of those to support multiple watches...
-	//WatchConfig *watch_config = malloc(sizeof *watch_config);
-	WatchConfig watch_config[16];
-	if (load_config(&daemon_config, watch_config) == -1) {
+	if (load_config() == -1) {
 		LOG("Failed to load config!");
 		exit(EXIT_FAILURE);
 	}
