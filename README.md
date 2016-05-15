@@ -1,4 +1,4 @@
-# kfmon
+# KFMon
 Kute File Monitor
 
 # What's it for?
