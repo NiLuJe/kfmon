@@ -248,7 +248,7 @@ static int load_config() {
 							rval = -1;
 						}
 						LOG("Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_count, p->fts_name, watch_config[watch_count].filename, watch_config[watch_count].action, watch_config[watch_count].do_db_update, watch_config[watch_count].db_title, watch_config[watch_count].db_author, watch_config[watch_count].db_comment);
-						// One more potential watch...
+						// Switch to the next slot!
 						watch_count++;
 					}
 				}
