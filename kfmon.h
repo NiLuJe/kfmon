@@ -63,8 +63,13 @@
 }												\
 
 // Some extra verbose stuff is relegated to DEBUG builds... (c.f., https://stackoverflow.com/questions/1644868)
-#define DBGLOG(...) \
-	do { if (DEBUG) LOG(##__VA_ARGS__); } while (0)
+#ifdef DEBUG
+#define DEBUG_LOG 1
+#else
+#define DEBUG_LOG 0
+#endif
+#define DBGLOG(fmt, ...) \
+	do { if (DEBUG_LOG) LOG(fmt, ## __VA_ARGS__); } while (0)
 
 // What the daemon config should look like
 typedef struct
