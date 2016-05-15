@@ -62,6 +62,10 @@
 	}											\
 }												\
 
+// Some extra verbose stuff is relegated to DEBUG builds... (c.f., https://stackoverflow.com/questions/1644868)
+#define DBGLOG(...) \
+	do { if (DEBUG) LOG(##__VA_ARGS__); } while (0)
+
 // What the daemon config should look like
 typedef struct
 {
@@ -76,9 +80,7 @@ typedef struct
 	char filename[PATH_MAX];
 	char action[PATH_MAX];
 	bool do_db_update;
-#ifdef NILUJE
 	bool skip_db_checks;
-#endif
 	char db_title[DB_SZ_MAX];
 	char db_author[DB_SZ_MAX];
 	char db_comment[DB_SZ_MAX];

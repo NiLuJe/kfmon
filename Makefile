@@ -25,6 +25,7 @@ endif
 ifeq "$(DEBUG)" "true"
     OUT_DIR=Debug
     CFLAGS:=$(DEBUG_CFLAGS)
+    EXTRA_CFLAGS+=-DDEBUG
 else
     OUT_DIR=Release
     CFLAGS?=$(OPT_CFLAGS)

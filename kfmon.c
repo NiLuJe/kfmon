@@ -110,9 +110,7 @@ static bool is_target_mounted(void)
 
 	if ((mtab = setmntent("/proc/mounts", "r")) != NULL) {
 		while ((part = getmntent(mtab)) != NULL) {
-#ifdef NILUJE
-			LOG("Checking fs %s mounted on %s", part->mnt_fsname, part->mnt_dir);
-#endif
+			DBGLOG("Checking fs %s mounted on %s", part->mnt_fsname, part->mnt_dir);
 			if ((part->mnt_dir != NULL) && (strcmp(part->mnt_dir, KFMON_TARGET_MOUNTPOINT)) == 0) {
 				is_mounted = true;
 				break;
@@ -183,10 +181,8 @@ static int watch_handler(void *user, const char *section, const char *key, const
 		strncpy(pconfig->action, value, PATH_MAX-1);
 	} else if (MATCH("watch", "do_db_update")) {
 		pconfig->do_db_update = atoi(value);
-#ifdef NILUJE
 	} else if (MATCH("watch", "skip_db_checks")) {
 		pconfig->skip_db_checks = atoi(value);
-#endif
 	} else if (MATCH("watch", "db_title")) {
 		strncpy(pconfig->db_title, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_author")) {
@@ -259,11 +255,11 @@ static int load_config() {
 	}
 	fts_close(ftsp);
 
-#ifdef NILUJE
+#ifdef DEBUG
 	// Let's recap...
-	LOG("Daemon config recap: db_timeout=%d, use_syslog=%d", daemon_config.db_timeout, daemon_config.use_syslog);
+	DBGLOG("Daemon config recap: db_timeout=%d, use_syslog=%d", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-		LOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_idx, watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_config[watch_idx].do_db_update, watch_config[watch_idx].db_title, watch_config[watch_idx].db_author, watch_config[watch_idx].db_comment);
+		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_idx, watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_config[watch_idx].do_db_update, watch_config[watch_idx].db_title, watch_config[watch_idx].db_author, watch_config[watch_idx].db_comment);
 	}
 #endif
 
@@ -294,7 +290,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	bool is_processed = false;
 	bool needs_update = false;
 
-#ifdef NILUJE
+#ifdef DEBUG
 	// Bypass DB checks on demand for debugging purposes...
 	if(watch_config[watch_idx].skip_db_checks)
 		return true;
@@ -327,9 +323,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
-#ifdef NILUJE
-		LOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
-#endif
+		DBGLOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
 		if (sqlite3_column_int(stmt, 0) == 1)
 			is_processed = true;
 	}
@@ -350,9 +344,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-#ifdef NILUJE
-			LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
-#endif
+			DBGLOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
 			const unsigned char *image_id = sqlite3_column_text(stmt, 0);
 			size_t len = (size_t)sqlite3_column_bytes(stmt, 0);
 
@@ -364,9 +356,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 
 			char images_path[PATH_MAX];
 			snprintf(images_path, PATH_MAX, "%s/.kobo-images/%d/%d", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
-#ifdef NILUJE
-			LOG("Checking for thumbnails in '%s' . . .", images_path);
-#endif
+			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
 			int thumbnails_num = 0;
@@ -421,9 +411,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-#ifdef NILUJE
-			LOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
-#endif
+			DBGLOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
 			if (strcmp((const char *)sqlite3_column_text(stmt, 0), "KOReader") != 0)
 				needs_update = true;
 		}
