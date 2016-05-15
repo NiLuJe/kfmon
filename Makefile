@@ -64,7 +64,7 @@ kfmon: $(OBJS)
 strip: all
 	$(STRIP) $(STRIP_OPTS) $(OUT_DIR)/kfmon
 
-kobo: strip
+kobo: release
 	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard/.kobo Kobo/etc/udev/rules.d Kobo/mnt/onboard/.adds/kfmon/config
 	ln -sf $(CURDIR)/resources/koreader.png Kobo/mnt/onboard/koreader.png
 	ln -sf $(CURDIR)/Release/kfmon Kobo/usr/local/kfmon/bin/kfmon
