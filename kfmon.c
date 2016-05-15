@@ -523,13 +523,19 @@ static bool handle_events(int fd)
 
 			// Identify which of our target file we've caught an event for...
 			unsigned int watch_idx = 0;
+			bool found_watch_idx = false;
 			for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 				if (watch_config[watch_idx].inotify_wd == event->wd) {
 #ifdef NILUJE
 					LOG("Current inotify event matches watch index: %d", watch_idx);
 #endif
+					found_watch_idx = true;
 					break;
 				}
+			}
+			if (!found_watch_idx) {
+				// NOTE: Err, that should (hopefully) never happen!
+				LOG("!! Failed to match the current inotify event to any of our watched file! !!");
 			}
 
 			// Print event type
@@ -615,13 +621,19 @@ void reaper(int sig  __attribute__ ((unused))) {
 	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
 		// Identify which of our target actions we've reaped a process from...
 		unsigned int watch_idx = 0;
+		bool found_watch_idx = false;
 		for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 			if (watch_config[watch_idx].last_spawned_pid == cpid) {
 #ifdef NILUJE
 				LOG("Current spawn pid matches watch index: %d", watch_idx);
 #endif
+				found_watch_idx = true;
 				break;
 			}
+		}
+		if (!found_watch_idx) {
+			// NOTE: Err, that should (hopefully) never happen!
+			LOG("!! Failed to match the child pid reaped to any of our tracked spawns! !!");
 		}
 		// NOTE: We shouldn't ever lose track of a spawn pid, but log what happened just in case...
 		LOG("Reaped our last spawn (reaped pid %d for watch index %d)", cpid, watch_idx);
