@@ -372,7 +372,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 
 			// Then the Homescreen tile...
 			// NOTE: This one might be a tad confusing...
-			//	 If the icon has never been processed, this will only happen the first time we *close* the KOReader PNG... (i.e., the moment it pops up as the 'last opened' tile).
+			//	 If the icon has never been processed, this will only happen the first time we *close* the PNG's "book"... (i.e., the moment it pops up as the 'last opened' tile).
 			//	 And *that* processing triggers a set of OPEN & CLOSE, meaning we can quite possibly run on book *exit* that first time (and only that first time), if database locking permits...
 			char tile_path[PATH_MAX];
 			snprintf(tile_path, PATH_MAX, "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
@@ -403,7 +403,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	// We leave enabling this option to the user's responsibility. KOReader ships with it disabled.
 	// The idea is to, optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
-		// Check if the DB has already been updated...
+		// Check if the DB has already been updated by checking the title...
 		CALL_SQLITE(prepare_v2(db, "SELECT Title FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
 
 		idx = sqlite3_bind_parameter_index(stmt, "@id");
@@ -412,7 +412,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			DBGLOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
-			if (strcmp((const char *)sqlite3_column_text(stmt, 0), "KOReader") != 0)
+			if (strcmp((const char *)sqlite3_column_text(stmt, 0), watch_config[watch_idx].db_title) != 0)
 				needs_update = true;
 		}
 
