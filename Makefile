@@ -13,7 +13,12 @@ ifdef NILUJE
     EXTRA_CFLAGS+=-DNILUJE
 else
     # We want to link to sqlite3 explicitly statically
-    LIBS=-l:libsqlite3.a -lpthread -ldl -lm
+    LIBS=-l:libsqlite3.a
+    # Depending on how SQLite was built, we might need...
+    LIBS+=-lpthread
+    # And in turn...
+    LIBS+=-ldl
+    LIBS+=-lm
 endif
 
 # NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
@@ -34,14 +39,19 @@ EXTRA_CFLAGS+=-Wcast-qual
 EXTRA_CFLAGS+=-Wcast-align
 EXTRA_CFLAGS+=-Wconversion
 
-# FIXME: Figure out where we'll end up putting SQLite3 ;p
-CPPFLAGS?=-Iincludes
-LDFLAGS?=-Llib -Wl,--as-needed
+# NOTE: Always use as-needed to avoid unecessary DT_NEEDED entries with our funky SQLite linking :)
+LDFLAGS?=-Wl,--as-needed
+
+# Pick up our vendored build of SQLite at worse...
+ifeq "$(SQLITE)" "true"
+    EXTRA_CPPFLAGS=-ISQLiteBuild
+    EXTRA_LDFLAGS=-LSQLiteBuild/.libs
+endif
 
 OBJS:=$(SRCS:%.c=$(OUT_DIR)/%.o)
 
 $(OUT_DIR)/%.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
 
 outdir:
 	mkdir -p $(OUT_DIR)/inih
@@ -49,7 +59,7 @@ outdir:
 all: outdir kfmon
 
 kfmon: $(OBJS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(LIBS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(LIBS)
 
 strip: all
 	$(STRIP) $(STRIP_OPTS) $(OUT_DIR)/kfmon
@@ -83,4 +93,12 @@ clean:
 	rm -rf Debug/kfmon
 	rm -rf Kobo
 
-.PHONY: all clean default outdir kfmon kobo strip debug niluje
+sqlite:
+	mkdir -p SQLiteBuild
+	cd sqlite && ../sqlite-export/create-fossil-manifest && cd ../SQLiteBuild && ../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && $(MAKE) SHELL_OPT=""
+
+distclean: clean
+	rm -rf SQLiteBuild
+	rm -rf sqlite/manifest sqlite/manifest.uuid
+
+.PHONY: all clean default outdir kfmon kobo strip debug niluje nilujed sqlite distclean
