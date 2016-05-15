@@ -1,5 +1,12 @@
-CC?=gcc
-STRIP?=strip
+# Pickup our cross-toolchains automatically...
+ifdef $(CROSS_TC)
+	CC=$(CROSS_TC)-gcc
+	STRIP=$(CROSS_TC)-strip
+else
+	CC?=gcc
+	STRIP?=strip
+endif
+
 DEBUG_CFLAGS=-O0 -fno-omit-frame-pointer -pipe -g
 OPT_CFLAGS=-O2 -fomit-frame-pointer -pipe
 
