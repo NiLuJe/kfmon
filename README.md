@@ -2,7 +2,7 @@
 Kute File Monitor
 
 Licensed under the [AGPLv3](/LICENSE).
-https://github.com/NiLuJe/kfmon
+Housed [here on GitHub](https://github.com/NiLuJe/kfmon).
 
 # What's it for?
 
