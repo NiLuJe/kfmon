@@ -41,12 +41,6 @@
 #ifndef KFMON_TARGET_MOUNTPOINT
 #define KFMON_TARGET_MOUNTPOINT "/mnt/onboard"
 #endif
-#ifndef KFMON_TARGET_FILE
-#define KFMON_TARGET_FILE KFMON_TARGET_MOUNTPOINT "/koreader.png"
-#endif
-#ifndef KFMON_TARGET_SCRIPT
-#define KFMON_TARGET_SCRIPT KFMON_TARGET_MOUNTPOINT "/.adds/koreader/koreader.sh"
-#endif
 // Use my debug paths on demand...
 #ifndef NILUJE
 #define KOBO_DB_PATH KFMON_TARGET_MOUNTPOINT "/.kobo/KoboReader.sqlite"
@@ -71,21 +65,22 @@
 // What the daemon config should look like
 typedef struct
 {
-    int db_timeout;
-    bool use_syslog;
+	int db_timeout;
+	bool use_syslog;
 } DaemonConfig;
 
 // What a watch config should look like
 #define DB_SZ_MAX 128
 typedef struct
 {
-    char filename[PATH_MAX];
-    char action[PATH_MAX];
-    bool do_db_update;
-    char db_title[DB_SZ_MAX];
-    char db_author[DB_SZ_MAX];
-    char db_comment[DB_SZ_MAX];
-    pid_t last_spawned_pid;
+	char filename[PATH_MAX];
+	char action[PATH_MAX];
+	bool do_db_update;
+	char db_title[DB_SZ_MAX];
+	char db_author[DB_SZ_MAX];
+	char db_comment[DB_SZ_MAX];
+	int inotify_wd;
+	pid_t last_spawned_pid;
 } WatchConfig;
 
 // Hardcode the max amount of watches we handle
@@ -120,11 +115,9 @@ DaemonConfig daemon_config = {0};
 WatchConfig watch_config[WATCH_MAX] = {0};
 
 static unsigned int qhash(const unsigned char *, size_t);
-static bool is_target_processed(bool, bool);
+static bool is_target_processed(unsigned int, bool);
 
-// Ugly global. Used to remember the pid of our last spawns...
-pid_t last_spawned_pid = 0;
 static pid_t spawn(char **);
 void reaper(int);
 
-static bool handle_events(int, int);
+static bool handle_events(int);

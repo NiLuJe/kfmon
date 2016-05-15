@@ -258,8 +258,8 @@ static int load_config() {
 #ifdef NILUJE
 	// Let's recap...
 	LOG("Daemon config recap: db_timeout=%d, use_syslog=%d", daemon_config.db_timeout, daemon_config.use_syslog);
-	for (unsigned int i = 0; i < watch_count; i++) {
-		LOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", i, watch_config[i].filename, watch_config[i].action, watch_config[i].do_db_update, watch_config[i].db_title, watch_config[i].db_author, watch_config[i].db_comment);
+	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+		LOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_idx, watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_config[watch_idx].do_db_update, watch_config[watch_idx].db_title, watch_config[watch_idx].db_author, watch_config[watch_idx].db_comment);
 	}
 #endif
 
@@ -281,7 +281,7 @@ static unsigned int qhash(const unsigned char *bytes, size_t length) {
 }
 
 // Check if our target file has been processed by Nickel...
-static bool is_target_processed(bool update, bool wait_for_db)
+static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 {
 	sqlite3 *db;
 	sqlite3_stmt * stmt;
@@ -290,6 +290,9 @@ static bool is_target_processed(bool update, bool wait_for_db)
 	bool is_processed = false;
 	bool needs_update = false;
 
+	// Did the user want to try to update the DB for this icon?
+	bool update = watch_config[watch_idx].do_db_update;
+
 	if (update) {
 		CALL_SQLITE(open_v2(KOBO_DB_PATH , &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX, NULL));
 	} else {
@@ -297,16 +300,20 @@ static bool is_target_processed(bool update, bool wait_for_db)
 		CALL_SQLITE(open_v2(KOBO_DB_PATH , &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL));
 	}
 
-	// Wait at most for 400ms on OPEN & 800ms on CLOSE if we ever hit a locked database during any of our proceedings...
-	// NOTE: Those timings appear to work reasonably well on my H2O with a 50MB Nickel DB... (i.e., it trips on OPEN when Nickel is moderately busy, but if everything's quiet, we're good).
-	//	 Time will tell if that's a good middle-ground or not ;).
-	sqlite3_busy_timeout(db, 400 * (wait_for_db + 1));
+	// Wait at most for Nms on OPEN & N*2ms on CLOSE if we ever hit a locked database during any of our proceedings...
+	// NOTE: The defaults timings (steps of 450ms) appear to work reasonably well on my H2O with a 50MB Nickel DB... (i.e., it trips on OPEN when Nickel is moderately busy, but if everything's quiet, we're good).
+	//	 Time will tell if that's a good middle-ground or not ;). This is user configurable in kfmon.ini (db_timeout key).
+	sqlite3_busy_timeout(db, daemon_config.db_timeout * (wait_for_db + 1));
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
 	CALL_SQLITE(prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
 
+	// Append the proper URI scheme to our icon path...
+	char book_path[PATH_MAX];
+	snprintf(book_path, PATH_MAX, "file://%s", watch_config[watch_idx].filename);
+
 	idx = sqlite3_bind_parameter_index(stmt, "@id");
-	CALL_SQLITE(bind_text(stmt, idx, "file://"KFMON_TARGET_FILE, -1, SQLITE_STATIC));
+	CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
 
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
@@ -329,7 +336,7 @@ static bool is_target_processed(bool update, bool wait_for_db)
 		CALL_SQLITE(prepare_v2(db, "SELECT ImageID FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
 
 		idx = sqlite3_bind_parameter_index(stmt, "@id");
-		CALL_SQLITE(bind_text(stmt, idx, "file://"KFMON_TARGET_FILE, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
 
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
@@ -392,15 +399,15 @@ static bool is_target_processed(bool update, bool wait_for_db)
 		sqlite3_finalize(stmt);
 	}
 
-	// FIXME: Here be dragons! This works in theory, but risks confusing Nickel's handling of the DB if we do that when nickel is running (which we are).
-	//	  Right now, nothing calls us with update set to 1, so we're safe.
-	// Optionally, update the Title, Author & Comment fields to make them more useful...
+	// NOTE: Here be dragons! This works in theory, but risks confusing Nickel's handling of the DB if we do that when nickel is running (which we are).
+	// We leave enabling this option to the user's responsibility. KOReader ships with it disabled.
+	// The idea is to, optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
 		// Check if the DB has already been updated...
 		CALL_SQLITE(prepare_v2(db, "SELECT Title FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
 
 		idx = sqlite3_bind_parameter_index(stmt, "@id");
-		CALL_SQLITE(bind_text(stmt, idx, "file://"KFMON_TARGET_FILE, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
 
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
@@ -416,14 +423,15 @@ static bool is_target_processed(bool update, bool wait_for_db)
 	if (needs_update) {
 		CALL_SQLITE(prepare_v2(db, "UPDATE content SET Title = @title, Attribution = @author, Description = @comment WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
 
+		// NOTE: No sanity checks are done to confirm that those watch configs are sane... The example config ships with a strong warning not to forget them if wanted, but that's it.
 		idx = sqlite3_bind_parameter_index(stmt, "@title");
-		CALL_SQLITE(bind_text(stmt, idx, "KOReader", -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, watch_config[watch_idx].db_title, -1, SQLITE_STATIC));
 		idx = sqlite3_bind_parameter_index(stmt, "@author");
-		CALL_SQLITE(bind_text(stmt, idx, "KOReader Devs", -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, watch_config[watch_idx].db_author, -1, SQLITE_STATIC));
 		idx = sqlite3_bind_parameter_index(stmt, "@comment");
-		CALL_SQLITE(bind_text(stmt, idx, "An eBook reader application", -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, watch_config[watch_idx].db_comment, -1, SQLITE_STATIC));
 		idx = sqlite3_bind_parameter_index(stmt, "@id");
-		CALL_SQLITE(bind_text(stmt, idx, "file://"KFMON_TARGET_FILE, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
 
 		rc = sqlite3_step(stmt);
 		if (rc != SQLITE_DONE) {
@@ -479,7 +487,7 @@ static pid_t spawn(char **command)
 }
 
 // Read all available inotify events from the file descriptor 'fd'.
-static bool handle_events(int fd, int wd)
+static bool handle_events(int fd)
 {
 	/* Some systems cannot read integer variables if they are not
 	   properly aligned. On other systems, incorrect alignment may
@@ -513,16 +521,27 @@ static bool handle_events(int fd, int wd)
 			// NOTE: This trips -Wcast-align on ARM, but it works, and saves us some code ;).
 			event = (const struct inotify_event *) ptr;
 
+			// Identify which of our target file we've caught an event for...
+			unsigned int watch_idx = 0;
+			for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+				if (watch_config[watch_idx].inotify_wd == event->wd) {
+#ifdef NILUJE
+					LOG("Current inotify event matches watch index: %d", watch_idx);
+#endif
+					break;
+				}
+			}
+
 			// Print event type
 			if (event->mask & IN_OPEN) {
-				LOG("Tripped IN_OPEN for %s", KFMON_TARGET_FILE);
+				LOG("Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
-				if (last_spawned_pid == 0) {
+				if (watch_config[watch_idx].last_spawned_pid == 0) {
 					// Only check if we're ready to spawn something...
-					if (!is_target_processed(false, false)) {
+					if (!is_target_processed(watch_idx, false)) {
 						// It's not processed on OPEN, flag as pending...
 						pending_processing = true;
-						LOG("Flagged target icon '%s' as pending processing ...", KFMON_TARGET_FILE);
+						LOG("Flagged target icon '%s' as pending processing ...", watch_config[watch_idx].filename);
 					} else {
 						// It's already processed, we're good!
 						pending_processing = false;
@@ -530,15 +549,13 @@ static bool handle_events(int fd, int wd)
 				}
 			}
 			if (event->mask & IN_CLOSE) {
-				LOG("Tripped IN_CLOSE for %s", KFMON_TARGET_FILE);
-				if (last_spawned_pid == 0) {
+				LOG("Tripped IN_CLOSE for %s", watch_config[watch_idx].filename);
+				if (watch_config[watch_idx].last_spawned_pid == 0) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
-					// FIXME: Setting the arg to 1 was a nice idea in theory (it updates the DB to set some nicer metadata for our icon),
-					//	  but it risks confusing the hell out of Nickel, since we'd be doing it while it's running, so don't do it.
-					if (!pending_processing && is_target_processed(false, true)) {
-						LOG("Spawning %s . . .", KFMON_TARGET_SCRIPT);
+					if (!pending_processing && is_target_processed(watch_idx, true)) {
+						LOG("Spawning %s . . .", watch_config[watch_idx].action);
 						// We're using execvp()...
-						char *cmd[] = {KFMON_TARGET_SCRIPT, NULL};
+						char *cmd[] = {watch_config[watch_idx].action, NULL};
 						// NOTE: Block our SIGCHLD handler until execvp() actually returns, to make sure it'll have an up-to-date last_spawned_pid
 						//	 Avoids races if execvp() returns really fast, which is not that uncommon for simple shell scripts.
 						sigset_t sigset;
@@ -546,22 +563,22 @@ static bool handle_events(int fd, int wd)
 						sigaddset(&sigset, SIGCHLD);
 						if (sigprocmask(SIG_BLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (BLOCK)");
-						last_spawned_pid = spawn(cmd);
-						LOG(". . . with pid: %d", last_spawned_pid);
+						watch_config[watch_idx].last_spawned_pid = spawn(cmd);
+						LOG(". . . with pid: %d", watch_config[watch_idx].last_spawned_pid);
 						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (UNBLOCK)");
 					} else {
-						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", KFMON_TARGET_FILE);
+						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
 					}
 				} else {
-					LOG("Our last spawn (%d) is still alive!", last_spawned_pid);
+					LOG("Our last spawn (%d) is still alive!", watch_config[watch_idx].last_spawned_pid);
 				}
 			}
 			if (event->mask & IN_UNMOUNT)
-				LOG("Tripped IN_UNMOUNT for %s", KFMON_TARGET_FILE);
+				LOG("Tripped IN_UNMOUNT for %s", watch_config[watch_idx].filename);
 			if (event->mask & IN_IGNORED) {
-				LOG("Tripped IN_IGNORED for %s", KFMON_TARGET_FILE);
+				LOG("Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
 				// Remember that the watch was automatically destroyed so we can break from the loop...
 				destroyed_wd = true;
 			}
@@ -572,7 +589,7 @@ static bool handle_events(int fd, int wd)
 					LOG("Huh oh... Tripped IN_Q_OVERFLOW");
 				}
 				// Destroy our only watch, and break the loop
-				if (inotify_rm_watch(fd, wd) == -1)
+				if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1)
 				{
 					// That's too bad, but may not be fatal, so warn only...
 					perror("[KFMon] inotify_rm_watch");
@@ -596,15 +613,25 @@ void reaper(int sig  __attribute__ ((unused))) {
 	int wstatus;
 	int saved_errno = errno;
 	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
-		// NOTE: We shouldn't ever get a pid mismatch here, but log both just in case...
-		LOG("Reaped our last spawn (reaped: %d vs. stored: %d)", cpid, last_spawned_pid);
+		// Identify which of our target actions we've reaped a process from...
+		unsigned int watch_idx = 0;
+		for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+			if (watch_config[watch_idx].last_spawned_pid == cpid) {
+#ifdef NILUJE
+				LOG("Current spawn pid matches watch index: %d", watch_idx);
+#endif
+				break;
+			}
+		}
+		// NOTE: We shouldn't ever lose track of a spawn pid, but log what happened just in case...
+		LOG("Reaped our last spawn (reaped pid %d for watch index %d)", cpid, watch_idx);
 		if (WIFEXITED(wstatus)) {
 			LOG("It exited with status %d", WEXITSTATUS(wstatus));
 		} else if (WIFSIGNALED(wstatus)) {
 			LOG("It was killed by signal %d", WTERMSIG(wstatus));
 		}
 		// Reset our pid tracker to announce that we're ready to spawn something new
-		last_spawned_pid = 0;
+		watch_config[watch_idx].last_spawned_pid = 0;
 	}
 	errno = saved_errno;
 }
@@ -612,7 +639,6 @@ void reaper(int sig  __attribute__ ((unused))) {
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
 	int fd, poll_num;
-	int wd;
 	struct pollfd pfd;
 
 	// Being launched via udev leaves us with a negative nice value, fix that.
@@ -680,14 +706,16 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			wait_for_target_mountpoint();
 		}
 
-		// Mark target file for 'file was opened' event
-		wd = inotify_add_watch(fd, KFMON_TARGET_FILE, IN_OPEN | IN_CLOSE);
-		if (wd == -1) {
-			LOG("Cannot watch '%s'! Giving up.", KFMON_TARGET_FILE);
-			perror("[KFMon] inotify_add_watch");
-			exit(EXIT_FAILURE);
-			// NOTE: This effectively means we exit when the target file doesn't exist, which is not a bad thing, per se...
-			//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
+		// Flag each of our target files for 'file was opened' and 'file was closed' events
+		for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+			watch_config[watch_idx].inotify_wd = inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
+			if (watch_config[watch_idx].inotify_wd == -1) {
+				LOG("Cannot watch '%s'! Giving up.", watch_config[watch_idx].filename);
+				perror("[KFMon] inotify_add_watch");
+				exit(EXIT_FAILURE);
+				// NOTE: This effectively means we exit when any one of our target file cannot be found, which is not a bad thing, per se...
+				//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
+			}
 		}
 
 		// Inotify input
@@ -708,7 +736,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			if (poll_num > 0) {
 				if (pfd.revents & POLLIN) {
 					// Inotify events are available
-					if (handle_events(fd, wd))
+					if (handle_events(fd))
 						// Go back to the main loop if we exited early (because the watch was destroyed automatically after an unmount or an unlink, for instance)
 						break;
 				}
