@@ -238,6 +238,13 @@ static int load_config() {
 						}
 						LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 					} else {
+						// NOTE: Don't blow up when trying to store more watches than we have space for...
+						if (watch_count >= WATCH_MAX) {
+							LOG("We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX, p->fts_name);
+							// Don't flag this as a hard failure, just warn and go on...
+							break;
+						}
+
 						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]) < 0) {
 							LOG("Failed to parse watch config file '%s'!", p->fts_name);
 							// Flag as a failure...
