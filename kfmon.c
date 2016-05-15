@@ -625,6 +625,7 @@ void reaper(int sig  __attribute__ ((unused))) {
 	pid_t cpid;
 	int wstatus;
 	int saved_errno = errno;
+	ssize_t foo __attribute__((unused));
 	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
 		// Identify which of our target actions we've reaped a process from...
 		unsigned int watch_idx = 0;
@@ -637,14 +638,14 @@ void reaper(int sig  __attribute__ ((unused))) {
 		}
 		if (!found_watch_idx) {
 			// NOTE: Err, that should (hopefully) never happen!
-			write(STDERR_FILENO, "!! Failed to match the child pid reaped to any of our tracked spawns! !!\n", 73);
+			foo = write(STDERR_FILENO, "!! Failed to match the child pid reaped to any of our tracked spawns! !!\n", 73);
 		}
 		// NOTE: We shouldn't ever lose track of a spawn pid, but we can't safely log what happened (fprintf & co not async-safe), so just mention *something* was reaped...
-		write(STDERR_FILENO, "Reaped a spawned pid.\n", 22);
+		foo = write(STDERR_FILENO, "Reaped a spawned pid.\n", 22);
 		if (WIFEXITED(wstatus)) {
-			write(STDERR_FILENO, "It exited.\n", 11);
+			foo = write(STDERR_FILENO, "It exited.\n", 11);
 		} else if (WIFSIGNALED(wstatus)) {
-			write(STDERR_FILENO, "It was killed by a signal.\n", 27);
+			foo = write(STDERR_FILENO, "It was killed by a signal.\n", 27);
 		}
 		// Reset our pid tracker to announce that we're ready to spawn something new
 		watch_config[watch_idx].last_spawned_pid = 0;
