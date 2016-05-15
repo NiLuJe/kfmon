@@ -259,7 +259,7 @@ static int load_config() {
 	// Let's recap...
 	DBGLOG("Daemon config recap: db_timeout=%d, use_syslog=%d", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_idx, watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_config[watch_idx].do_db_update, watch_config[watch_idx].db_title, watch_config[watch_idx].db_author, watch_config[watch_idx].db_comment);
+		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, skip_db_checks=%d, db_title=%s, db_author=%s, db_comment=%s", watch_idx, watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_config[watch_idx].do_db_update, watch_config[watch_idx].skip_db_checks, watch_config[watch_idx].db_title, watch_config[watch_idx].db_author, watch_config[watch_idx].db_comment);
 	}
 #endif
 
