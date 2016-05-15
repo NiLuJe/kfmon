@@ -68,7 +68,7 @@ Note that these three fields will be cropped at 128 characters.
 # Things to watch out for
 
 KFMon will abort if any of the watched files cannot be found when it starts up.
-KFMon will only parse new config files at boot.
+KFMon will only parse config files at boot.
 
 Meaning you will need to reboot your device after adding new config files or modifying existing ones ;).
 If it's a new config file, try to make sure it points to a file that has already been processed by Nickel (after an USBMS plug/eject session, for instance) to save you some puzzlement ;).
