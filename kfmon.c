@@ -682,7 +682,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// Load our configs
 	if (load_config() == -1) {
-		LOG("Failed to load config!");
+		LOG("Failed to load one or more config files!");
 		exit(EXIT_FAILURE);
 	}
 
