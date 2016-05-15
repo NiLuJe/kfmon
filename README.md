@@ -79,3 +79,5 @@ If it's a new config file, try to make sure it points to a file that has already
 Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
 
 Note that right now, proper interaction with KOReader requires a bleeding-edge version of KOReader (i.e., current nightlies or OTAs, not the stable version).
+
+Right now, KFMon supports a maximum of [16](/kfmon.h#L104) file watches. Ping me if that's not enough for you ;).
