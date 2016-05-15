@@ -93,12 +93,17 @@ clean:
 	rm -rf Debug/kfmon
 	rm -rf Kobo
 
-sqlite:
+sqlite.built:
 	mkdir -p SQLiteBuild
 	cd sqlite && ../sqlite-export/create-fossil-manifest && cd ../SQLiteBuild && ../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && $(MAKE) SHELL_OPT=""
+	touch sqlite.built
+
+release: sqlite.built
+	$(MAKE) strip SQLITE=true
 
 distclean: clean
 	rm -rf SQLiteBuild
 	rm -rf sqlite/manifest sqlite/manifest.uuid
+	rm -rf sqlite.built
 
-.PHONY: all clean default outdir kfmon kobo strip debug niluje nilujed sqlite distclean
+.PHONY: default outdir all kfmon strip kobo debug niluje nilujed clean release distclean
