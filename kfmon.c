@@ -575,6 +575,8 @@ static bool handle_events(int fd)
 						watch_config[watch_idx].last_spawned_pid = spawn(cmd);
 						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (UNBLOCK)");
+						// NOTE: For vscripts returning very quickly, the PID logged *may* be stale since the SIGCHLD handler might actually have done its job *before* us...
+						//	 I prefer keeping this *out* of the critical section to avoid race & deadlock issues with the signal handler...
 						LOG(". . . with pid: %d", watch_config[watch_idx].last_spawned_pid);
 					} else {
 						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
