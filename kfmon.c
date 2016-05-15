@@ -731,6 +731,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				// NOTE: This effectively means we exit when any one of our target file cannot be found, which is not a bad thing, per se...
 				//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
 			}
+			LOG("Setup an inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
 		}
 
 		// Inotify input
