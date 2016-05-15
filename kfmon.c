@@ -536,9 +536,6 @@ static bool handle_events(int fd)
 			bool found_watch_idx = false;
 			for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 				if (watch_config[watch_idx].inotify_wd == event->wd) {
-#ifdef NILUJE
-					LOG("Current inotify event matches watch index: %d", watch_idx);
-#endif
 					found_watch_idx = true;
 					break;
 				}
@@ -634,9 +631,6 @@ void reaper(int sig  __attribute__ ((unused))) {
 		bool found_watch_idx = false;
 		for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 			if (watch_config[watch_idx].last_spawned_pid == cpid) {
-#ifdef NILUJE
-				LOG("Current spawn pid matches watch index: %d", watch_idx);
-#endif
 				found_watch_idx = true;
 				break;
 			}
