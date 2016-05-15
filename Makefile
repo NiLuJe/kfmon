@@ -1,5 +1,5 @@
 # Pickup our cross-toolchains automatically...
-ifdef $(CROSS_TC)
+ifdef CROSS_TC
 	CC=$(CROSS_TC)-gcc
 	STRIP=$(CROSS_TC)-strip
 else
