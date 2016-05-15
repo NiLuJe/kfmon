@@ -53,13 +53,13 @@
 #endif
 
 // Log everything to stderr (which actually points to our logfile)
-#define LOG(fmt, ...) do {									\
+#define LOG(fmt, ...) ({									\
 	if (daemon_config.use_syslog) {								\
 		syslog(LOG_INFO, fmt "\n", ## __VA_ARGS__);					\
 	} else {										\
 		fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);	\
 	}											\
-} while (0)											\
+})											\
 
 // Some extra verbose stuff is relegated to DEBUG builds... (c.f., https://stackoverflow.com/questions/1644868)
 #ifdef DEBUG
@@ -67,11 +67,11 @@
 #else
 #define DEBUG_LOG 0
 #endif
-#define DBGLOG(fmt, ...) do {			\
+#define DBGLOG(fmt, ...) ({			\
 	if (DEBUG_LOG) {			\
 		LOG(fmt, ## __VA_ARGS__);	\
 	}					\
-} while (0)					\
+})					\
 
 // What the daemon config should look like
 typedef struct
@@ -99,7 +99,7 @@ typedef struct
 #define WATCH_MAX 16
 
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
-#define CALL_SQLITE(f) do {				\
+#define CALL_SQLITE(f) ({				\
 	int i;						\
 	i = sqlite3_ ## f;				\
 	if (i != SQLITE_OK) {				\
@@ -107,7 +107,7 @@ typedef struct
 			#f, i, sqlite3_errmsg(db));	\
 		return is_processed;			\
 	}						\
-} while (0)						\
+})						\
 
 static int daemonize(void);
 
