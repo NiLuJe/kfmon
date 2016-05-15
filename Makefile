@@ -40,6 +40,9 @@ EXTRA_CFLAGS+=-Wcast-qual
 EXTRA_CFLAGS+=-Wcast-align
 EXTRA_CFLAGS+=-Wconversion
 
+# A version tag...
+EXTRA_CFLAGS+=-DKFMON_VERSION='"$(shell git describe)"'
+
 # NOTE: Always use as-needed to avoid unecessary DT_NEEDED entries with our funky SQLite linking :)
 LDFLAGS?=-Wl,--as-needed
 

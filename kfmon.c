@@ -658,6 +658,9 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		exit(EXIT_FAILURE);
 	}
 
+	// Say hello :)
+	LOG("Initializing KFMon %s | Built on %s @ %s", KFMON_VERSION,  __DATE__, __TIME__);
+
 	// Keep track of the reaping of our children
 	struct sigaction sa;
 	sa.sa_handler = &reaper;

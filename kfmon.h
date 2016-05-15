@@ -37,6 +37,11 @@
 #include <sqlite3.h>
 #include "inih/ini.h"
 
+// Fallback version tag...
+#ifndef KFMON_VERSION
+#define KFMON_VERSION "v1.0"
+#endif
+
 // Do an ifdef check to allow overriding those at compile-time...
 #ifndef KFMON_TARGET_MOUNTPOINT
 #define KFMON_TARGET_MOUNTPOINT "/mnt/onboard"
