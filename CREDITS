@@ -1,0 +1,9 @@
+This project makes use of a number of third-party libraries, which we'll acknowledge here:
+
+	* SQLite,
+		Released under the public domain.
+		(http://sqlite.org/)
+
+	* inih (INI Not Invented Here), Copyright (c) 2009, Ben Hoyt,
+		Released under the New BSD license (https://opensource.org/licenses/BSD-3-Clause).
+		(https://github.com/benhoyt/inih)

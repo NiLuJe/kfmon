@@ -1,6 +1,9 @@
 # KFMon
 Kute File Monitor
 
+Licensed under the [AGPLv3](/LICENSE).
+https://github.com/NiLuJe/kfmon
+
 # What's it for?
 
 This is intended as an improvement over [Sergey](https://github.com/sergeyvl/vlasovsoft/tree/master/fmon)'s [Kobo File Monitor](http://www.mobileread.com/forums/showthread.php?t=218283). If you're unfamiliar with fmon, it basically launches a specific action when you open a specific book on your Kobo, thanks to Linux's ```inotify``` API. Usually, a single PNG file is used as the "trigger" book.
