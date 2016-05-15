@@ -317,6 +317,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	// NOTE: The defaults timings (steps of 450ms) appear to work reasonably well on my H2O with a 50MB Nickel DB... (i.e., it trips on OPEN when Nickel is moderately busy, but if everything's quiet, we're good).
 	//	 Time will tell if that's a good middle-ground or not ;). This is user configurable in kfmon.ini (db_timeout key).
 	sqlite3_busy_timeout(db, daemon_config.db_timeout * (wait_for_db + 1));
+	DBGLOG("SQLite busy timeout set to %dms", daemon_config.db_timeout * (wait_for_db + 1));
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
 	CALL_SQLITE(prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
