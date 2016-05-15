@@ -183,6 +183,10 @@ static int watch_handler(void *user, const char *section, const char *key, const
 		strncpy(pconfig->action, value, PATH_MAX-1);
 	} else if (MATCH("watch", "do_db_update")) {
 		pconfig->do_db_update = atoi(value);
+#ifdef NILUJE
+	} else if (MATCH("watch", "skip_db_checks")) {
+		pconfig->skip_db_checks = atoi(value);
+#endif
 	} else if (MATCH("watch", "db_title")) {
 		strncpy(pconfig->db_title, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_author")) {
@@ -289,6 +293,12 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	int idx;
 	bool is_processed = false;
 	bool needs_update = false;
+
+#ifdef NILUJE
+	// Bypass DB checks on demand for debugging purposes...
+	if(watch_config[watch_idx].skip_db_checks)
+		return true;
+#endif
 
 	// Did the user want to try to update the DB for this icon?
 	bool update = watch_config[watch_idx].do_db_update;

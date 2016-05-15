@@ -76,6 +76,9 @@ typedef struct
 	char filename[PATH_MAX];
 	char action[PATH_MAX];
 	bool do_db_update;
+#ifdef NILUJE
+	bool skip_db_checks;
+#endif
 	char db_title[DB_SZ_MAX];
 	char db_author[DB_SZ_MAX];
 	char db_comment[DB_SZ_MAX];
