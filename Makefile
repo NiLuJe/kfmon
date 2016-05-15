@@ -63,7 +63,7 @@ kfmon: $(OBJS)
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(LIBS)
 
 strip: all
-	$(STRIP) $(STRIP_OPTS) $(OUT_DIR)/kfmon
+	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon
 
 kobo: release
 	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard/.kobo Kobo/etc/udev/rules.d Kobo/mnt/onboard/.adds/kfmon/config
