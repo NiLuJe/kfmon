@@ -3,7 +3,7 @@ Kute File Monitor
 
 # What's it for?
 
-This is intended as an improvement over [Sergey](https://github.com/sergeyvl/vlasovsoft/tree/master/fmon)'s [Kobo File Monitor](http://www.mobileread.com/forums/showthread.php?t=218283). If you're unfamiliar with fmon, it basically launches a specific action when you open a specific Book on your Kobo, thanks to Linux's ```inotify``` API. Usually, a single PNG file is used as the "trigger" book.
+This is intended as an improvement over [Sergey](https://github.com/sergeyvl/vlasovsoft/tree/master/fmon)'s [Kobo File Monitor](http://www.mobileread.com/forums/showthread.php?t=218283). If you're unfamiliar with fmon, it basically launches a specific action when you open a specific book on your Kobo, thanks to Linux's ```inotify``` API. Usually, a single PNG file is used as the "trigger" book.
 
 The original fmon does zero sanity checking, and, given the intricacies of how Nickel actually processes books, it might trigger an action *before* the trigger file has successfully been processed by Nickel. Depending on the action in question, this might lead to fun boot loops or other weirdness ;).
 
@@ -19,16 +19,16 @@ It's also integrated in the Kobo boot process in an unobtrusive manner (an udev 
 
 First, if you're currently using fmon, it might be a good idea to uninstall it first ;).
 Then, head over to the [dedicated MobileRead thread](TODO), and simply unpack the ZIP archive to the USB root of your Kobo when it's plugged to a computer.
-The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276) if it is already installed, as well as a KoboRoot.tgz which will actually install KFMon itself.
+The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276) if it is already installed, as well as a ```KoboRoot.tgz``` which will actually install KFMon itself.
 This ensures that the KOReader PNG file will first be processed by Nickel before the KoboRoot package triggers a reboot for installation.
 
 # How can I tinker with it?
 
 The config files are stored in the */mnt/onboard/*__.adds/kfmon/config__ folder.
 
-KFMon itself has a dedicated config file, [kfmon.ini](/NiLuJe/kfmon/blob/master/config/kfmon.ini), with two knobs:
+KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with two knobs:
 
-```db_timeout = 450```, which sets the maximum amount of time in ms we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
+```db_timeout = 450```, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
 This default value (450ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.
 You can confirm KFMon's behavior by checking its log, which we'll come to presently.
 
@@ -36,7 +36,7 @@ You can confirm KFMon's behavior by checking its log, which we'll come to presen
 
 # How can I add my own actions?
 
-Each action gets a [dedicated INI file](/NiLuJe/kfmon/blob/master/config/koreader.ini) in the config folder, so just drop a new .ini in the config folder.
+Each action gets a [dedicated INI file](/config/koreader.ini) in the config folder, so just drop a new ```.ini``` in the config folder.
 This should make it trivial to port existing fmon setups.
 As you would expect, a simple file/action pair only requires two entries:
 
@@ -51,7 +51,7 @@ In addition to that, you can try to do some cool stuff with the Nickel database:
 This is disabled by default, because ninja writing to the database behind Nickel's back *might* upset Nickel...
 If you want to try it, you will have to first enable this knob:
 
-```do_db_update = 0``` (i.e., set it to 1).
+```do_db_update = 1```
 
 And you will have to set *all three* of the following key/value pairs:
 
@@ -59,7 +59,7 @@ And you will have to set *all three* of the following key/value pairs:
 
 ```db_author = An Awesome Team```, which sets the Author of your "book" in the Library.
 
-```db_comment = A cool app that does neat stuff made by an awesome team.```, which sets the Comment show in the "Details" panel of the "book' in the Library.
+```db_comment = A cool app that does neat stuff made by an awesome team.```, which sets the Comment shown in the "Details" panel of the "book" in the Library.
 
 Note that these three fields will be cropped at 128 characters.
 
