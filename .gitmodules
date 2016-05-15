@@ -1,3 +1,9 @@
 [submodule "inih"]
 	path = inih
 	url = https://github.com/benhoyt/inih.git
+[submodule "sqlite-export"]
+	path = sqlite-export
+	url = git://repo.or.cz/sqlite-export.git
+[submodule "sqlite"]
+	path = sqlite
+	url = git://repo.or.cz/sqlite.git
