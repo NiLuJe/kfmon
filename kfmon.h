@@ -83,7 +83,7 @@ typedef struct
 	char db_author[DB_SZ_MAX];
 	char db_comment[DB_SZ_MAX];
 	int inotify_wd;
-	pid_t last_spawned_pid;
+	volatile sig_atomic_t last_spawned_pid;
 } WatchConfig;
 
 // Hardcode the max amount of watches we handle

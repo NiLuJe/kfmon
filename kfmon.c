@@ -577,9 +577,9 @@ static bool handle_events(int fd)
 						if (sigprocmask(SIG_BLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (BLOCK)");
 						watch_config[watch_idx].last_spawned_pid = spawn(cmd);
-						LOG(". . . with pid: %d", watch_config[watch_idx].last_spawned_pid);
 						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1)
 							perror("[KFMon] sigprocmask (UNBLOCK)");
+						LOG(". . . with pid: %d", watch_config[watch_idx].last_spawned_pid);
 					} else {
 						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
@@ -637,14 +637,14 @@ void reaper(int sig  __attribute__ ((unused))) {
 		}
 		if (!found_watch_idx) {
 			// NOTE: Err, that should (hopefully) never happen!
-			LOG("!! Failed to match the child pid reaped to any of our tracked spawns! !!");
+			write(STDERR_FILENO, "!! Failed to match the child pid reaped to any of our tracked spawns! !!\n", 73);
 		}
-		// NOTE: We shouldn't ever lose track of a spawn pid, but log what happened just in case...
-		LOG("Reaped our last spawn (reaped pid %d for watch index %d)", cpid, watch_idx);
+		// NOTE: We shouldn't ever lose track of a spawn pid, but we can't safely log what happened (fprintf & co not async-safe), so just mention *something* was reaped...
+		write(STDERR_FILENO, "Reaped a spawned pid.\n", 22);
 		if (WIFEXITED(wstatus)) {
-			LOG("It exited with status %d", WEXITSTATUS(wstatus));
+			write(STDERR_FILENO, "It exited.\n", 11);
 		} else if (WIFSIGNALED(wstatus)) {
-			LOG("It was killed by signal %d", WTERMSIG(wstatus));
+			write(STDERR_FILENO, "It was killed by a signal.\n", 27);
 		}
 		// Reset our pid tracker to announce that we're ready to spawn something new
 		watch_config[watch_idx].last_spawned_pid = 0;
