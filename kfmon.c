@@ -752,7 +752,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			if (poll_num > 0) {
 				if (pfd.revents & POLLIN) {
 					// Inotify events are available
-					if (handle_events(fd))
+					if (handle_events(fd)) {
 						// Go back to the main loop if we exited early (because a watch was destroyed automatically after an unmount or an unlink, for instance)
 						// But before we do that, make sure we've removed *all* of our watches first, since we'll be setting them up all again...
 						for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
@@ -765,6 +765,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 							}
 						}
 						break;
+					}
 				}
 			}
 		}
