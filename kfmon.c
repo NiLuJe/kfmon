@@ -643,7 +643,7 @@ static bool handle_events(int fd)
 						}
 					}
 				} else {
-					// Reset the flag to avoid false-positives on the next entry...
+					// Reset the flag to avoid false-positives on the next iteration of the loop, since we re-use the array's content.
 					watch_config[watch_idx].wd_was_destroyed = false;
 				}
 			}
