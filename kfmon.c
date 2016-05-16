@@ -58,7 +58,7 @@ static int daemonize(void)
 		if (fd > 2)
 			close (fd);
 	} else {
-		fprintf(stderr, "Failed to redirect stdint & stdout to /dev/null\n");
+		fprintf(stderr, "Failed to redirect stdin & stdout to /dev/null\n");
 		return -1;
 	}
 
@@ -94,7 +94,7 @@ char *get_current_time(void)
 	lt = localtime(&t);
 
 	// Needs to be static to avoid dealing with painful memory handling...
-	static char sz_time[24];
+	static char sz_time[22];
 	strftime(sz_time, sizeof(sz_time), "%Y-%m-%d @ %H:%M:%S", lt);
 
 	return sz_time;
@@ -211,6 +211,7 @@ static int load_config() {
 	char *cfg_path[] = {KFMON_CONFIGPATH, NULL};
 	int rval = 0;
 
+	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) == NULL) {
 		perror("[KFMon] fts_open");
 		return -1;
@@ -484,6 +485,7 @@ static pid_t spawn(char **command)
 	else if (pid == 0) {
 		// Sweet child o' mine!
 		execvp(*command, command);
+		// This will only ever be reached on error, hence the lack of actual return value check ;).
 		perror("[KFMon] execvp");
 		exit(EXIT_FAILURE);
 	}
@@ -597,19 +599,14 @@ static bool handle_events(int fd)
 				if (event->len) {
 					LOG("Huh oh... Tripped IN_Q_OVERFLOW for %s", event->name);
 				} else {
-					LOG("Huh oh... Tripped IN_Q_OVERFLOW");
+					LOG("Huh oh... Tripped IN_Q_OVERFLOW for... something?");
 				}
-				// Destroy our only watch, and break the loop
-				if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1)
-				{
-					// That's too bad, but may not be fatal, so warn only...
-					perror("[KFMon] inotify_rm_watch");
-				}
+				// Break the loop, we'll try to remove all our inotify watches later...
 				destroyed_wd = true;
 			}
 		}
 
-		// If we caught an event indicating that the watch was automatically destroyed, break the loop.
+		// If we caught an event indicating that a watch was automatically destroyed, break the loop.
 		if (destroyed_wd)
 			break;
 	}
@@ -756,7 +753,17 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				if (pfd.revents & POLLIN) {
 					// Inotify events are available
 					if (handle_events(fd))
-						// Go back to the main loop if we exited early (because the watch was destroyed automatically after an unmount or an unlink, for instance)
+						// Go back to the main loop if we exited early (because a watch was destroyed automatically after an unmount or an unlink, for instance)
+						// But before we do that, make sure we've removed *all* of our watches first, since we'll be setting them up all again...
+						for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+							// Log what we're doing...
+							LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+							if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1)
+							{
+								// That's too bad, but may not be fatal, so warn only...
+								perror("[KFMon] inotify_rm_watch");
+							}
+						}
 						break;
 				}
 			}
