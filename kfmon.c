@@ -515,6 +515,7 @@ static bool handle_events(int fd)
 	ssize_t len;
 	char *ptr;
 	bool destroyed_wd = false;
+	bool was_unmounted = false;
 	static bool pending_processing = false;
 
 	// Loop while events can be read from inotify file descriptor.
@@ -601,6 +602,8 @@ static bool handle_events(int fd)
 			}
 			if (event->mask & IN_UNMOUNT) {
 				LOG("Tripped IN_UNMOUNT for %s", watch_config[watch_idx].filename);
+				// Remember that we ate an unmount, so we don't try to manually remove watches that are already gone...
+				was_unmounted = true;
 			}
 			if (event->mask & IN_IGNORED) {
 				LOG("Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
@@ -630,12 +633,14 @@ static bool handle_events(int fd)
 			// But before we do that, make sure we've removed *all* our *other* watches first (again, hoping matching was successful), since we'll be setting them up all again...
 			for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 				if (!watch_config[watch_idx].wd_was_destroyed) {
-					// Log what we're doing...
-					LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
-					if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
-						// Depending on how many events we parsed at once, we might be trying to remove watches that are already gone, but that we haven't yet flagged as such (i.e., an unmount)
-						// So, this warning might trip a lot of false-positives...
-						perror("[KFMon] inotify_rm_watch");
+					// Don't do anything if that was because of an unmount... Because that assures us that everything's gone, even if we didn't get to parse all the events in one go.
+					if (!was_unmounted) {
+						// Log what we're doing...
+						LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+						if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
+							// That's too bad, but may not be fatal, so warn only...
+							perror("[KFMon] inotify_rm_watch");
+						}
 					}
 				} else {
 					// Reset the flag to avoid false-positives on the next entry...
