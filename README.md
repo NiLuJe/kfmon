@@ -16,6 +16,8 @@ On top of that, we have a few extra features: instead of launching one instance 
 
 It's also integrated in the Kobo boot process in an unobtrusive manner (an udev hook), unlike fmon (which modifies a startup script).
 
+And it also properly persists across unmounts & remounts (like during an USBMS export).
+
 **IMPORTANT NOTE**: Some of these checks requires a decently recent enough Nickel version. Make sure you're running a firmware version equal to or newer than 2.9.0!
 
 # How do I install this?
@@ -73,8 +75,10 @@ Note that these three fields will be cropped at 128 characters.
 KFMon will abort if any of the watched files cannot be found when it starts up.
 KFMon will only parse config files at boot.
 
-Meaning you will need to reboot your device after adding new config files or modifying existing ones ;).
+Meaning you will need to reboot your device after adding new config files or modifying or removing existing ones ;).
 If it's a new config file, try to make sure it points to a file that has already been processed by Nickel (after an USBMS plug/eject session, for instance) to save you some puzzlement ;).
+
+If you delete one of the files being watched, don't forget to delete the matching config file, and then to reboot your device!
 
 Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
 
