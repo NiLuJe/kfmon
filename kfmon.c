@@ -633,7 +633,8 @@ static bool handle_events(int fd)
 					// Log what we're doing...
 					LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
 					if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
-						// That's too bad, but may not be fatal, so warn only...
+						// Depending on how many events we parsed at once, we might be trying to remove watches that are already gone, but that we haven't yet flagged as such (i.e., an unmount)
+						// So, this warning might trip a lot of false-positives...
 						perror("[KFMon] inotify_rm_watch");
 					}
 				} else {
