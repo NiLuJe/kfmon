@@ -32,8 +32,9 @@ static int daemonize(void)
 			_exit(0);
 	}
 
-	if (setsid() == -1)
+	if (setsid() == -1) {
 		return -1;
+	}
 
 	// Double fork, for... reasons!
 	signal(SIGHUP, SIG_IGN);
@@ -46,8 +47,9 @@ static int daemonize(void)
 			_exit(0);
 	}
 
-	if (chdir("/") == -1)
+	if (chdir("/") == -1) {
 		return -1;
+	}
 
 	umask(0);
 
@@ -55,8 +57,9 @@ static int daemonize(void)
 	if ((fd = open("/dev/null", O_RDWR)) != -1) {
 		dup2(fd, fileno(stdin));
 		dup2(fd, fileno(stdout));
-		if (fd > 2)
+		if (fd > 2) {
 			close (fd);
+		}
 	} else {
 		fprintf(stderr, "Failed to redirect stdin & stdout to /dev/null\n");
 		return -1;
@@ -68,13 +71,15 @@ static int daemonize(void)
 	struct stat st;
 	if ((stat(KFMON_LOGFILE, &st) == 0) && (S_ISREG(st.st_mode))) {
 		// Truncate if > 1MB
-		if (st.st_size > 1*1024*1024)
+		if (st.st_size > 1*1024*1024) {
 			flags |= O_TRUNC;
+		}
 	}
 	if ((fd = open(KFMON_LOGFILE, flags, 0600)) != -1) {
 		dup2(fd, fileno(stderr));
-		if (fd > 2)
+		if (fd > 2) {
 			close (fd);
+		}
 	} else {
 		fprintf(stderr, "Failed to redirect stderr to logfile '%s'\n", KFMON_LOGFILE);
 		return -1;
@@ -333,8 +338,9 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
 		DBGLOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
-		if (sqlite3_column_int(stmt, 0) == 1)
+		if (sqlite3_column_int(stmt, 0) == 1) {
 			is_processed = true;
+		}
 	}
 
 	sqlite3_finalize(stmt);
@@ -401,8 +407,9 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 			}
 
 			// Only give a greenlight if we got all three!
-			if (thumbnails_num >= 3)
+			if (thumbnails_num >= 3) {
 				is_processed = true;
+			}
 		}
 
 		sqlite3_finalize(stmt);
@@ -421,8 +428,9 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			DBGLOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
-			if (strcmp((const char *)sqlite3_column_text(stmt, 0), watch_config[watch_idx].db_title) != 0)
+			if (strcmp((const char *)sqlite3_column_text(stmt, 0), watch_config[watch_idx].db_title) != 0) {
 				needs_update = true;
+			}
 		}
 
 		sqlite3_finalize(stmt);
@@ -480,9 +488,9 @@ static pid_t spawn(char **command)
 
 	pid = fork();
 
-	if (pid < 0)
+	if (pid < 0) {
 		return pid;
-	else if (pid == 0) {
+	} else if (pid == 0) {
 		// Sweet child o' mine!
 		execvp(*command, command);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
@@ -521,8 +529,9 @@ static bool handle_events(int fd)
 		/* If the nonblocking read() found no events to read, then
 		   it returns -1 with errno set to EAGAIN. In that case,
 		   we exit the loop. */
-		if (len <= 0)
+		if (len <= 0) {
 			break;
+		}
 
 		// Loop over all events in the buffer
 		for (ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
@@ -572,11 +581,13 @@ static bool handle_events(int fd)
 						sigset_t sigset;
 						sigemptyset (&sigset);
 						sigaddset(&sigset, SIGCHLD);
-						if (sigprocmask(SIG_BLOCK, &sigset, NULL) == -1)
+						if (sigprocmask(SIG_BLOCK, &sigset, NULL) == -1) {
 							perror("[KFMon] sigprocmask (BLOCK)");
+						}
 						watch_config[watch_idx].last_spawned_pid = spawn(cmd);
-						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1)
+						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1) {
 							perror("[KFMon] sigprocmask (UNBLOCK)");
+						}
 						// NOTE: For actions returning very quickly, the PID logged *may* be stale since the SIGCHLD handler might actually have done its job *before* us...
 						//	 I prefer keeping this *out* of the critical section to avoid race & deadlock issues with the signal handler...
 						LOG(". . . with pid: %d", watch_config[watch_idx].last_spawned_pid);
@@ -588,8 +599,9 @@ static bool handle_events(int fd)
 					LOG("Our last spawn (%d) is still alive!", watch_config[watch_idx].last_spawned_pid);
 				}
 			}
-			if (event->mask & IN_UNMOUNT)
+			if (event->mask & IN_UNMOUNT) {
 				LOG("Tripped IN_UNMOUNT for %s", watch_config[watch_idx].filename);
+			}
 			if (event->mask & IN_IGNORED) {
 				LOG("Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
 				// Remember that the watch was automatically destroyed so we can break from the loop...
@@ -607,8 +619,9 @@ static bool handle_events(int fd)
 		}
 
 		// If we caught an event indicating that a watch was automatically destroyed, break the loop.
-		if (destroyed_wd)
+		if (destroyed_wd) {
 			break;
+		}
 	}
 
 	// And we have another outer loop to break, so pass that on...
@@ -690,8 +703,9 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		// Redirect stderr (which is now actually our log file) to /dev/null
 		if ((fd = open("/dev/null", O_RDWR)) != -1) {
 			dup2(fd, fileno(stderr));
-			if (fd > 2)
+			if (fd > 2) {
 				close (fd);
+			}
 		} else {
 			fprintf(stderr, "Failed to redirect stderr to /dev/null\n");
 			return -1;
@@ -743,8 +757,9 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		while (1) {
 			poll_num = poll(&pfd, 1, -1);
 			if (poll_num == -1) {
-				if (errno == EINTR)
+				if (errno == EINTR) {
 					continue;
+				}
 				perror("[KFMon] poll");
 				exit(EXIT_FAILURE);
 			}
@@ -758,8 +773,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 						for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 							// Log what we're doing...
 							LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
-							if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1)
-							{
+							if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
 								// That's too bad, but may not be fatal, so warn only...
 								perror("[KFMon] inotify_rm_watch");
 							}
