@@ -39,7 +39,7 @@
 
 // Fallback version tag...
 #ifndef KFMON_VERSION
-#define KFMON_VERSION "v1.0"
+#define KFMON_VERSION "v0.9"
 #endif
 
 // Do an ifdef check to allow overriding those at compile-time...
@@ -64,7 +64,7 @@
 	} else {										\
 		fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);	\
 	}											\
-})											\
+})												\
 
 // Some extra verbose stuff is relegated to DEBUG builds... (c.f., https://stackoverflow.com/questions/1644868)
 #ifdef DEBUG
@@ -76,7 +76,7 @@
 	if (DEBUG_LOG) {			\
 		LOG(fmt, ## __VA_ARGS__);	\
 	}					\
-})					\
+})						\
 
 // What the daemon config should look like
 typedef struct
@@ -112,7 +112,7 @@ typedef struct
 			#f, i, sqlite3_errmsg(db));	\
 		return is_processed;			\
 	}						\
-})						\
+})							\
 
 static int daemonize(void);
 
