@@ -613,13 +613,29 @@ static bool handle_events(int fd)
 				} else {
 					LOG("Huh oh... Tripped IN_Q_OVERFLOW for... something?");
 				}
-				// Break the loop, we'll try to remove all our inotify watches later...
+				// Try to remove the inotify watch we matched (... hoping matching actually was succesful), and break the loop.
+				LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+				if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
+					// That's too bad, but may not be fatal, so warn only...
+					perror("[KFMon] inotify_rm_watch");
+				}
 				destroyed_wd = true;
 			}
 		}
 
 		// If we caught an event indicating that a watch was automatically destroyed, break the loop.
 		if (destroyed_wd) {
+			// But before we do that, make sure we've removed *all* our *other* watches first (again, hoping matching was successful), since we'll be setting them up all again...
+			for (unsigned int wd_idx = 0; wd_idx < watch_count; wd_idx++) {
+				if (wd_idx != watch_idx) {
+					// Log what we're doing...
+					LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[wd_idx].filename, wd_idx);
+					if (inotify_rm_watch(fd, watch_config[wd_idx].inotify_wd) == -1) {
+						// That's too bad, but may not be fatal, so warn only...
+						perror("[KFMon] inotify_rm_watch");
+					}
+				}
+			}
 			break;
 		}
 	}
@@ -769,15 +785,6 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 					// Inotify events are available
 					if (handle_events(fd)) {
 						// Go back to the main loop if we exited early (because a watch was destroyed automatically after an unmount or an unlink, for instance)
-						// But before we do that, make sure we've removed *all* of our watches first, since we'll be setting them up all again...
-						for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-							// Log what we're doing...
-							LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
-							if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
-								// That's too bad, but may not be fatal, so warn only...
-								perror("[KFMon] inotify_rm_watch");
-							}
-						}
 						break;
 					}
 				}
