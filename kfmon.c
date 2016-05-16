@@ -606,6 +606,7 @@ static bool handle_events(int fd)
 				LOG("Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
 				// Remember that the watch was automatically destroyed so we can break from the loop...
 				destroyed_wd = true;
+				watch_config[watch_idx].wd_was_destroyed = true;
 			}
 			if (event->mask & IN_Q_OVERFLOW) {
 				if (event->len) {
@@ -620,17 +621,18 @@ static bool handle_events(int fd)
 					perror("[KFMon] inotify_rm_watch");
 				}
 				destroyed_wd = true;
+				watch_config[watch_idx].wd_was_destroyed = true;
 			}
 		}
 
 		// If we caught an event indicating that a watch was automatically destroyed, break the loop.
 		if (destroyed_wd) {
 			// But before we do that, make sure we've removed *all* our *other* watches first (again, hoping matching was successful), since we'll be setting them up all again...
-			for (unsigned int wd_idx = 0; wd_idx < watch_count; wd_idx++) {
-				if (wd_idx != watch_idx) {
+			for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+				if (!watch_config[watch_idx].wd_was_destroyed) {
 					// Log what we're doing...
-					LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[wd_idx].filename, wd_idx);
-					if (inotify_rm_watch(fd, watch_config[wd_idx].inotify_wd) == -1) {
+					LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+					if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
 						// That's too bad, but may not be fatal, so warn only...
 						perror("[KFMon] inotify_rm_watch");
 					}

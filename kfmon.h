@@ -97,6 +97,7 @@ typedef struct
 	char db_author[DB_SZ_MAX];
 	char db_comment[DB_SZ_MAX];
 	int inotify_wd;
+	bool wd_was_destroyed;
 	volatile sig_atomic_t last_spawned_pid;
 } WatchConfig;
 
