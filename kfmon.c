@@ -636,6 +636,9 @@ static bool handle_events(int fd)
 						// That's too bad, but may not be fatal, so warn only...
 						perror("[KFMon] inotify_rm_watch");
 					}
+				} else {
+					// Reset the flag to avoid false-positives on the next entry...
+					watch_config[watch_idx].wd_was_destroyed = false;
 				}
 			}
 			break;
