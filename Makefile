@@ -109,7 +109,11 @@ clean:
 
 sqlite.built:
 	mkdir -p SQLiteBuild
-	cd sqlite && ../sqlite-export/create-fossil-manifest && cd ../SQLiteBuild && ../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && $(MAKE) SHELL_OPT=""
+	cd sqlite && \
+	../sqlite-export/create-fossil-manifest && \
+	cd ../SQLiteBuild && \
+	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && \
+	$(MAKE) SHELL_OPT=""
 	touch sqlite.built
 
 release: sqlite.built
