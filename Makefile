@@ -48,7 +48,8 @@ EXTRA_CFLAGS+=-Wcast-align
 EXTRA_CFLAGS+=-Wconversion
 
 # A version tag...
-EXTRA_CFLAGS+=-DKFMON_VERSION='"$(shell git describe)"'
+KFMON_VERSION=$(shell git describe)
+EXTRA_CFLAGS+=-DKFMON_VERSION='"$(KFMON_VERSION)"'
 
 # NOTE: Always use as-needed to avoid unecessary DT_NEEDED entries with our funky SQLite linking :)
 LDFLAGS?=-Wl,--as-needed
@@ -87,7 +88,7 @@ kobo: release
 	ln -sf $(CURDIR)/Kobo/KoboRoot.tgz Kobo/mnt/onboard/.kobo/KoboRoot.tgz
 	ln -sf $(CURDIR)/config/kfmon.ini Kobo/mnt/onboard/.adds/kfmon/config/kfmon.ini
 	ln -sf $(CURDIR)/config/koreader.ini Kobo/mnt/onboard/.adds/kfmon/config/koreader.ini
-	cd Kobo/mnt/onboard && zip -r ../../KFMon.zip . && cd ../../..
+	cd Kobo/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && cd ../../..
 
 debug:
 	$(MAKE) all DEBUG=true
