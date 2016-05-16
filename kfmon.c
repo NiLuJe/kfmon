@@ -602,7 +602,7 @@ static bool handle_events(int fd)
 			}
 			if (event->mask & IN_UNMOUNT) {
 				LOG("Tripped IN_UNMOUNT for %s", watch_config[watch_idx].filename);
-				// Remember that we ate an unmount, so we don't try to manually remove watches that are already gone...
+				// Remember that we encountered an unmount, so we don't try to manually remove watches that are already gone...
 				was_unmounted = true;
 			}
 			if (event->mask & IN_IGNORED) {
@@ -630,10 +630,10 @@ static bool handle_events(int fd)
 
 		// If we caught an event indicating that a watch was automatically destroyed, break the loop.
 		if (destroyed_wd) {
-			// But before we do that, make sure we've removed *all* our *other* watches first (again, hoping matching was successful), since we'll be setting them up all again...
+			// But before we do that, make sure we've removed *all* our *other* watches first (again, hoping matching was successful), since we'll be setting them up all again later...
 			for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 				if (!watch_config[watch_idx].wd_was_destroyed) {
-					// Don't do anything if that was because of an unmount... Because that assures us that everything's gone, even if we didn't get to parse all the events in one go.
+					// Don't do anything if that was because of an unmount... Because that assures us that everything's gone (since by design, we're sure all our target files live on the same mountpoint), even if we didn't get to parse all the events in one go to flag them as destroyed one by one.
 					if (!was_unmounted) {
 						// Log what we're doing...
 						LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
