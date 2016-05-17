@@ -23,7 +23,7 @@ And it also properly persists across unmounts & remounts (like during an USBMS e
 # How do I install this?
 
 First, if you're currently using fmon, it might be a good idea to uninstall it first ;).
-Then, head over to the [dedicated MobileRead thread](TODO), and simply unpack the ZIP archive to the USB root of your Kobo when it's plugged to a computer.
+Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/forums/showthread.php?t=274231), and simply unpack the ZIP archive to the USB root of your Kobo when it's plugged to a computer.
 The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276) if it is already installed, as well as a ```KoboRoot.tgz``` which will actually install KFMon itself.
 This ensures that the KOReader PNG file will first be processed by Nickel before the KoboRoot package triggers a reboot for installation.
 
