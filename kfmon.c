@@ -492,7 +492,7 @@ static pid_t spawn(char **command)
 		return pid;
 	} else if (pid == 0) {
 		// Sweet child o' mine!
-		execvp(*command, command);
+		execvp(*command, command);	// FIXME: Use execvpe() with a minimal env? (PWD=/ & PATH=/sbin:/usr/sbin:/bin:/usr/bin). Last resort: install fmon and check its env...
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
 		perror("[KFMon] execvp");
 		exit(EXIT_FAILURE);
