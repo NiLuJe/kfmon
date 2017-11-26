@@ -577,10 +577,10 @@ static bool handle_events(int fd)
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
 						LOG("Spawning %s . . .", watch_config[watch_idx].action);
-						// We're using execvp()...
+						// We're using execvpe()...
 						char *cmd[] = {watch_config[watch_idx].action, NULL};
-						// NOTE: Block our SIGCHLD handler until execvp() actually returns, to make sure it'll have an up-to-date last_spawned_pid
-						//	 Avoids races if execvp() returns really fast, which is not that uncommon for simple shell scripts.
+						// NOTE: Block our SIGCHLD handler until execvpe() actually returns, to make sure it'll have an up-to-date last_spawned_pid
+						//	 Avoids races if execvpe() returns really fast, which is not that uncommon for simple shell scripts.
 						sigset_t sigset;
 						sigemptyset (&sigset);
 						sigaddset(&sigset, SIGCHLD);
