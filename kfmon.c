@@ -329,8 +329,8 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	CALL_SQLITE(prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
 
 	// Append the proper URI scheme to our icon path...
-	char book_path[PATH_MAX];
-	snprintf(book_path, PATH_MAX, "file://%s", watch_config[watch_idx].filename);
+	char book_path[PATH_MAX+7];
+	snprintf(book_path, PATH_MAX+7, "file://%s", watch_config[watch_idx].filename);
 
 	idx = sqlite3_bind_parameter_index(stmt, "@id");
 	CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
@@ -492,9 +492,11 @@ static pid_t spawn(char **command)
 		return pid;
 	} else if (pid == 0) {
 		// Sweet child o' mine!
-		execvp(*command, command);	// FIXME: Use execvpe() with a minimal env? (PWD=/ & PATH=/sbin:/usr/sbin:/bin:/usr/bin). Last resort: install fmon and check its env...
+		// NOTE: Always use a barebones env, to see if that helps avoid Nickel getting its panties in a twist...
+		char *const envp[] = {"PWD=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL};	// FIXME: Last resort: install fmon and check its env...
+		execvpe(*command, command, envp);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
-		perror("[KFMon] execvp");
+		perror("[KFMon] execvpe");
 		exit(EXIT_FAILURE);
 	}
 	// We have a shiny SIGCHLD handler to reap this process when it dies, so we're done here.
