@@ -1,6 +1,6 @@
 /*
 	KFMon: Kobo inotify-based launcher
-	Copyright (C) 2016 NiLuJe <ninuje@gmail.com>
+	Copyright (C) 2016-2017 NiLuJe <ninuje@gmail.com>
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as
@@ -139,7 +139,7 @@ WatchConfig watch_config[WATCH_MAX] = {0};
 static unsigned int qhash(const unsigned char *, size_t);
 static bool is_target_processed(unsigned int, bool);
 
-static pid_t spawn(char **);
+static pid_t spawn(char *const *);
 void reaper(int);
 
 static bool handle_events(int);

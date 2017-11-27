@@ -1,6 +1,6 @@
 /*
 	KFMon: Kobo inotify-based launcher
-	Copyright (C) 2016 NiLuJe <ninuje@gmail.com>
+	Copyright (C) 2016-2017 NiLuJe <ninuje@gmail.com>
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as
@@ -213,7 +213,7 @@ static int load_config() {
 	FTS *ftsp;
 	FTSENT *p, *chp;
 	// We only need to walk a single directory...
-	char *cfg_path[] = {KFMON_CONFIGPATH, NULL};
+	char *const cfg_path[] = {KFMON_CONFIGPATH, NULL};
 	int rval = 0;
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
@@ -256,7 +256,16 @@ static int load_config() {
 							// Flag as a failure...
 							rval = -1;
 						}
-						LOG("Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s", watch_count, p->fts_name, watch_config[watch_count].filename, watch_config[watch_count].action, watch_config[watch_count].do_db_update, watch_config[watch_count].db_title, watch_config[watch_count].db_author, watch_config[watch_count].db_comment);
+						LOG("Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+							watch_count,
+							p->fts_name,
+							watch_config[watch_count].filename,
+							watch_config[watch_count].action,
+							watch_config[watch_count].do_db_update,
+							watch_config[watch_count].db_title,
+							watch_config[watch_count].db_author,
+							watch_config[watch_count].db_comment
+						);
 						// Switch to the next slot!
 						watch_count++;
 					}
@@ -272,7 +281,16 @@ static int load_config() {
 	// Let's recap...
 	DBGLOG("Daemon config recap: db_timeout=%d, use_syslog=%d", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, skip_db_checks=%d, db_title=%s, db_author=%s, db_comment=%s", watch_idx, watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_config[watch_idx].do_db_update, watch_config[watch_idx].skip_db_checks, watch_config[watch_idx].db_title, watch_config[watch_idx].db_author, watch_config[watch_idx].db_comment);
+		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, skip_db_checks=%d, db_title=%s, db_author=%s, db_comment=%s",
+			watch_idx,
+			watch_config[watch_idx].filename,
+			watch_config[watch_idx].action,
+			watch_config[watch_idx].do_db_update,
+			watch_config[watch_idx].skip_db_checks,
+			watch_config[watch_idx].db_title,
+			watch_config[watch_idx].db_author,
+			watch_config[watch_idx].db_comment
+		);
 	}
 #endif
 
@@ -482,7 +500,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 /* Spawn a process and return its pid...
  * Massively inspired from popen2() implementations from https://stackoverflow.com/questions/548063
  * Except that getting that pid is all I care about, so forget about the popen-like piping ;). */
-static pid_t spawn(char **command)
+static pid_t spawn(char *const *command)
 {
 	pid_t pid;
 
@@ -578,7 +596,7 @@ static bool handle_events(int fd)
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
 						LOG("Spawning %s . . .", watch_config[watch_idx].action);
 						// We're using execvpe()...
-						char *cmd[] = {watch_config[watch_idx].action, NULL};
+						char *const cmd[] = {watch_config[watch_idx].action, NULL};
 						// NOTE: Block our SIGCHLD handler until execvpe() actually returns, to make sure it'll have an up-to-date last_spawned_pid
 						//	 Avoids races if execvpe() returns really fast, which is not that uncommon for simple shell scripts.
 						sigset_t sigset;
