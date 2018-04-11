@@ -296,7 +296,7 @@ static int load_config() {
 	return rval;
 }
 
-// Implementation of Qt4's QtHash (cf. qhash @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L35)
+// Implementation of Qt4's QtHash (cf. qhash @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L37)
 static unsigned int qhash(const unsigned char *bytes, size_t length) {
 	unsigned int h = 0;
 	unsigned int i;
@@ -381,7 +381,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 			size_t len = (size_t)sqlite3_column_bytes(stmt, 0);
 
 			// Then we need the proper hashes Nickel devises...
-			// cf. images_path @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L2374
+			// cf. images_path @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L2489
 			unsigned int hash = qhash(image_id, len);
 			unsigned int dir1 = hash & (0xff * 1);
 			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
