@@ -55,7 +55,7 @@ Note that the section all these key/value pairs fall under *has* to be named ```
 
 
 In addition to that, you can try to do some cool stuff with the Nickel database: updating the Title, Author and Comment entries of your "book" in the Library.
-This is disabled by default, because ninja writing to the database behind Nickel's back *might* upset Nickel...
+This is disabled by default, because ninja writing to the database behind Nickel's back *might* upset Nickel (meaning thrash your db!)...
 If you want to try it, you will have to first enable this knob:
 
 ```do_db_update = 1```
