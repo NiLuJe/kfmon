@@ -20,6 +20,8 @@ And it also properly persists across unmounts & remounts (like during an USBMS e
 
 **IMPORTANT NOTE**: Some of these checks requires a decently recent enough Nickel version. Make sure you're running a firmware version equal to or newer than 2.9.0!
 
+**NOTE**: If you're just looking for a drop-in replacement of Sergey's fmon, check out [Baskerville](https://github.com/baskerville/fmon)'s implementation of fmon, which should be saner & safer than Sergey's original, while following the same general principles.
+
 # How do I install this?
 
 First, if you're currently using fmon, it might be a good idea to uninstall it first ;).
