@@ -433,7 +433,8 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	}
 
 	// NOTE: Here be dragons! This works in theory, but risks confusing Nickel's handling of the DB if we do that when nickel is running (which we are).
-	// We leave enabling this option to the user's responsibility. KOReader ships with it disabled.
+	// Because doing it with Nickel running is a potentially terrible idea, for various reasons (c.f., https://www.sqlite.org/howtocorrupt.html for the gory details, some of which probably even apply here! :p).
+	// As such, we leave enabling this option to the user's responsibility. KOReader ships with it disabled.
 	// The idea is to, optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
 		// Check if the DB has already been updated by checking the title...
