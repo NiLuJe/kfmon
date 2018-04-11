@@ -337,7 +337,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	}
 
 	// Wait at most for Nms on OPEN & N*2ms on CLOSE if we ever hit a locked database during any of our proceedings...
-	// NOTE: The defaults timings (steps of 450ms) appear to work reasonably well on my H2O with a 50MB Nickel DB... (i.e., it trips on OPEN when Nickel is moderately busy, but if everything's quiet, we're good).
+	// NOTE: The defaults timings (steps of 500ms) appear to work reasonably well on my H2O with a 50MB Nickel DB... (i.e., it trips on OPEN when Nickel is moderately busy, but if everything's quiet, we're good).
 	//	 Time will tell if that's a good middle-ground or not ;). This is user configurable in kfmon.ini (db_timeout key).
 	sqlite3_busy_timeout(db, daemon_config.db_timeout * (wait_for_db + 1));
 	DBGLOG("SQLite busy timeout set to %dms", daemon_config.db_timeout * (wait_for_db + 1));
@@ -484,8 +484,8 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 		while (access(KOBO_DB_PATH"-journal", F_OK) == 0) {
 			LOG("Found a SQLite rollback journal, waiting for it to go away (iteration nr. %d) . . .", count++);
 			usleep(250 * 1000);
-			// NOTE: Don't wait more than 7.5s
-			if (count > 30) {
+			// NOTE: Don't wait more than 10s
+			if (count > 40) {
 				LOG("Waited for the SQLite rollback journal to go away for far too long, going on anyway.");
 				break;
 			}
