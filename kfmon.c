@@ -391,7 +391,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
-			int thumbnails_num = 0;
+			unsigned int thumbnails_num = 0;
 
 			// Start with the full-size screensaver...
 			char ss_path[PATH_MAX];
@@ -479,7 +479,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	if (is_processed && wait_for_db) {
 		// If there's a rollback journal for the DB, wait for it to go away...
 		// NOTE: This assumes the DB was opened with the default journal_mode, DELETE
-		int count = 0;
+		unsigned int count = 0;
 		while (access(KOBO_DB_PATH"-journal", F_OK) == 0) {
 			LOG("Found a SQLite rollback journal, waiting for it to go away (iteration nr. %d) . . .", count++);
 			usleep(250 * 1000);
