@@ -133,13 +133,12 @@ static void wait_for_target_mountpoint(void)
 	// cf. https://stackoverflow.com/questions/5070801
 	int mfd = open("/proc/mounts", O_RDONLY, 0);
 	struct pollfd pfd;
-	int rv;
 
 	unsigned int changes = 0;
 	pfd.fd = mfd;
 	pfd.events = POLLERR | POLLPRI;
 	pfd.revents = 0;
-	while ((rv = poll(&pfd, 1, 500)) >= 0) {
+	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
 			LOG("Mountpoints changed (iteration nr. %d)", changes++);
 
