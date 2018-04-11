@@ -424,7 +424,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 			}
 
 			// Only give a greenlight if we got all three!
-			if (thumbnails_num >= 3) {
+			if (thumbnails_num == 3) {
 				is_processed = true;
 			}
 		}
