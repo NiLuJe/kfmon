@@ -298,7 +298,7 @@ static int load_config() {
 
 // Implementation of Qt4's QtHash (cf. qhash @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L35)
 static unsigned int qhash(const unsigned char *bytes, size_t length) {
-	unsigned int h = 0x00000000;
+	unsigned int h = 0;
 	unsigned int i;
 
 	for(i = 0; i < length; i++) {
