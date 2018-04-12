@@ -73,10 +73,12 @@ Note that these three fields will be cropped at 128 characters.
 # How do I install this?
 
 You'll havbe to delete a few things manually, ideally over SSH:
-The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, depending on which version of KFMon you were running)
-And the folders ```/usr/local/kfmon``` & ```/mnt/onboard/.adds/kfmon```
-Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (c.f., 8710a31)
 
+The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, depending on which version of KFMon you were running).
+
+And the folders ```/usr/local/kfmon``` & ```/mnt/onboard/.adds/kfmon```.
+
+Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (c.f., 8710a31).
 
 # Things to watch out for
 
