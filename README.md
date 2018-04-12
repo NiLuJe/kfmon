@@ -14,7 +14,7 @@ KFMon tries to alleviate this issue by doing a number of checks before deeming t
 
 On top of that, we have a few extra features: instead of launching one instance per book/action pair, KFMon is a centralized daemon, which simply parses a number of simple INI config files. Each book/action pair gets a dedicated config file.
 
-It's also integrated in the Kobo boot process in an unobtrusive manner (an udev hook), unlike fmon (which modifies a startup script).
+~~It's also integrated in the Kobo boot process in an unobtrusive manner (an udev hook), unlike fmon (which modifies a startup script).~~ (See #1 for the various troubles that caused us ;)).
 
 And it also properly persists across unmounts & remounts (like during an USBMS export).
 
