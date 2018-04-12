@@ -140,6 +140,5 @@ static unsigned int qhash(const unsigned char *, size_t);
 static bool is_target_processed(unsigned int, bool);
 
 static pid_t spawn(char *const *);
-static pid_t is_alive(const pid_t);
 
 static bool handle_events(int);

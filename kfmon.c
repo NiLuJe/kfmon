@@ -561,18 +561,6 @@ static pid_t spawn(char *const *command)
 	return pid;
 }
 
-// Dumb-ass check to confirm that a pid is valid (i.e., it matches a currently running process)
-static pid_t is_alive(const pid_t pid)
-{
-	if (kill(pid, 0) == 0) {
-		// It's still alive!
-		return pid;
-	} else {
-		// It's dead or defunct.
-		return 0;
-	}
-}
-
 // Read all available inotify events from the file descriptor 'fd'.
 static bool handle_events(int fd)
 {
