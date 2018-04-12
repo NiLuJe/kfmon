@@ -84,6 +84,7 @@ kobo: release
 	ln -sf $(CURDIR)/LICENSE Kobo/usr/local/kfmon/LICENSE
 	ln -sf $(CURDIR)/CREDITS Kobo/usr/local/kfmon/CREDITS
 	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
+	ln -sf $(CURDIR)/scripts/kfmon-update.sh Kobo/usr/local/kfmon/bin/kfmon-update.sh
 	ln -sf $(CURDIR)/scripts/on-animator.sh Kobo/etc/init.d/on-animator.sh
 	cd Kobo && tar -cvzhf KoboRoot.tgz usr etc && cd ..
 	ln -sf $(CURDIR)/Kobo/KoboRoot.tgz Kobo/mnt/onboard/.kobo/KoboRoot.tgz
