@@ -840,5 +840,9 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		close(fd);
 	}
 
+	if (daemon_config.use_syslog) {
+		closelog();
+	}
+
 	exit(EXIT_SUCCESS);
 }
