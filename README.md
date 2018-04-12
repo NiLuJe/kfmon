@@ -14,7 +14,7 @@ KFMon tries to alleviate this issue by doing a number of checks before deeming t
 
 On top of that, we have a few extra features: instead of launching one instance per book/action pair, KFMon is a centralized daemon, which simply parses a number of simple INI config files. Each book/action pair gets a dedicated config file.
 
-~~It's also integrated in the Kobo boot process in an unobtrusive manner (an udev hook), unlike fmon (which modifies a startup script).~~ (See [Issue #2](/NiLuJe/kfmon/issues/2) for the various troubles that caused us ;)).
+~~It's also integrated in the Kobo boot process in an unobtrusive manner (an udev hook), unlike fmon (which modifies a startup script).~~ (See [Issue #2](NiLuJe/kfmon/issues/2) for the various troubles that caused us ;)).
 
 And it also properly persists across unmounts & remounts (like during an USBMS export).
 
@@ -78,7 +78,7 @@ The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, de
 
 And the folders ```/usr/local/kfmon``` & ```/mnt/onboard/.adds/kfmon```.
 
-Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (f.g., [commit 8710a31](/NiLuJe/kfmon/commit/8710a31d2e6d998ba315bafff37fd4ba8d1cc7a1) features one such version).
+Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (f.g., [commit 8710a31](NiLuJe/kfmon/commit/8710a31d2e6d998ba315bafff37fd4ba8d1cc7a1) features one such version).
 
 # Things to watch out for
 
