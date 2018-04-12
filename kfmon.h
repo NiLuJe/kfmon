@@ -120,6 +120,10 @@ typedef struct
 	}						\
 })							\
 
+// Remember stdin/stdout/stderr to restore them in our children
+int orig_stdin;
+int orig_stdout;
+int orig_stderr;
 static int daemonize(void);
 
 char *get_current_time(void);

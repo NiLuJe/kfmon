@@ -53,13 +53,16 @@ static int daemonize(void)
 
 	umask(0);
 
+	// Store a copy of stdin, stdout & stderr so we can restore it to our children later on...
+	orig_stdin = dup(fileno(stdin));
+	orig_stdout = dup(fileno(stdout));
+	orig_stderr = dup(fileno(stderr));
+
 	// Redirect stdin & stdout to /dev/null
-	// FIXME: Could that be the cause of all my Nickel woes? It might expect to have 'sane' stdin/out/err fds, and our mingling fucks thinks up?
-	// 	  Investigate restoring sane fds in our child, to see if I can break stuff in even more fun & interesting ways!
 	if ((fd = open("/dev/null", O_RDWR)) != -1) {
 		dup2(fd, fileno(stdin));
 		dup2(fd, fileno(stdout));
-		if (fd > 2) {
+		if (fd > 2 + 3) {
 			close(fd);
 		}
 	} else {
@@ -79,7 +82,7 @@ static int daemonize(void)
 	}
 	if ((fd = open(KFMON_LOGFILE, flags, 0600)) != -1) {
 		dup2(fd, fileno(stderr));
-		if (fd > 2) {
+		if (fd > 2 + 3) {
 			close(fd);
 		}
 	} else {
@@ -512,6 +515,13 @@ static pid_t spawn(char *const *command)
 		return pid;
 	} else if (pid == 0) {
 		// Sweet child o' mine!
+		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
+		dup2(orig_stdin, fileno(stdin));
+		dup2(orig_stdout, fileno(stdout));
+		dup2(orig_stderr, fileno(stderr));
+		close(orig_stdin);
+		close(orig_stdout);
+		close(orig_stderr);
 		// NOTE: Always use a barebones env, to see if that helps avoid Nickel getting its panties in a twist...
 		char *const envp[] = {"PWD=/", "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:", NULL};	// FIXME: Last resort: install fmon and check its env...
 		execvpe(*command, command, envp);
@@ -752,8 +762,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		// Redirect stderr (which is now actually our log file) to /dev/null
 		if ((fd = open("/dev/null", O_RDWR)) != -1) {
 			dup2(fd, fileno(stderr));
-			if (fd > 2) {
-				close (fd);
+			if (fd > 2 + 3) {
+				close(fd);
 			}
 		} else {
 			fprintf(stderr, "Failed to redirect stderr to /dev/null\n");
@@ -771,7 +781,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 		// Create the file descriptor for accessing the inotify API
 		LOG("Initializing inotify.");
-		fd = inotify_init1(IN_NONBLOCK);
+		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
 			perror("[KFMon] inotify_init1");
 			exit(EXIT_FAILURE);
