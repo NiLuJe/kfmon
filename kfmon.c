@@ -485,6 +485,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	if (is_processed && wait_for_db) {
 		// If there's a rollback journal for the DB, wait for it to go away...
 		// NOTE: This assumes the DB was opened with the default journal_mode, DELETE
+		//       This doesn't appear to be the case anymore, on FW 4.7.x (and possibly earlier, I haven't looked at this stuff in quite a while), it's now using WAL (which makes sense).
 		unsigned int count = 0;
 		while (access(KOBO_DB_PATH"-journal", F_OK) == 0) {
 			LOG("Found a SQLite rollback journal, waiting for it to go away (iteration nr. %d) . . .", count++);
