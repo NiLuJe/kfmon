@@ -92,7 +92,7 @@ If it's a new config file, try to make sure it points to a file that has already
 
 If you delete one of the files being watched, don't forget to delete the matching config file, and then to reboot your device!
 
-If you launch a long-running task via KFMon, especially one that *may* trigger one of your inotify watches, you should take care of killing KFMon during your task startup. While KFMon can only run a single process concurrently, inotify events are buffered: any number of them may be played back once your task exit, which would then potentially trigger watches at unintented times.
+If you launch a long-running task via KFMon, especially one that *may* trigger one of your inotify watches, you should take care of killing KFMon during your task startup. While KFMon can only run a single process concurrently, inotify events are buffered: any number of them may be played back once your task exits, which would then potentially trigger those buffered watches at unintented times.
 
 Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
 
