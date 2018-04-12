@@ -503,12 +503,40 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	return is_processed;
 }
 
+// c.f. http://man7.org/tlpi/code/online/book/signals/signal_functions.c.html
+void
+printSigset(FILE *of, const char *prefix, const sigset_t *sigset)
+{
+    int sig, cnt;
+
+    cnt = 0;
+    for (sig = 1; sig < NSIG; sig++) {
+        if (sigismember(sigset, sig)) {
+            cnt++;
+            fprintf(of, "%s%d (%s)\n", prefix, sig, strsignal(sig));
+        }
+    }
+
+    if (cnt == 0)
+        fprintf(of, "%s<empty signal set>\n", prefix);
+}
+
 /* Spawn a process and return its pid...
  * Massively inspired from popen2() implementations from https://stackoverflow.com/questions/548063
  * Except that getting that pid is all I care about, so forget about the popen-like piping ;). */
 static pid_t spawn(char *const *command)
 {
 	pid_t pid;
+
+	// Do roughly the same signal dance as system()
+	sigset_t sigset;
+	sigemptyset(&sigset);
+	sigaddset(&sigset, SIGCHLD);
+	sigset_t osigset;
+	if (sigprocmask(SIG_BLOCK, &sigset, &osigset) == -1) {
+		perror("[KFMon] sigprocmask (BLOCK)");
+	}
+	printSigset(stderr, "sigset p: \t\t", &sigset);
 
 	pid = fork();
 
@@ -523,6 +551,18 @@ static pid_t spawn(char *const *command)
 		close(orig_stdin);
 		close(orig_stdout);
 		close(orig_stderr);
+		// Restore signals
+		/*
+		if (sigprocmask(SIG_SETMASK, &osigset, NULL) == -1) {
+			perror("[KFMon] sigprocmask (SETMASK)");
+		}
+		*/
+		printSigset(stderr, "sigset c: \t\t", &sigset);
+		if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1) {
+			perror("[KFMon] sigprocmask (UNBLOCK)");
+		}
+
+		signal(SIGHUP, SIG_DFL);
 		// NOTE: We used to use execvpe when being launched from udev in order to sanitize all the crap we inherited from udev's env ;).
 		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
 		execvp(*command, command);
@@ -610,18 +650,12 @@ static bool handle_events(int fd)
 						LOG("Spawning %s . . .", watch_config[watch_idx].action);
 						// We're using execvp()...
 						char *const cmd[] = {watch_config[watch_idx].action, NULL};
-						// NOTE: Block our SIGCHLD handler until execvp() actually returns, to make sure it'll have an up-to-date last_spawned_pid
-						//	 Avoids races if execvp() returns really fast, which is not that uncommon for simple shell scripts.
-						sigset_t sigset;
-						sigemptyset (&sigset);
-						sigaddset(&sigset, SIGCHLD);
-						if (sigprocmask(SIG_BLOCK, &sigset, NULL) == -1) {
-							perror("[KFMon] sigprocmask (BLOCK)");
-						}
+						// NOTE: We'll block our SIGCHLD handler for a while during the forking process, because that's what system() does, too.
+						//       Keeping it blocked during the full length of execvp()'s execution is probably a bad idea,
+						//       because our spawned process would then inherit that block, while it might very well rely on it not being blocked!
+						//       Hopefully, it's still enough to make sure that the SIGCHLD handler will have an up-to-date last_spawned_pid,
+						//	 because things may be race-y if execvp() returns really fast, which is not that uncommon for simple shell scripts.
 						watch_config[watch_idx].last_spawned_pid = spawn(cmd);
-						if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1) {
-							perror("[KFMon] sigprocmask (UNBLOCK)");
-						}
 						// NOTE: For actions returning very quickly, the PID logged *may* be stale since the SIGCHLD handler might actually have done its job *before* us...
 						//	 I prefer keeping this *out* of the critical section to avoid race & deadlock issues with the signal handler...
 						LOG(". . . with pid: %d", watch_config[watch_idx].last_spawned_pid);
@@ -747,7 +781,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	sigemptyset(&sa.sa_mask);
 	// We don't care about SIGSTOP & SIGCONT
 	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	if (sigaction(SIGCHLD, &sa, 0) == -1) {
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
 		perror("[KFMon] sigaction");
 		exit(EXIT_FAILURE);
 	}
