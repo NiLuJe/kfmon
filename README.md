@@ -70,7 +70,7 @@ And you will have to set *all three* of the following key/value pairs:
 
 Note that these three fields will be cropped at 128 characters.
 
-# How do I install this?
+# How do I uninstall this?
 
 You'll havbe to delete a few things manually, ideally over SSH:
 
