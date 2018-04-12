@@ -58,7 +58,7 @@ static int daemonize(void)
 		dup2(fd, fileno(stdin));
 		dup2(fd, fileno(stdout));
 		if (fd > 2) {
-			close (fd);
+			close(fd);
 		}
 	} else {
 		fprintf(stderr, "Failed to redirect stdin & stdout to /dev/null\n");
@@ -78,7 +78,7 @@ static int daemonize(void)
 	if ((fd = open(KFMON_LOGFILE, flags, 0600)) != -1) {
 		dup2(fd, fileno(stderr));
 		if (fd > 2) {
-			close (fd);
+			close(fd);
 		}
 	} else {
 		fprintf(stderr, "Failed to redirect stderr to logfile '%s'\n", KFMON_LOGFILE);
