@@ -523,11 +523,9 @@ static pid_t spawn(char *const *command)
 		close(orig_stdin);
 		close(orig_stdout);
 		close(orig_stderr);
-		// NOTE: Always use a barebones env, to see if that helps avoid Nickel getting its panties in a twist...
-		char *const envp[] = {"PWD=/", "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:", NULL};	// FIXME: This might be counter-productive when started from on-animator...
-		execvpe(*command, command, envp);
+		execvp(*command, command);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
-		perror("[KFMon] execvpe");
+		perror("[KFMon] execvp");
 		exit(EXIT_FAILURE);
 	}
 	// We have a shiny SIGCHLD handler to reap this process when it dies, so we're done here.

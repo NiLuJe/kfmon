@@ -16,11 +16,6 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// For execvpe...
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <sys/types.h>
 #include <stdbool.h>
 #include <sys/stat.h>
