@@ -520,6 +520,7 @@ static pid_t spawn(char *const *command)
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
+		LOG("Spawned process %ld . . .", (long) getpid());
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
@@ -537,7 +538,7 @@ static pid_t spawn(char *const *command)
 		exit(EXIT_FAILURE);
 	} else {
 		// Parent
-		LOG(". . . with pid %d", pid);
+		LOG("Waiting to reap process %ld . . .", (long) pid);
 		// Wait for our child process to terminate, retrying on EINTR
 		do {
 			ret = waitpid(pid, &wstatus, 0);
@@ -548,12 +549,12 @@ static pid_t spawn(char *const *command)
 			exit(EXIT_FAILURE);
 		} else {
 			if (WIFEXITED(wstatus)) {
-				LOG("Reaped spawned process %d: It exited.", pid);
+				LOG("Reaped process %d: It exited.", pid);
 			} else if (WIFSIGNALED(wstatus)) {
-				LOG("Reaped spawned process %d: It was killed by a signal.", pid);
+				LOG("Reaped process %d: It was killed by a signal.", pid);
 			} else {
 				// :D
-				LOG("Reaped spawned process %d: Something happened to it?", pid);
+				LOG("Reaped process %d: Something happened to it?", pid);
 			}
 		}
 	}
