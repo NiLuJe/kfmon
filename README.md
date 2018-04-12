@@ -30,7 +30,8 @@ Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/f
 
 The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276), if it is already installed, as well as a ```KoboRoot.tgz``` which will actually install KFMon itself.
 This ensures that the KOReader PNG file will first be processed by Nickel before the KoboRoot package triggers a reboot for installation.
-You can also find a config to launch [Plato](https://www.mobileread.com/forums/showthread.php?t=292914) [in the repository](/config/plato.ini). See inside for details.
+
+You can also find a config to launch [Plato](https://www.mobileread.com/forums/showthread.php?t=292914) in the repository, [right here](/config/plato.ini). See inside for details.
 
 # How can I tinker with it?
 
