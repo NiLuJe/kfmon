@@ -549,12 +549,9 @@ static pid_t spawn(char *const *command)
 			exit(EXIT_FAILURE);
 		} else {
 			if (WIFEXITED(wstatus)) {
-				LOG("Reaped process %d: It exited.", pid);
+				LOG("Reaped process %d: It exited with status %d.", pid, WEXITSTATUS(wstatus));
 			} else if (WIFSIGNALED(wstatus)) {
-				LOG("Reaped process %d: It was killed by a signal.", pid);
-			} else {
-				// :D
-				LOG("Reaped process %d: Something happened to it?", pid);
+				LOG("Reaped process %d: It was killed by signal %d (%s).", pid, WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
 			}
 		}
 	}
