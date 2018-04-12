@@ -28,8 +28,9 @@ First, if you're currently using fmon, it might be a good idea to uninstall it f
 
 Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/forums/showthread.php?t=274231), and simply unpack the ZIP archive to the USB root of your Kobo when it's plugged to a computer.
 
-The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276) if it is already installed, as well as a ```KoboRoot.tgz``` which will actually install KFMon itself.
+The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276), if it is already installed, as well as a ```KoboRoot.tgz``` which will actually install KFMon itself.
 This ensures that the KOReader PNG file will first be processed by Nickel before the KoboRoot package triggers a reboot for installation.
+You can also find a config to launch [Plato](https://www.mobileread.com/forums/showthread.php?t=292914) [in the repository](/config/plato.ini). See inside for details.
 
 # How can I tinker with it?
 
