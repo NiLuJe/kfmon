@@ -25,7 +25,9 @@ And it also properly persists across unmounts & remounts (like during an USBMS e
 # How do I install this?
 
 First, if you're currently using fmon, it might be a good idea to uninstall it first ;). Since both patch the same startup script, only the last one you installed will actually "take".
+
 Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/forums/showthread.php?t=274231), and simply unpack the ZIP archive to the USB root of your Kobo when it's plugged to a computer.
+
 The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276) if it is already installed, as well as a ```KoboRoot.tgz``` which will actually install KFMon itself.
 This ensures that the KOReader PNG file will first be processed by Nickel before the KoboRoot package triggers a reboot for installation.
 
@@ -35,8 +37,8 @@ The config files are stored in the */mnt/onboard/*__.adds/kfmon/config__ folder.
 
 KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with two knobs:
 
-```db_timeout = 450```, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
-This default value (450ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.
+```db_timeout = 500``, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
+This default value (500ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.
 You can confirm KFMon's behavior by checking its log, which we'll come to presently.
 
 ```use_syslog = 0```, which dictates whether KFMon logs to a dedicated log file (located in */usr/local/kfmon/kfmon.log*), or to the syslog (which you can access via the *logread* tool on the Kobo). Might be useful if you're paranoid about flash wear. Disabled by default. Be aware that the log file will be trimmed if it grows over 1MB.
@@ -72,7 +74,7 @@ Note that these three fields will be cropped at 128 characters.
 
 # How do I uninstall this?
 
-You'll havbe to delete a few things manually, ideally over SSH:
+You'll have to delete a few things manually, ideally over SSH:
 
 The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, depending on which version of KFMon you were running).
 
@@ -94,4 +96,4 @@ Due to the exact timing at which Nickel parses books, for a completely new file,
 
 Note that right now, proper interaction with KOReader requires a bleeding-edge version of KOReader (i.e., current nightlies or OTAs, not the stable version).
 
-Right now, KFMon supports a maximum of [16](/kfmon.h#L104) file watches. Ping me if that's not enough for you ;).
+Right now, KFMon supports a maximum of [16](/kfmon.h#L112) file watches. Ping me if that's not enough for you ;).
