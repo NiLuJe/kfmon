@@ -503,45 +503,21 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	return is_processed;
 }
 
-// c.f. http://man7.org/tlpi/code/online/book/signals/signal_functions.c.html
-void
-printSigset(FILE *of, const char *prefix, const sigset_t *sigset)
-{
-    int sig, cnt;
-
-    cnt = 0;
-    for (sig = 1; sig < NSIG; sig++) {
-        if (sigismember(sigset, sig)) {
-            cnt++;
-            fprintf(of, "%s%d (%s)\n", prefix, sig, strsignal(sig));
-        }
-    }
-
-    if (cnt == 0)
-        fprintf(of, "%s<empty signal set>\n", prefix);
-}
-
-/* Spawn a process and return its pid...
- * Massively inspired from popen2() implementations from https://stackoverflow.com/questions/548063
- * Except that getting that pid is all I care about, so forget about the popen-like piping ;). */
+/* Spawn a process, wait for it to die, and return its pid...
+ * Inspired from popen2() implementations from https://stackoverflow.com/questions/548063
+ * As well as the glibc's system() call */
 static pid_t spawn(char *const *command)
 {
 	pid_t pid;
-
-	// Do roughly the same signal dance as system()
-	sigset_t sigset;
-	sigemptyset(&sigset);
-	sigaddset(&sigset, SIGCHLD);
-	sigset_t osigset;
-	if (sigprocmask(SIG_BLOCK, &sigset, &osigset) == -1) {
-		perror("[KFMon] sigprocmask (BLOCK)");
-	}
-	printSigset(stderr, "sigset p: \t\t", &sigset);
+	int wstatus;
+	pid_t ret;
 
 	pid = fork();
 
 	if (pid < 0) {
-		return pid;
+		// Fork failed?
+		perror("[KFMon] waitpid");
+		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
@@ -552,16 +528,6 @@ static pid_t spawn(char *const *command)
 		close(orig_stdout);
 		close(orig_stderr);
 		// Restore signals
-		/*
-		if (sigprocmask(SIG_SETMASK, &osigset, NULL) == -1) {
-			perror("[KFMon] sigprocmask (SETMASK)");
-		}
-		*/
-		printSigset(stderr, "sigset c: \t\t", &sigset);
-		if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) == -1) {
-			perror("[KFMon] sigprocmask (UNBLOCK)");
-		}
-
 		signal(SIGHUP, SIG_DFL);
 		// NOTE: We used to use execvpe when being launched from udev in order to sanitize all the crap we inherited from udev's env ;).
 		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
@@ -569,10 +535,42 @@ static pid_t spawn(char *const *command)
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
 		perror("[KFMon] execvp");
 		exit(EXIT_FAILURE);
+	} else {
+		// Parent
+		// Wait for our child process to terminate, retrying on EINTR
+		do {
+			ret = waitpid(pid, &wstatus, 0);
+		} while (ret == -1 && errno == EINTR);
+		// Recap what happened to it
+		if (ret != pid) {
+			perror("[KFMon] waitpid");
+			exit(EXIT_FAILURE);
+		} else {
+			LOG("Reaped spawned pid %d:", pid);
+			if (WIFEXITED(wstatus)) {
+				LOG("It exited.");
+			} else if (WIFSIGNALED(wstatus)) {
+				LOG("It was killed by a signal.");
+			} else {
+				// :D
+				LOG("Or something happened to it.");
+			}
+		}
 	}
-	// We have a shiny SIGCHLD handler to reap this process when it dies, so we're done here.
 
 	return pid;
+}
+
+// Dumb-ass check to confirm that a pid is valid (i.e., it matches a currently running process)
+static pid_t is_alive(const pid_t pid)
+{
+	if (kill(pid, 0) == 0) {
+		// It's still alive!
+		return pid;
+	} else {
+		// It's dead or defunct.
+		return 0;
+	}
 }
 
 // Read all available inotify events from the file descriptor 'fd'.
@@ -630,6 +628,7 @@ static bool handle_events(int fd)
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
+				watch_config[watch_idx].last_spawned_pid = is_alive(watch_config[watch_idx].last_spawned_pid);
 				if (watch_config[watch_idx].last_spawned_pid == 0) {
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(watch_idx, false)) {
@@ -644,21 +643,14 @@ static bool handle_events(int fd)
 			}
 			if (event->mask & IN_CLOSE) {
 				LOG("Tripped IN_CLOSE for %s", watch_config[watch_idx].filename);
+				watch_config[watch_idx].last_spawned_pid = is_alive(watch_config[watch_idx].last_spawned_pid);
 				if (watch_config[watch_idx].last_spawned_pid == 0) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
 						LOG("Spawning %s . . .", watch_config[watch_idx].action);
 						// We're using execvp()...
 						char *const cmd[] = {watch_config[watch_idx].action, NULL};
-						// NOTE: We'll block our SIGCHLD handler for a while during the forking process, because that's what system() does, too.
-						//       Keeping it blocked during the full length of execvp()'s execution is probably a bad idea,
-						//       because our spawned process would then inherit that block, while it might very well rely on it not being blocked!
-						//       Hopefully, it's still enough to make sure that the SIGCHLD handler will have an up-to-date last_spawned_pid,
-						//	 because things may be race-y if execvp() returns really fast, which is not that uncommon for simple shell scripts.
 						watch_config[watch_idx].last_spawned_pid = spawn(cmd);
-						// NOTE: For actions returning very quickly, the PID logged *may* be stale since the SIGCHLD handler might actually have done its job *before* us...
-						//	 I prefer keeping this *out* of the critical section to avoid race & deadlock issues with the signal handler...
-						LOG(". . . with pid: %d", watch_config[watch_idx].last_spawned_pid);
 					} else {
 						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
@@ -722,6 +714,7 @@ static bool handle_events(int fd)
 	return destroyed_wd;
 }
 
+/*
 // Handle SIGCHLD to reap processes and update our last_spawned_pid tracker ASAP
 void reaper(int sig  __attribute__ ((unused))) {
 	pid_t cpid;
@@ -754,6 +747,7 @@ void reaper(int sig  __attribute__ ((unused))) {
 	}
 	errno = saved_errno;
 }
+*/
 
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
@@ -774,17 +768,6 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// Say hello :)
 	LOG("Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s)", KFMON_VERSION,  __DATE__, __TIME__, sqlite3_libversion(), SQLITE_VERSION);
-
-	// Keep track of the reaping of our children
-	struct sigaction sa;
-	sa.sa_handler = &reaper;
-	sigemptyset(&sa.sa_mask);
-	// We don't care about SIGSTOP & SIGCONT
-	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		perror("[KFMon] sigaction");
-		exit(EXIT_FAILURE);
-	}
 
 	// Load our configs
 	if (load_config() == -1) {
