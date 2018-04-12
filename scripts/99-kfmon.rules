@@ -1,2 +1,5 @@
 # Runs early at boot... (onboard *might* be mounted at that point)
-KERNEL=="loop0", RUN+="/usr/local/kfmon/bin/kfmon"
+# There's even a good chance it'll run before on-animator...
+# Hence the crappy workaround to avoid launching two instances of kfmon,
+# when upgrading from 0.9 to >= 0.9.5...
+KERNEL=="loop0", RUN+="rm -f /etc/udev/rules.d/99-kfmon.rules"
