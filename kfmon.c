@@ -54,6 +54,8 @@ static int daemonize(void)
 	umask(0);
 
 	// Redirect stdin & stdout to /dev/null
+	// FIXME: Could that be the cause of all my Nickel woes? It might expect to have 'sane' stdin/out/err fds, and our mingling fucks thinks up?
+	// 	  Investigate restoring sane fds in our child, to see if I can break stuff in even more fun & interesting ways!
 	if ((fd = open("/dev/null", O_RDWR)) != -1) {
 		dup2(fd, fileno(stdin));
 		dup2(fd, fileno(stdout));
