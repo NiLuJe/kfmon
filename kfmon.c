@@ -523,6 +523,8 @@ static pid_t spawn(char *const *command)
 		close(orig_stdin);
 		close(orig_stdout);
 		close(orig_stderr);
+		// NOTE: We used to use execvpe when being launched from udev in order to sanitize all the crap we inherited from udev's env ;).
+		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
 		execvp(*command, command);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
 		perror("[KFMon] execvp");
