@@ -78,7 +78,7 @@ The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, de
 
 And the folders ```/usr/local/kfmon``` & ```/mnt/onboard/.adds/kfmon```.
 
-Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (c.f., 8710a31d2e6d998ba315bafff37fd4ba8d1cc7a1).
+Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (f.g., commit 8710a31d2e6d998ba315bafff37fd4ba8d1cc7a1 features one such version).
 
 # Things to watch out for
 
