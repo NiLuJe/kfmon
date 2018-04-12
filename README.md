@@ -37,7 +37,7 @@ The config files are stored in the */mnt/onboard/*__.adds/kfmon/config__ folder.
 
 KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with two knobs:
 
-```db_timeout = 500``, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
+```db_timeout = 500```, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
 This default value (500ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.
 You can confirm KFMon's behavior by checking its log, which we'll come to presently.
 
