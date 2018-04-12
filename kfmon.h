@@ -100,7 +100,6 @@ typedef struct
 	char db_comment[DB_SZ_MAX];
 	int inotify_wd;
 	bool wd_was_destroyed;
-	volatile sig_atomic_t last_spawned_pid;
 } WatchConfig;
 
 // Hardcode the max amount of watches we handle
@@ -142,6 +141,5 @@ static bool is_target_processed(unsigned int, bool);
 
 static pid_t spawn(char *const *);
 static pid_t is_alive(const pid_t);
-//void reaper(int);
 
 static bool handle_events(int);

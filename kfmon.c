@@ -537,6 +537,7 @@ static pid_t spawn(char *const *command)
 		exit(EXIT_FAILURE);
 	} else {
 		// Parent
+		LOG(". . . with pid %d", pid);
 		// Wait for our child process to terminate, retrying on EINTR
 		do {
 			ret = waitpid(pid, &wstatus, 0);
@@ -546,14 +547,13 @@ static pid_t spawn(char *const *command)
 			perror("[KFMon] waitpid");
 			exit(EXIT_FAILURE);
 		} else {
-			LOG("Reaped spawned pid %d:", pid);
 			if (WIFEXITED(wstatus)) {
-				LOG("It exited.");
+				LOG("Reaped spawned process %d: It exited.", pid);
 			} else if (WIFSIGNALED(wstatus)) {
-				LOG("It was killed by a signal.");
+				LOG("Reaped spawned process %d: It was killed by a signal.", pid);
 			} else {
 				// :D
-				LOG("Or something happened to it.");
+				LOG("Reaped spawned process %d: Something happened to it?", pid);
 			}
 		}
 	}
@@ -628,35 +628,27 @@ static bool handle_events(int fd)
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
-				watch_config[watch_idx].last_spawned_pid = is_alive(watch_config[watch_idx].last_spawned_pid);
-				if (watch_config[watch_idx].last_spawned_pid == 0) {
-					// Only check if we're ready to spawn something...
-					if (!is_target_processed(watch_idx, false)) {
-						// It's not processed on OPEN, flag as pending...
-						pending_processing = true;
-						LOG("Flagged target icon '%s' as pending processing ...", watch_config[watch_idx].filename);
-					} else {
-						// It's already processed, we're good!
-						pending_processing = false;
-					}
+				// Only check if we're ready to spawn something...
+				if (!is_target_processed(watch_idx, false)) {
+					// It's not processed on OPEN, flag as pending...
+					pending_processing = true;
+					LOG("Flagged target icon '%s' as pending processing ...", watch_config[watch_idx].filename);
+				} else {
+					// It's already processed, we're good!
+					pending_processing = false;
 				}
 			}
 			if (event->mask & IN_CLOSE) {
 				LOG("Tripped IN_CLOSE for %s", watch_config[watch_idx].filename);
-				watch_config[watch_idx].last_spawned_pid = is_alive(watch_config[watch_idx].last_spawned_pid);
-				if (watch_config[watch_idx].last_spawned_pid == 0) {
-					// Check that our target file has already fully been processed by Nickel before launching anything...
-					if (!pending_processing && is_target_processed(watch_idx, true)) {
-						LOG("Spawning %s . . .", watch_config[watch_idx].action);
-						// We're using execvp()...
-						char *const cmd[] = {watch_config[watch_idx].action, NULL};
-						watch_config[watch_idx].last_spawned_pid = spawn(cmd);
-					} else {
-						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
-						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
-					}
+				// Check that our target file has already fully been processed by Nickel before launching anything...
+				if (!pending_processing && is_target_processed(watch_idx, true)) {
+					LOG("Spawning %s . . .", watch_config[watch_idx].action);
+					// We're using execvp()...
+					char *const cmd[] = {watch_config[watch_idx].action, NULL};
+					spawn(cmd);
 				} else {
-					LOG("Our last spawn (%d) is still alive!", watch_config[watch_idx].last_spawned_pid);
+					LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
+					// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
 				}
 			}
 			if (event->mask & IN_UNMOUNT) {
@@ -713,41 +705,6 @@ static bool handle_events(int fd)
 	// And we have another outer loop to break, so pass that on...
 	return destroyed_wd;
 }
-
-/*
-// Handle SIGCHLD to reap processes and update our last_spawned_pid tracker ASAP
-void reaper(int sig  __attribute__ ((unused))) {
-	pid_t cpid;
-	int wstatus;
-	int saved_errno = errno;
-	ssize_t foo __attribute__((unused));
-	while ((cpid = waitpid((pid_t)(-1), &wstatus, WNOHANG)) > 0) {
-		// Identify which of our target actions we've reaped a process from...
-		unsigned int watch_idx = 0;
-		bool found_watch_idx = false;
-		for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-			if (watch_config[watch_idx].last_spawned_pid == cpid) {
-				found_watch_idx = true;
-				break;
-			}
-		}
-		if (!found_watch_idx) {
-			// NOTE: Err, that should (hopefully) never happen!
-			foo = write(STDERR_FILENO, "!! Failed to match the child pid reaped to any of our tracked spawns! !!\n", 73);
-		}
-		// NOTE: We shouldn't ever lose track of a spawn pid, but we can't safely log what happened (fprintf & co not async-safe), so just mention *something* was reaped...
-		foo = write(STDERR_FILENO, "Reaped a spawned pid.\n", 22);
-		if (WIFEXITED(wstatus)) {
-			foo = write(STDERR_FILENO, "It exited.\n", 11);
-		} else if (WIFSIGNALED(wstatus)) {
-			foo = write(STDERR_FILENO, "It was killed by a signal.\n", 27);
-		}
-		// Reset our pid tracker to announce that we're ready to spawn something new
-		watch_config[watch_idx].last_spawned_pid = 0;
-	}
-	errno = saved_errno;
-}
-*/
 
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {

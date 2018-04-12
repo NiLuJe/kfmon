@@ -96,4 +96,4 @@ Due to the exact timing at which Nickel parses books, for a completely new file,
 
 Note that right now, proper interaction with KOReader requires a bleeding-edge version of KOReader (i.e., current nightlies or OTAs, not the stable version).
 
-Right now, KFMon supports a maximum of [16](/kfmon.h#L107) file watches. Ping me if that's not enough for you ;).
+Right now, KFMon supports a maximum of [16](/kfmon.h#L106) file watches. Ping me if that's not enough for you ;).
