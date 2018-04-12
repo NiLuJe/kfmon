@@ -524,7 +524,7 @@ static pid_t spawn(char *const *command)
 		close(orig_stdout);
 		close(orig_stderr);
 		// NOTE: Always use a barebones env, to see if that helps avoid Nickel getting its panties in a twist...
-		char *const envp[] = {"PWD=/", "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:", NULL};	// FIXME: Last resort: install fmon and check its env...
+		char *const envp[] = {"PWD=/", "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:", NULL};	// FIXME: This might be counter-productive when started from on-animator...
 		execvpe(*command, command, envp);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
 		perror("[KFMon] execvpe");
@@ -727,8 +727,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	struct pollfd pfd;
 
 	// Being launched via udev leaves us with a negative nice value, fix that.
-	if (nice(2) == -1) {
-		perror("[KFMon] nice");
+	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
+		perror("[KFMon] setpriority");
 		exit(EXIT_FAILURE);
 	}
 

@@ -39,6 +39,8 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <syslog.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sqlite3.h>
 #include "inih/ini.h"
 
