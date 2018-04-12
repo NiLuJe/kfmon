@@ -24,7 +24,7 @@ And it also properly persists across unmounts & remounts (like during an USBMS e
 
 # How do I install this?
 
-First, if you're currently using fmon, it might be a good idea to uninstall it first ;).
+First, if you're currently using fmon, it might be a good idea to uninstall it first ;). Since both patch the same startup script, only the last one you installed will actually "take".
 Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/forums/showthread.php?t=274231), and simply unpack the ZIP archive to the USB root of your Kobo when it's plugged to a computer.
 The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276) if it is already installed, as well as a ```KoboRoot.tgz``` which will actually install KFMon itself.
 This ensures that the KOReader PNG file will first be processed by Nickel before the KoboRoot package triggers a reboot for installation.
@@ -70,6 +70,12 @@ And you will have to set *all three* of the following key/value pairs:
 
 Note that these three fields will be cropped at 128 characters.
 
+# How do I install this?
+
+You'll havbe to delete a few things manually, ideally over SSH:
+The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, depending on which version of KFMon you were running)
+And the folders ```/usr/local/kfmon``` & ```/mnt/onboard/.adds/kfmon```
+Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (c.f., 8710a31)
 
 
 # Things to watch out for
