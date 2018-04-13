@@ -932,6 +932,12 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				if (PT.spawn_fds[0].revents & POLLIN) {
 					// Try to reap potentially stale zombie processes before processing the inotify events (without blocking this time).
 					// FIXME: This shouldn't be needed, because the whole pipe polling dance should do the trick just fine, but there you have it...
+					// NOTE:  Another crappy workaround if you feel particularly offended by that potential zombie process per watch, is to instead:
+					//        1. reap_zombie_processes() at the top of this loop (i.e., right above the poll_num poll())
+					//        2. Set a timeout to the poll_num poll()
+					//        This would ensure forceful reaping of zombie processes on every timeout.
+					//        I'm not doing it this way, because I have some concerns about wakeups and battery life, but I may be overthinking it, because
+					//        nickel appears to be happily looping a bunch of pselect() calls w/ timeouts...
 					reap_zombie_processes();
 					// Inotify events are available
 					if (handle_events(fd)) {
