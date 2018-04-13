@@ -249,11 +249,8 @@ static int load_config() {
 						LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 					} else {
 						// NOTE: Don't blow up when trying to store more watches than we have space for...
-						// NOTE: Our process table also uses WATCH_MAX, but it has one entry reserved for the inotify fd.
-						//       Account for the (very) unlikely fact that we could be overflowing our process table by subtracting one here.
-						//       (It's highly unlikely to happen, because that'd mean having *every* available watch currently running a process!)
-						if (watch_count >= WATCH_MAX-1) {
-							LOG("We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX-1, p->fts_name);
+						if (watch_count >= WATCH_MAX) {
+							LOG("We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX, p->fts_name);
 							// Don't flag this as a hard failure, just warn and go on...
 							break;
 						}
@@ -511,16 +508,14 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 static void init_process_table(void) {
 	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		PT.spawn_pids[i] = -1;
-		PT.spawn_fds[i].fd = -1;
-		PT.spawn_fds[i].events = POLLIN;
 		PT.spawn_watchids[i] = -1;
 	}
 }
 
 // Returns the index of the next available entry in the process table.
 static int get_next_available_pt_entry(void) {
-	for (int i = 1; i < WATCH_MAX; i++) {
-		if (PT.spawn_fds[i].fd == -1) {
+	for (int i = 0; i < WATCH_MAX; i++) {
+		if (PT.spawn_watchids[i] == -1) {
 			return i;
 		}
 	}
@@ -528,23 +523,20 @@ static int get_next_available_pt_entry(void) {
 }
 
 // Adds information about a new spawn to the process table.
-static void add_process_to_table(int i, pid_t pid, int fd, unsigned int watch_idx) {
+static void add_process_to_table(int i, pid_t pid, unsigned int watch_idx) {
 	PT.spawn_pids[i] = pid;
-	PT.spawn_fds[i].fd = fd;
 	PT.spawn_watchids[i] = (int) watch_idx;
 }
 
 // Removes information about a spawn from the process table.
 static void remove_process_from_table(int i) {
-	close(PT.spawn_fds[i].fd);
 	PT.spawn_pids[i] = -1;
-	PT.spawn_fds[i].fd = -1;
 	PT.spawn_watchids[i] = -1;
 }
 
 void *thread_reaper(void *ptr) {
 	int i = *((int *) ptr);
-	LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
+	LOG(". . . Waiting to reap process %ld", (long) PT.spawn_pids[i]);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
@@ -578,13 +570,6 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 {
 	pid_t pid;
 
-	// Create the pipe needed to handle reaping via polling during our main event loop
-	int p[2];
-	if (pipe(p) < 0) {
-		perror("[KFMon] pipe");
-		exit(EXIT_FAILURE);
-	}
-
 	pid = fork();
 
 	if (pid < 0) {
@@ -594,8 +579,6 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 	} else if (pid == 0) {
 		// Sweet child o' mine!
 		LOG("Spawned process %ld . . .", (long) getpid());
-		// Close the read end of the pipe
-		close(p[0]);
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
@@ -613,9 +596,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		exit(EXIT_FAILURE);
 	} else {
 		// Parent
-		// Close the write end of the pipe
-		close(p[1]);
-		// And keep track of the process
+		// Keep track of the process
 		int i = get_next_available_pt_entry();
 		if (i < 0) {
 			// NOTE: If we ever hit this error codepath, we don't have to worry about leaving that last spawn as a zombie:
@@ -624,9 +605,10 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			LOG("Failed to find an available entry in our process table for pid %ld!", (long) pid);
 			exit(EXIT_FAILURE);
 		} else {
-			add_process_to_table(i, pid, p[0], watch_idx);
-			DBGLOG("Assigned pid %ld (from watch idx %d and with pipefd %d) to process table entry idx %d", (long) pid, watch_idx, p[0], i);
-			// Create a thread for every spawn to handle reaping...
+			add_process_to_table(i, pid, watch_idx);
+			DBGLOG("Assigned pid %ld (from watch idx %d) to process table entry idx %d", (long) pid, watch_idx, i);
+			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread for every spawn...
+			//       See #2 for an history of the previous failed attempts...
 			pthread_t rthread;
 			int *arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
@@ -644,42 +626,11 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 	return pid;
 }
 
-// Reap and cleans up any dead child processes from the process table.
-static void reap_zombie_processes(void) {
-	// NOTE: For *some* scripts, the whole "detecting the termination of the child process via the closed pipe" somehow doesn't take.
-	//        As a dirty workaround, we try to manually reap our currently registered spawns on *every* batch of inotify events...
-	//        ... but do so with a twist: use WNOHANG to avoid blocking.
-	//       This *may* be HW/FW specific (or at least I hope), but I only have an H2O to test...
-	for (int i = 1; i < WATCH_MAX; i++) {
-		if (PT.spawn_pids[i] != -1) {
-			LOG("Forcefully trying to reap process %ld ...", (long) PT.spawn_pids[i]);
-			pid_t ret;
-			int wstatus;
-			ret = waitpid(PT.spawn_pids[i], &wstatus, WNOHANG);
-			// Recap what happened to it
-			if (ret < 0) {
-				perror("[KFMon] waitpid");
-				exit(EXIT_FAILURE);
-			} else if (ret == PT.spawn_pids[i]) {
-				if (WIFEXITED(wstatus)) {
-					LOG("Reaped zombie process %d: It exited with status %d.", PT.spawn_pids[i], WEXITSTATUS(wstatus));
-				} else if (WIFSIGNALED(wstatus)) {
-					LOG("Reaped zombie process %d: It was killed by signal %d (%s).", PT.spawn_pids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
-				}
-				// And now we can safely remove it from the process table
-				remove_process_from_table(i);
-			} else {
-				LOG("... process %ld is still alive.", (long) PT.spawn_pids[i]);
-			}
-		}
-	}
-}
-
 // Check if a given inotify watch already has a spawn running
 static bool is_watch_already_spawned(unsigned int watch_idx)
 {
 	// Walk our process table to see if the given watch currently has a registered running process
-	for (unsigned int i = 1; i < WATCH_MAX; i++) {
+	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == (int) watch_idx) {
 			return true;
 			// NOTE: Assume everything's peachy, and we'll never end up with the same watch_idx assigned to multiple indices in the process table.
@@ -692,7 +643,7 @@ static bool is_watch_already_spawned(unsigned int watch_idx)
 
 // Return the pid of the spawn of a given inotify watch
 static pid_t get_spawn_pid_for_watch(unsigned int watch_idx) {
-	for (unsigned int i = 1; i < WATCH_MAX; i++) {
+	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == (int) watch_idx) {
 			return PT.spawn_pids[i];
 		}
@@ -846,6 +797,7 @@ static bool handle_events(int fd)
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
 	int fd, poll_num;
+	struct pollfd pfd;
 
 	// Being launched via udev leaves us with a negative nice value, fix that.
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
@@ -920,15 +872,14 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			LOG("Setup an inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
 		}
 
-		// NOTE: Always hijack the first entry of the process table for our inotify input fd...
-		//       This is not terribly neat, but it simplifies my life a bit during the polling...
-		PT.spawn_fds[0].fd = fd;
-		PT.spawn_fds[0].events = POLLIN;
+		// Inotify input
+		pfd.fd = fd;
+		pfd.events = POLLIN;
 
-		// Wait for events (both from inotify, and spawned processes terminations)
+		// Wait for events
 		LOG("Listening for events.");
 		while (1) {
-			poll_num = poll(PT.spawn_fds, WATCH_MAX, -1);
+			poll_num = poll(&pfd, 1, -1);
 			if (poll_num == -1) {
 				if (errno == EINTR) {
 					continue;
@@ -938,53 +889,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			}
 
 			if (poll_num > 0) {
-				// Loop over our process table to check if any of the pipes have closed
-				// NOTE: Index 0 is reserved for our inotify fd, so we start looping at index 1
-				for (int i = 1; i < WATCH_MAX; i++) {
-					// NOTE: Unfortunately, what happens when the remote end of a pipe is closed is implementation dependent. It can be a combination of POLLHUP, POLLIN, or both.
-					//       c.f., http://www.greenend.org.uk/rjk/tech/poll.html
-					//       Try to cover everything just to be safe... Although, in our case, it should reasonably always be simply POLLHUP
-					if (PT.spawn_fds[i].revents & (POLLIN | POLLHUP)) {
-						LOG(". . . NOT Reaping process %ld", (long) PT.spawn_pids[i]);
-						/*
-						pid_t ret;
-						int wstatus;
-						// Wait for our child process to terminate, retrying on EINTR
-						do {
-							ret = waitpid(PT.spawn_pids[i], &wstatus, 0);
-						} while (ret == -1 && errno == EINTR);
-						// Recap what happened to it
-						if (ret != PT.spawn_pids[i]) {
-							perror("[KFMon] waitpid");
-							exit(EXIT_FAILURE);
-						} else {
-							if (WIFEXITED(wstatus)) {
-								LOG("Reaped process %d: It exited with status %d.", PT.spawn_pids[i], WEXITSTATUS(wstatus));
-							} else if (WIFSIGNALED(wstatus)) {
-								LOG("Reaped process %d: It was killed by signal %d (%s).", PT.spawn_pids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
-							}
-						}
-						// And now we can safely remove it from the process table
-						remove_process_from_table(i);
-						*/
-					}
-				}
-				// And finally handle our inotify events
-				if (PT.spawn_fds[0].revents & POLLIN) {
-					// Try to reap potentially stale zombie processes before processing the inotify events (without blocking this time).
-					// FIXME: This shouldn't be needed, because the whole pipe polling dance should do the trick just fine, but there you have it...
-					// NOTE:  Another crappy workaround if you feel particularly offended by that potential zombie process per watch, is to instead:
-					//        1. reap_zombie_processes() at the top of this loop (i.e., right above the poll_num poll())
-					//        2. Set a timeout to the poll_num poll()
-					//        This would ensure forceful reaping of zombie processes on every timeout.
-					//        I'm not doing it this way, because I have some concerns about wakeups and battery life, but I may be overthinking it, because
-					//        nickel appears to be happily looping a bunch of pselect() calls w/ timeouts...
-					// NOTE:  I briefly looked into using signalfd(), but I *think* we'd fall into roughly the same pitfalls as with the SIGCHLD handler,
-					//        because we still need to block/unblock SIGCHLD after a fork(), and I still don't understand why I couldn't get that behavior to
-					//        work properly (either in 74a6563, or even with a simple SIG_IGN on SIGCHLD [which would reap automatically])...
-					// NOTE:  So the only other viable state I ever hit was with synchronous blocking waitpid() calls (right before 601d134), but that costs us,
-					//        among other things, the ability to reliably prevent a watch from being run twice while it's still up.
-					//reap_zombie_processes();
+				if (pfd.revents & POLLIN) {
 					// Inotify events are available
 					if (handle_events(fd)) {
 						// Go back to the main loop if we exited early (because a watch was destroyed automatically after an unmount or an unlink, for instance)
