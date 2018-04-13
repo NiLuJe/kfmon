@@ -816,7 +816,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	}
 
 	// Say hello :)
-	LOG("Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s)", KFMON_VERSION,  __DATE__, __TIME__, sqlite3_libversion(), SQLITE_VERSION);
+	LOG("[PID: %ld] Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s)", (long) getpid(), KFMON_VERSION,  __DATE__, __TIME__, sqlite3_libversion(), SQLITE_VERSION);
 
 	// Load our configs
 	if (load_config() == -1) {
