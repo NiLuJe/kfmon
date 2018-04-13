@@ -866,7 +866,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				// Loop over our process table to check if any of the pipes have closed
 				for (int i = 1; i < WATCH_MAX; i++) {
 					if ((PT.spawn_fds[i].revents & POLLHUP) != 0) {
-						LOG("Reaping process %ld . . .", (long) PT.spawn_pids[i]);
+						LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
 						pid_t ret;
 						int wstatus;
 						ret = waitpid(PT.spawn_pids[i], &wstatus, 0);
