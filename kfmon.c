@@ -564,7 +564,6 @@ void *thread_reaper(void *ptr) {
 	}
 	// And now we can safely remove it from the process table
 	remove_process_from_table(i);
-	free(ptr);
 
 	return(EXIT_SUCCESS);
 }
@@ -628,13 +627,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			DBGLOG("Assigned pid %ld (from watch idx %d and with pipefd %d) to process table entry idx %d", (long) pid, watch_idx, p[0], i);
 			// Create a thread for every spawn to handle reaping...
 			pthread_t rthread;
-			int *arg = malloc(sizeof(*arg));
-			if (arg == NULL) {
-				LOG("Couldn't allocate memory for thread arg.");
-				exit(EXIT_FAILURE);
-			}
-			*arg = i;
-			if (pthread_create( &rthread, NULL, thread_reaper, arg) < 0) {
+			if (pthread_create( &rthread, NULL, thread_reaper, (void *)&i) < 0) {
 				perror("[KFMon] pthread_create");
 				exit(EXIT_FAILURE);
 			}

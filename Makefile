@@ -17,6 +17,7 @@ default: all
 # NOTE: For some weird reason, tabs suddenly confuse the hell out of make outside of targets...
 ifdef NILUJE
     LIBS=-lsqlite3
+    LIBS+=-lpthread
     EXTRA_CFLAGS+=-DNILUJE
 else
     # We want to link to sqlite3 explicitly statically
