@@ -586,10 +586,14 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		// And keep track of the process
 		int i = get_next_available_pt_entry();
 		if (i < 0) {
-			LOG("Failed to find an available entry in our process table!");
+			// NOTE: If we ever hit this error codepath, we don't have to worry about leaving that last spawn as a zombie:
+			//       One of the benefits of the double-fork we do to daemonize is that, on our death, our children will get reparented to init,
+			//       which, by design, will handle the reaping automatically.
+			LOG("Failed to find an available entry in our process table for pid %ld!", (long) pid);
 			exit(EXIT_FAILURE);
 		} else {
 			add_process_to_table(i, pid, p[0], watch_idx);
+			DBGLOG("Assigned pid %ld (from watch idx %d and with pipefd %d) to process table entry idx %d", (long) pid, watch_idx, p[0], i);
 		}
 	}
 
