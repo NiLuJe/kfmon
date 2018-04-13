@@ -601,6 +601,37 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 	return pid;
 }
 
+// Reap and cleans up any dead child processes from the process table.
+static void reap_zombie_processes(void) {
+	// NOTE: For *some* scripts, the whole "detecting the termination of the child process via the closed pipe" somehow doesn't take.
+	//        As a dirty workaround, we try to manually reap our currently registered spawns on *every* batch of inotify events...
+	//        ... but do so with a twist: use WNOHANG to avoid blocking.
+	//       This *may* be HW/FW specific (or at least I hope), but I only have an H2O to test...
+	for (int i = 1; i < WATCH_MAX; i++) {
+		if (PT.spawn_pids[i] != -1) {
+			LOG("Forcefully trying to reap process %ld ...", (long) PT.spawn_pids[i]);
+			pid_t ret;
+			int wstatus;
+			ret = waitpid(PT.spawn_pids[i], &wstatus, WNOHANG);
+			// Recap what happened to it
+			if (ret < 0) {
+				perror("[KFMon] waitpid");
+				exit(EXIT_FAILURE);
+			} else if (ret == PT.spawn_pids[i]) {
+				if (WIFEXITED(wstatus)) {
+					LOG("Reaped zombie process %d: It exited with status %d.", PT.spawn_pids[i], WEXITSTATUS(wstatus));
+				} else if (WIFSIGNALED(wstatus)) {
+					LOG("Reaped zombie process %d: It was killed by signal %d (%s).", PT.spawn_pids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
+				}
+				// And now we can safely remove it from the process table
+				remove_process_from_table(i);
+			} else {
+				LOG("... process %ld is still alive.", (long) PT.spawn_pids[i]);
+			}
+		}
+	}
+}
+
 // Check if a given inotify watch already has a spawn running
 static bool is_watch_already_spawned(unsigned int watch_idx)
 {
@@ -864,10 +895,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			}
 
 			if (poll_num > 0) {
-				DBGLOG("poll_num: %d", poll_num);
 				// Loop over our process table to check if any of the pipes have closed
 				for (int i = 1; i < WATCH_MAX; i++) {
-					DBGLOG("revents for fd %d == %d", i, PT.spawn_fds[i].revents);
 					if ((PT.spawn_fds[i].revents & POLLHUP) != 0) {
 						LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
 						pid_t ret;
@@ -890,6 +919,9 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				}
 				// And finally handle our inotify events
 				if (PT.spawn_fds[0].revents & POLLIN) {
+					// Try to reap potentially stale zombie processes before processing the inotify events (without blocking).
+					// FIXME: This shouldn't be needed, because the whole pipe polling dance should do the trick just fine, but there you have it...
+					reap_zombie_processes();
 					// Inotify events are available
 					if (handle_events(fd)) {
 						// Go back to the main loop if we exited early (because a watch was destroyed automatically after an unmount or an unlink, for instance)
