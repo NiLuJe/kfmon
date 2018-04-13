@@ -938,6 +938,11 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 					//        This would ensure forceful reaping of zombie processes on every timeout.
 					//        I'm not doing it this way, because I have some concerns about wakeups and battery life, but I may be overthinking it, because
 					//        nickel appears to be happily looping a bunch of pselect() calls w/ timeouts...
+					// NOTE:  I briefly looked into using signalfd(), but I *think* we'd fall into roughly the same pitfalls as with the SIGCHLD handler,
+					//        because we still need to block/unblock SIGCHLD after a fork(), and I still don't understand why I couldn't get that behavior to
+					//        work properly (either in 74a6563, or even with a simple SIG_IGN on SIGCHLD [which would reap automatically])...
+					// NOTE:  So the only other viable state I ever hit was with synchronous blocking waitpid() calls (right before 601d134), but that costs us,
+					//        among other things, the ability to reliably prevent a watch from being run twice while it's still up.
 					reap_zombie_processes();
 					// Inotify events are available
 					if (handle_events(fd)) {
