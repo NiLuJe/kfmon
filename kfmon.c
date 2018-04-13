@@ -94,6 +94,8 @@ static int daemonize(void)
 }
 
 // Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
+// NOTE: None of this is particularly thread safe, but let's call that good enough for us...
+//       (It's mainly race-y because of the use of static variables).
 char *get_current_time(void)
 {
 	// cf. strftime(3) & https://stackoverflow.com/questions/7411301
