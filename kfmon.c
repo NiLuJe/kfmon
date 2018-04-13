@@ -249,8 +249,11 @@ static int load_config() {
 						LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 					} else {
 						// NOTE: Don't blow up when trying to store more watches than we have space for...
-						if (watch_count >= WATCH_MAX) {
-							LOG("We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX, p->fts_name);
+						// NOTE: Our process table also uses WATCH_MAX, but it has one entry reserved for the inotify fd.
+						//       Account for the (very) unlikely fact that we could be overflowing our process table by subtracting one here.
+						//       (It's highly unlikely to happen, because that'd mean having *every* available watch currently running a process!)
+						if (watch_count >= WATCH_MAX-1) {
+							LOG("We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX-1, p->fts_name);
 							// Don't flag this as a hard failure, just warn and go on...
 							break;
 						}
@@ -516,7 +519,7 @@ static void init_process_table(void) {
 
 // Returns the index of the next available entry in the process table.
 static int get_next_available_pt_entry(void) {
-	for (int i = 0; i < WATCH_MAX; i++) {
+	for (int i = 1; i < WATCH_MAX; i++) {
 		if (PT.spawn_fds[i].fd == -1) {
 			return i;
 		}
@@ -637,7 +640,7 @@ static void reap_zombie_processes(void) {
 static bool is_watch_already_spawned(unsigned int watch_idx)
 {
 	// Walk our process table to see if the given watch currently has a registered running process
-	for (unsigned int i = 0; i < WATCH_MAX; i++) {
+	for (unsigned int i = 1; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == (int) watch_idx) {
 			return true;
 			// NOTE: Assume everything's peachy, and we'll never end up with the same watch_idx assigned to multiple indices in the process table.
@@ -650,7 +653,7 @@ static bool is_watch_already_spawned(unsigned int watch_idx)
 
 // Return the pid of the spawn of a given inotify watch
 static pid_t get_spawn_pid_for_watch(unsigned int watch_idx) {
-	for (unsigned int i = 0; i < WATCH_MAX; i++) {
+	for (unsigned int i = 1; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == (int) watch_idx) {
 			return PT.spawn_pids[i];
 		}
@@ -897,6 +900,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 			if (poll_num > 0) {
 				// Loop over our process table to check if any of the pipes have closed
+				// NOTE: Index 0 is reserved for our inotify fd, so we start looping at index 1
 				for (int i = 1; i < WATCH_MAX; i++) {
 					// NOTE: Unfortunately, what happens when the remote end of a pipe is closed is implementation dependent. It can be a combination of POLLHUP, POLLIN, or both.
 					//       c.f., http://www.greenend.org.uk/rjk/tech/poll.html
@@ -926,7 +930,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				}
 				// And finally handle our inotify events
 				if (PT.spawn_fds[0].revents & POLLIN) {
-					// Try to reap potentially stale zombie processes before processing the inotify events (without blocking).
+					// Try to reap potentially stale zombie processes before processing the inotify events (without blocking this time).
 					// FIXME: This shouldn't be needed, because the whole pipe polling dance should do the trick just fine, but there you have it...
 					reap_zombie_processes();
 					// Inotify events are available
