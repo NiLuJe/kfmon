@@ -524,10 +524,10 @@ static int get_next_available_pt_entry(void) {
 }
 
 // Adds information about a new spawn to the process table.
-static void add_process_to_table(int i, pid_t pid, int fd, unsigned int watchidx) {
+static void add_process_to_table(int i, pid_t pid, int fd, unsigned int watch_idx) {
 	PT.spawn_pids[i] = pid;
 	PT.spawn_fds[i].fd = fd;
-	PT.spawn_watchids[i] = (int) watchidx;
+	PT.spawn_watchids[i] = (int) watch_idx;
 }
 
 // Removes information about a spawn from the process table.
@@ -600,6 +600,31 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 	return pid;
 }
 
+// Check if a given inotify watch already has a spawn running
+static bool is_watch_already_spawned(unsigned int watch_idx)
+{
+	// Walk our process table to see if the given watch currently has a registered running process
+	for (unsigned int i = 0; i < WATCH_MAX; i++) {
+		if (PT.spawn_watchids[i] == (int) watch_idx) {
+			return true;
+			// NOTE: Consider counting the amount of matches to catch instances of things going awry?
+		}
+	}
+
+	return false;
+}
+
+// Return the pid of the spawn of a given inotify watch
+static pid_t get_spawn_pid_for_watch(unsigned int watch_idx) {
+	for (unsigned int i = 0; i < WATCH_MAX; i++) {
+		if (PT.spawn_watchids[i] == (int) watch_idx) {
+			return PT.spawn_pids[i];
+		}
+	}
+
+	return -1;
+}
+
 // Read all available inotify events from the file descriptor 'fd'.
 static bool handle_events(int fd)
 {
@@ -655,27 +680,36 @@ static bool handle_events(int fd)
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
-				// Only check if we're ready to spawn something...
-				if (!is_target_processed(watch_idx, false)) {
-					// It's not processed on OPEN, flag as pending...
-					pending_processing = true;
-					LOG("Flagged target icon '%s' as pending processing ...", watch_config[watch_idx].filename);
-				} else {
-					// It's already processed, we're good!
-					pending_processing = false;
+				if (!is_watch_already_spawned(watch_idx)) {
+					// Only check if we're ready to spawn something...
+					if (!is_target_processed(watch_idx, false)) {
+						// It's not processed on OPEN, flag as pending...
+						pending_processing = true;
+						LOG("Flagged target icon '%s' as pending processing ...", watch_config[watch_idx].filename);
+					} else {
+						// It's already processed, we're good!
+						pending_processing = false;
+					}
 				}
 			}
 			if (event->mask & IN_CLOSE) {
 				LOG("Tripped IN_CLOSE for %s", watch_config[watch_idx].filename);
-				// Check that our target file has already fully been processed by Nickel before launching anything...
-				if (!pending_processing && is_target_processed(watch_idx, true)) {
-					LOG("Spawning %s . . .", watch_config[watch_idx].action);
-					// We're using execvp()...
-					char *const cmd[] = {watch_config[watch_idx].action, NULL};
-					spawn(cmd, watch_idx);
+				// NOTE: Make sure we won't run a specific command multiple times while an earlier instance of it is still running...
+				//       This is mostly of interest for KOReader/Plato: it means we can keep KFMon running while they're up, without risking
+				//       trying to spawn multiple instances of them in case they end up tripping their own inotify watch ;).
+				if (!is_watch_already_spawned(watch_idx)) {
+					// Check that our target file has already fully been processed by Nickel before launching anything...
+					if (!pending_processing && is_target_processed(watch_idx, true)) {
+						LOG("Spawning %s . . .", watch_config[watch_idx].action);
+						// We're using execvp()...
+						char *const cmd[] = {watch_config[watch_idx].action, NULL};
+						spawn(cmd, watch_idx);
+					} else {
+						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
+						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
+					}
 				} else {
-					LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
-					// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
+					LOG("Our last spawn (%ld) is still alive!", (long) get_spawn_pid_for_watch(watch_idx));
 				}
 			}
 			if (event->mask & IN_UNMOUNT) {

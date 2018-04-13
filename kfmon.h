@@ -154,4 +154,7 @@ static bool is_target_processed(unsigned int, bool);
 
 static pid_t spawn(char *const *, unsigned int);
 
+static bool is_watch_already_spawned(unsigned int);
+static pid_t get_spawn_pid_for_watch(unsigned int);
+
 static bool handle_events(int);
