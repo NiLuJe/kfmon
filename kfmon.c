@@ -509,7 +509,7 @@ static void init_process_table(void) {
 	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		PT.spawn_pids[i] = -1;
 		PT.spawn_fds[i].fd = -1;
-		PT.spawn_fds[i].events = 0;
+		PT.spawn_fds[i].events = POLLIN;
 		PT.spawn_watchids[i] = -1;
 	}
 }
@@ -898,7 +898,10 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			if (poll_num > 0) {
 				// Loop over our process table to check if any of the pipes have closed
 				for (int i = 1; i < WATCH_MAX; i++) {
-					if (PT.spawn_fds[i].revents & POLLHUP) {
+					// NOTE: Unfortunately, what happens when the remote end of a pipe is closed is implementation dependent. It can be a combination of POLLHUP, POLLIN, or both.
+					//       c.f., http://www.greenend.org.uk/rjk/tech/poll.html
+					//       Try to cover everything just to be safe...
+					if (PT.spawn_fds[i].revents & (POLLIN | POLLHUP)) {
 						LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
 						pid_t ret;
 						int wstatus;
