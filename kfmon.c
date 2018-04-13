@@ -532,6 +532,7 @@ static void add_process_to_table(int i, pid_t pid, int fd, unsigned int watch_id
 
 // Removes information about a spawn from the process table.
 static void remove_process_from_table(int i) {
+	close(PT.spawn_fds[i].fd);
 	PT.spawn_pids[i] = -1;
 	PT.spawn_fds[i].fd = -1;
 	PT.spawn_watchids[i] = -1;
