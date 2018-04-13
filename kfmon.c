@@ -534,9 +534,11 @@ static void remove_process_from_table(int i) {
 	PT.spawn_watchids[i] = -1;
 }
 
-void *thread_reaper(void *ptr) {
+void *reaper_thread(void *ptr) {
 	int i = *((int *) ptr);
-	LOG(". . . Waiting to reap process %ld", (long) PT.spawn_pids[i]);
+	pid_t tid;
+	tid = (pid_t) syscall(SYS_gettid);
+	LOG(". . . Waiting to reap process %ld from thread %ld", (long) PT.spawn_pids[i], (long) tid);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
@@ -616,7 +618,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 				exit(EXIT_FAILURE);
 			}
 			*arg = i;
-			if (pthread_create(&rthread, NULL, thread_reaper, arg) < 0) {
+			if (pthread_create(&rthread, NULL, reaper_thread, arg) < 0) {
 				perror("[KFMon] pthread_create");
 				exit(EXIT_FAILURE);
 			}
