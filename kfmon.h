@@ -36,6 +36,7 @@
 #include <syslog.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <pthread.h>
 #include <sqlite3.h>
 #include "inih/ini.h"
 
@@ -152,6 +153,7 @@ WatchConfig watch_config[WATCH_MAX] = {0};
 static unsigned int qhash(const unsigned char *, size_t);
 static bool is_target_processed(unsigned int, bool);
 
+void *thread_reaper(void *);
 static pid_t spawn(char *const *, unsigned int);
 
 static void reap_zombie_processes(void);

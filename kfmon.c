@@ -542,6 +542,33 @@ static void remove_process_from_table(int i) {
 	PT.spawn_watchids[i] = -1;
 }
 
+void *thread_reaper(void *ptr) {
+	int i = *((int *) ptr);
+	LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
+	pid_t ret;
+	int wstatus;
+	// Wait for our child process to terminate, retrying on EINTR
+	do {
+		ret = waitpid(PT.spawn_pids[i], &wstatus, 0);
+	} while (ret == -1 && errno == EINTR);
+	// Recap what happened to it
+	if (ret != PT.spawn_pids[i]) {
+		perror("[KFMon] waitpid");
+		exit(EXIT_FAILURE);
+	} else {
+		if (WIFEXITED(wstatus)) {
+			LOG("Reaped process %d: It exited with status %d.", PT.spawn_pids[i], WEXITSTATUS(wstatus));
+		} else if (WIFSIGNALED(wstatus)) {
+			LOG("Reaped process %d: It was killed by signal %d (%s).", PT.spawn_pids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
+		}
+	}
+	// And now we can safely remove it from the process table
+	remove_process_from_table(i);
+	free(ptr);
+
+	return(EXIT_SUCCESS);
+}
+
 /* Spawn a process and return its pid...
  * Initially inspired from popen2() implementations from https://stackoverflow.com/questions/548063
  * As well as the glibc's system() call,
@@ -599,6 +626,18 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		} else {
 			add_process_to_table(i, pid, p[0], watch_idx);
 			DBGLOG("Assigned pid %ld (from watch idx %d and with pipefd %d) to process table entry idx %d", (long) pid, watch_idx, p[0], i);
+			// Create a thread for every spawn to handle reaping...
+			pthread_t rthread;
+			int *arg = malloc(sizeof(*arg));
+			if (arg == NULL) {
+				LOG("Couldn't allocate memory for thread arg.");
+				exit(EXIT_FAILURE);
+			}
+			*arg = i;
+			if (pthread_create( &rthread, NULL, thread_reaper, arg) < 0) {
+				perror("[KFMon] pthread_create");
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
@@ -906,7 +945,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 					//       c.f., http://www.greenend.org.uk/rjk/tech/poll.html
 					//       Try to cover everything just to be safe... Although, in our case, it should reasonably always be simply POLLHUP
 					if (PT.spawn_fds[i].revents & (POLLIN | POLLHUP)) {
-						LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
+						LOG(". . . NOT Reaping process %ld", (long) PT.spawn_pids[i]);
+						/*
 						pid_t ret;
 						int wstatus;
 						// Wait for our child process to terminate, retrying on EINTR
@@ -926,6 +966,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 						}
 						// And now we can safely remove it from the process table
 						remove_process_from_table(i);
+						*/
 					}
 				}
 				// And finally handle our inotify events
@@ -943,7 +984,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 					//        work properly (either in 74a6563, or even with a simple SIG_IGN on SIGCHLD [which would reap automatically])...
 					// NOTE:  So the only other viable state I ever hit was with synchronous blocking waitpid() calls (right before 601d134), but that costs us,
 					//        among other things, the ability to reliably prevent a watch from being run twice while it's still up.
-					reap_zombie_processes();
+					//reap_zombie_processes();
 					// Inotify events are available
 					if (handle_events(fd)) {
 						// Go back to the main loop if we exited early (because a watch was destroyed automatically after an unmount or an unlink, for instance)
