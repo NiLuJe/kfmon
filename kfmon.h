@@ -105,6 +105,19 @@ typedef struct
 // Hardcode the max amount of watches we handle
 #define WATCH_MAX 16
 
+// Used to keep track of our spawned processes, by storing their pids, their pipe fds, and their watch idx.
+// c.f., https://stackoverflow.com/a/35235950
+// As well as issue #2 for details of past failures w/ a SIGCHLD handler
+struct process_table {
+	pid_t spawn_pids[WATCH_MAX];
+	struct pollfd spawn_fds[WATCH_MAX];
+	int spawn_watchids[WATCH_MAX];
+} PT;
+static void init_process_table(void);
+static int get_next_available_pt_entry(void);
+static void add_process_to_table(int, pid_t, int, unsigned int);
+static void remove_process_from_table(int);
+
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
 #define CALL_SQLITE(f) ({				\
 	int i;						\
@@ -139,6 +152,6 @@ WatchConfig watch_config[WATCH_MAX] = {0};
 static unsigned int qhash(const unsigned char *, size_t);
 static bool is_target_processed(unsigned int, bool);
 
-static pid_t spawn(char *const *);
+static pid_t spawn(char *const *, unsigned int);
 
 static bool handle_events(int);

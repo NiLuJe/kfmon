@@ -503,14 +503,55 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	return is_processed;
 }
 
-/* Spawn a process, wait for it to die, and return its pid...
- * Inspired from popen2() implementations from https://stackoverflow.com/questions/548063
- * As well as the glibc's system() call */
-static pid_t spawn(char *const *command)
+// Heavily inspired from https://stackoverflow.com/a/35235950
+// Initializes the process table. -1 means the entry in the table is available.
+static void init_process_table(void) {
+	for (unsigned int i = 0; i < WATCH_MAX; i++) {
+		PT.spawn_pids[i] = -1;
+		PT.spawn_fds[i].fd = -1;
+		PT.spawn_watchids[i] = -1;
+	}
+}
+
+// Returns the index of the next available entry in the process table.
+static int get_next_available_pt_entry(void) {
+	for (int i = 0; i < WATCH_MAX; i++) {
+		if (PT.spawn_fds[i].fd == -1) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+// Adds information about a new spawn to the process table.
+static void add_process_to_table(int i, pid_t pid, int fd, unsigned int watchidx) {
+	PT.spawn_pids[i] = pid;
+	PT.spawn_fds[i].fd = fd;
+	PT.spawn_watchids[i] = (int) watchidx;
+}
+
+// Removes information about a spawn from the process table.
+static void remove_process_from_table(int i) {
+	PT.spawn_pids[i] = -1;
+	PT.spawn_fds[i].fd = -1;
+	PT.spawn_watchids[i] = -1;
+}
+
+/* Spawn a process and return its pid...
+ * Initially inspired from popen2() implementations from https://stackoverflow.com/questions/548063
+ * As well as the glibc's system() call,
+ * With a bit of added tracking to handle reaping without a SIGCHLD handler.
+ */
+static pid_t spawn(char *const *command, unsigned int watch_idx)
 {
 	pid_t pid;
-	int wstatus;
-	pid_t ret;
+
+	// Create the pipe needed to handle reaping via polling during our main event loop
+	int p[2];
+	if (pipe(p) < 0) {
+		perror("[KFMon] pipe");
+		exit(EXIT_FAILURE);
+	}
 
 	pid = fork();
 
@@ -521,6 +562,8 @@ static pid_t spawn(char *const *command)
 	} else if (pid == 0) {
 		// Sweet child o' mine!
 		LOG("Spawned process %ld . . .", (long) getpid());
+		// Close the read end of the pipe
+		close(p[0]);
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
@@ -538,21 +581,15 @@ static pid_t spawn(char *const *command)
 		exit(EXIT_FAILURE);
 	} else {
 		// Parent
-		LOG("Waiting to reap process %ld . . .", (long) pid);
-		// Wait for our child process to terminate, retrying on EINTR
-		do {
-			ret = waitpid(pid, &wstatus, 0);
-		} while (ret == -1 && errno == EINTR);
-		// Recap what happened to it
-		if (ret != pid) {
-			perror("[KFMon] waitpid");
+		// Close the write end of the pipe
+		close(p[1]);
+		// And keep track of the process
+		int i = get_next_available_pt_entry();
+		if (i < 0) {
+			LOG("Failed to find an available entry in our process table!");
 			exit(EXIT_FAILURE);
 		} else {
-			if (WIFEXITED(wstatus)) {
-				LOG("Reaped process %d: It exited with status %d.", pid, WEXITSTATUS(wstatus));
-			} else if (WIFSIGNALED(wstatus)) {
-				LOG("Reaped process %d: It was killed by signal %d (%s).", pid, WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
-			}
+			add_process_to_table(i, pid, p[0], watch_idx);
 		}
 	}
 
@@ -631,7 +668,7 @@ static bool handle_events(int fd)
 					LOG("Spawning %s . . .", watch_config[watch_idx].action);
 					// We're using execvp()...
 					char *const cmd[] = {watch_config[watch_idx].action, NULL};
-					spawn(cmd);
+					spawn(cmd, watch_idx);
 				} else {
 					LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
 					// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
@@ -695,7 +732,6 @@ static bool handle_events(int fd)
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
 	int fd, poll_num;
-	struct pollfd pfd;
 
 	// Being launched via udev leaves us with a negative nice value, fix that.
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
@@ -735,6 +771,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		openlog("kfmon", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_DAEMON);
 	}
 
+	// Initialize the process table, to track our spawns
+	init_process_table();
 
 	// We pretty much want to loop forever...
 	while (1) {
@@ -768,14 +806,15 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			LOG("Setup an inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
 		}
 
-		// Inotify input
-		pfd.fd = fd;
-		pfd.events = POLLIN;
+		// NOTE: Always hijack the first entry of the process table for our inotify input fd...
+		//       This is not terribly neat, but it simplifies my life a bit during the polling...
+		PT.spawn_fds[0].fd = fd;
+		PT.spawn_fds[0].events = POLLIN;
 
-		// Wait for events
+		// Wait for events (both from inotify, and spawned processes terminations)
 		LOG("Listening for events.");
 		while (1) {
-			poll_num = poll(&pfd, 1, -1);
+			poll_num = poll(PT.spawn_fds, WATCH_MAX, -1);
 			if (poll_num == -1) {
 				if (errno == EINTR) {
 					continue;
@@ -785,7 +824,30 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			}
 
 			if (poll_num > 0) {
-				if (pfd.revents & POLLIN) {
+				// Loop over our process table to check if any of the pipes have closed
+				for (int i = 1; i < WATCH_MAX; i++) {
+					if ((PT.spawn_fds[i].revents & POLLHUP) != 0) {
+						LOG("Reaping process %ld . . .", (long) PT.spawn_pids[i]);
+						pid_t ret;
+						int wstatus;
+						ret = waitpid(PT.spawn_pids[i], &wstatus, 0);
+						// Recap what happened to it
+						if (ret != PT.spawn_pids[i]) {
+							perror("[KFMon] waitpid");
+							exit(EXIT_FAILURE);
+						} else {
+							if (WIFEXITED(wstatus)) {
+								LOG("Reaped process %d: It exited with status %d.", PT.spawn_pids[i], WEXITSTATUS(wstatus));
+							} else if (WIFSIGNALED(wstatus)) {
+								LOG("Reaped process %d: It was killed by signal %d (%s).", PT.spawn_pids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
+							}
+						}
+						// And now we can safely remove it from the process table
+						remove_process_from_table(i);
+					}
+				}
+				// And finally handle our inotify events
+				if (PT.spawn_fds[0].revents & POLLIN) {
 					// Inotify events are available
 					if (handle_events(fd)) {
 						// Go back to the main loop if we exited early (because a watch was destroyed automatically after an unmount or an unlink, for instance)
