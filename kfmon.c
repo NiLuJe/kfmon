@@ -509,6 +509,7 @@ static void init_process_table(void) {
 	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		PT.spawn_pids[i] = -1;
 		PT.spawn_fds[i].fd = -1;
+		PT.spawn_fds[i].events = 0;
 		PT.spawn_watchids[i] = -1;
 	}
 }
@@ -901,7 +902,10 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 						LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
 						pid_t ret;
 						int wstatus;
-						ret = waitpid(PT.spawn_pids[i], &wstatus, 0);
+						// Wait for our child process to terminate, retrying on EINTR
+						do {
+							ret = waitpid(PT.spawn_pids[i], &wstatus, 0);
+						} while (ret == -1 && errno == EINTR);
 						// Recap what happened to it
 						if (ret != PT.spawn_pids[i]) {
 							perror("[KFMon] waitpid");
