@@ -94,8 +94,8 @@ static int daemonize(void)
 }
 
 // Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
-// NOTE: None of this is particularly thread safe, but let's call that good enough for us...
-//       (It's mainly race-y because of the use of static variables).
+// NOTE: None of this is particularly thread safe,
+//       it's mainly race-y because of the use of static variables.
 char *get_current_time(void)
 {
 	// cf. strftime(3) & https://stackoverflow.com/questions/7411301
@@ -540,7 +540,7 @@ void *reaper_thread(void *ptr) {
 	int i = *((int *) ptr);
 	pid_t tid;
 	tid = (pid_t) syscall(SYS_gettid);
-	LOG(". . . Waiting to reap process %ld from thread %ld", (long) PT.spawn_pids[i], (long) tid);
+	MTLOG(". . . Waiting to reap process %ld from thread %ld", (long) PT.spawn_pids[i], (long) tid);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
@@ -553,9 +553,9 @@ void *reaper_thread(void *ptr) {
 		exit(EXIT_FAILURE);
 	} else {
 		if (WIFEXITED(wstatus)) {
-			LOG("Reaped process %d: It exited with status %d.", PT.spawn_pids[i], WEXITSTATUS(wstatus));
+			MTLOG("Reaped process %d: It exited with status %d.", PT.spawn_pids[i], WEXITSTATUS(wstatus));
 		} else if (WIFSIGNALED(wstatus)) {
-			LOG("Reaped process %d: It was killed by signal %d (%s).", PT.spawn_pids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
+			MTLOG("Reaped process %d: It was killed by signal %d (%s).", PT.spawn_pids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
 		}
 	}
 	// And now we can safely remove it from the process table

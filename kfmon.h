@@ -75,6 +75,15 @@
 	}											\
 })												\
 
+// Slight variation without date/time handling to ensure thread safety
+#define MTLOG(fmt, ...) ({									\
+	if (daemon_config.use_syslog) {								\
+		syslog(LOG_INFO, fmt "\n", ## __VA_ARGS__);					\
+	} else {										\
+		fprintf(stderr, "[KFMon] " fmt "\n", ## __VA_ARGS__);	\
+	}											\
+})												\
+
 // Some extra verbose stuff is relegated to DEBUG builds... (c.f., https://stackoverflow.com/questions/1644868)
 #ifdef DEBUG
 #define DEBUG_LOG 1
