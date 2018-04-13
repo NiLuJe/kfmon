@@ -14,6 +14,9 @@ KFMon tries to alleviate this issue by doing a number of checks before deeming t
 
 On top of that, we have a few extra features: instead of launching one instance per book/action pair, KFMon is a centralized daemon, which simply parses a number of simple INI config files. Each book/action pair gets a dedicated config file.
 
+It also keeps track of processes it has launched, mainly to ensure that for a given watch, only one single instance of its action can ever be run concurrently. As a practical exemple, this means that if you use KFMon to launch KOReader (by tapping its PNG icon), and, once inside KOReader, you try to do the very same thing, KFMon will remember that KOReader is already running, and will refuse to launch a second instance until the previous one has exited. This means that long-running apps don't necessarily need to kill KFMon when they start.
+In the same vein, KFMon's startup script will also refuse to run concurrent instances of KFMon itself.
+
 ~~It's also integrated in the Kobo boot process in an unobtrusive manner (an udev hook), unlike fmon (which modifies a startup script).~~ (See [Issue #2](https://github.com/NiLuJe/kfmon/issues/2) for the various troubles that caused us ;)).
 
 And it also properly persists across unmounts & remounts (like during an USBMS export).
@@ -93,8 +96,6 @@ Meaning you will need to reboot your device after adding new config files or mod
 If it's a new config file, try to make sure it points to a file that has already been processed by Nickel (after an USBMS plug/eject session, for instance) to save you some puzzlement ;).
 
 If you delete one of the files being watched, don't forget to delete the matching config file, and then to reboot your device!
-
-If you launch a long-running task via KFMon, especially one that *may* trigger one of your inotify watches, you should take care of killing KFMon during your task startup. While KFMon can only run a single process concurrently, inotify events are buffered: any number of them may be played back once your task exits, which would then potentially trigger those buffered watches at unintented times.
 
 Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
 
