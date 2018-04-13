@@ -627,7 +627,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			DBGLOG("Assigned pid %ld (from watch idx %d and with pipefd %d) to process table entry idx %d", (long) pid, watch_idx, p[0], i);
 			// Create a thread for every spawn to handle reaping...
 			pthread_t rthread;
-			if (pthread_create( &rthread, NULL, thread_reaper, (void *)&i) < 0) {
+			if (pthread_create(&rthread, NULL, thread_reaper, (void *)&i) < 0) {
 				perror("[KFMon] pthread_create");
 				exit(EXIT_FAILURE);
 			}
