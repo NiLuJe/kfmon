@@ -608,7 +608,8 @@ static bool is_watch_already_spawned(unsigned int watch_idx)
 	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == (int) watch_idx) {
 			return true;
-			// NOTE: Consider counting the amount of matches to catch instances of things going awry?
+			// NOTE: Assume everything's peachy, and we'll never end up with the same watch_idx assigned to multiple indices in the process table.
+			//       Good news: That assumption seems to hold true so far :).
 		}
 	}
 
