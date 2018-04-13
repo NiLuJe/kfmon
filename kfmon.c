@@ -904,7 +904,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				for (int i = 1; i < WATCH_MAX; i++) {
 					// NOTE: Unfortunately, what happens when the remote end of a pipe is closed is implementation dependent. It can be a combination of POLLHUP, POLLIN, or both.
 					//       c.f., http://www.greenend.org.uk/rjk/tech/poll.html
-					//       Try to cover everything just to be safe...
+					//       Try to cover everything just to be safe... Although, in our case, it should reasonably always be simply POLLHUP
 					if (PT.spawn_fds[i].revents & (POLLIN | POLLHUP)) {
 						LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
 						pid_t ret;
