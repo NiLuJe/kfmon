@@ -864,8 +864,10 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			}
 
 			if (poll_num > 0) {
+				DBGLOG("poll_num: %d", poll_num);
 				// Loop over our process table to check if any of the pipes have closed
 				for (int i = 1; i < WATCH_MAX; i++) {
+					DBGLOG("revents for fd %d == %d", i, PT.spawn_fds[i].revents);
 					if ((PT.spawn_fds[i].revents & POLLHUP) != 0) {
 						LOG(". . . Reaping process %ld", (long) PT.spawn_pids[i]);
 						pid_t ret;
