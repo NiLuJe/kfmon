@@ -182,14 +182,14 @@ static long int check_atoi(const char *str) {
 	}
 
 	if (endptr == str) {
-		LOG("No digits were found in a key expecting an int");
+		LOG("No digits were found in value '%s' assigned to a key expecting an int", str);
 		return -1;
 	}
 
 	// If we got here, strtol() successfully parsed at least part of a number.
 	// But check that the input really was *only* an int (accounting for comments)
 	if (*endptr != '\0' && *endptr != ';') {
-		LOG("Found trailing characters (%s) after a key expecting an int", endptr);
+		LOG("Found trailing characters (%s) behind value '%s' assigned to a key expecting an int", endptr, str);
 		return -1;
 	}
 
@@ -327,14 +327,14 @@ static int load_config() {
 					// The main config has to be parsed slightly differently...
 					if (strncasecmp(p->fts_name, "kfmon.ini", 4) == 0) {
 						if (ini_parse(p->fts_path, daemon_handler, &daemon_config) < 0) {
-							LOG("Failed to parse main config file '%s'!", p->fts_name);
-							// Flag as a hard failure...
+							LOG("Failed to parse main config file '%s', will abort!", p->fts_name);
+							// Flag as a failure...
 							rval = -1;
 						} else {
 							if (validate_daemon_config(&daemon_config)) {
 								LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 							} else {
-								LOG("Main config file '%s' is not sane!", p->fts_name);
+								LOG("Main config file '%s' is not sane, will abort!", p->fts_name);
 								rval = -1;
 							}
 						}
@@ -343,17 +343,14 @@ static int load_config() {
 						if (watch_count >= WATCH_MAX) {
 							LOG("We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX, p->fts_name);
 							// Don't flag this as a hard failure, just warn and go on...
-							rval = -2;
 							break;
 						}
 
-						// FIXME: Reset watch_config for said slot on soft fail? Annoying w/ our unsafe strncpy() usage... Scarp the concept? We parse every config before exiting, anyway...
-						// FIXME: Add an Abort: in front exi exiting() perror
 						// FIXME: We possibly need to prevent setting multiple actions on the same file? (cf. matching an inotfy wd to a watch_idx?)
 						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]) < 0) {
-							LOG("Failed to parse watch config file '%s'!", p->fts_name);
-							// Flag as a soft failure...
-							rval = -2;
+							LOG("Failed to parse watch config file '%s', will abort!", p->fts_name);
+							// Flag as a failure...
+							rval = -1;
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
 								LOG("Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
@@ -369,8 +366,8 @@ static int load_config() {
 								// Switch to the next slot!
 								watch_count++;
 							} else {
-								LOG("Watch config file '%s' is not sane, discarding it!", p->fts_name);
-								rval = -2;
+								LOG("Watch config file '%s' is not sane, will abort!", p->fts_name);
+								rval = -1;
 							}
 						}
 					}
@@ -659,7 +656,7 @@ void *reaper_thread(void *ptr) {
 	// Recap what happened to it
 	if (ret != cpid) {
 		perror("[KFMon] waitpid");
-		exit(EXIT_FAILURE);
+		pthread_exit(EXIT_FAILURE);
 	} else {
 		if (WIFEXITED(wstatus)) {
 			MTLOG("Reaped process %ld (from watch idx %d): It exited with status %d.", (long) cpid, watch_idx, WEXITSTATUS(wstatus));
@@ -691,7 +688,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 
 	if (pid < 0) {
 		// Fork failed?
-		perror("[KFMon] waitpid");
+		perror("[KFMon] Aborting: fork");
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
@@ -709,7 +706,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
 		execvp(*command, command);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
-		perror("[KFMon] execvp");
+		perror("[KFMon] Aborting: execvp");
 		exit(EXIT_FAILURE);
 	} else {
 		// Parent
@@ -741,7 +738,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			}
 			*arg = i;
 			if (pthread_create(&rthread, NULL, reaper_thread, arg) < 0) {
-				perror("[KFMon] pthread_create");
+				perror("[KFMon] Aborting: pthread_create");
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -797,7 +794,7 @@ static bool handle_events(int fd)
 		// Read some events.
 		len = read(fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
-			perror("[KFMon] read");
+			perror("[KFMon] Aborting: read");
 			exit(EXIT_FAILURE);
 		}
 
@@ -941,7 +938,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// Make sure we're running at a neutral niceness (f.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
-		perror("[KFMon] setpriority");
+		perror("[KFMon] Aborting: setpriority");
 		exit(EXIT_FAILURE);
 	}
 
@@ -957,12 +954,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	// Load our configs
 	ret = load_config();
 	if (ret < 0) {
-		if (ret == -2) {
-			LOG("Failed to load one or more config files! Affected watches will NOT be functional.");
-		} else {
-			LOG("Something went awfully wrong when loading our main config, aborting!");
-			exit(EXIT_FAILURE);
-		}
+		LOG("Failed to load one or more config files, aborting!");
+		exit(EXIT_FAILURE);
 	}
 
 	// Squish stderr if we want to log to the syslog... (can't do that w/ the rest in daemonize, since we don't have our config yet at that point)
@@ -993,7 +986,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		LOG("Initializing inotify.");
 		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
-			perror("[KFMon] inotify_init1");
+			perror("[KFMon] Aborting: inotify_init1");
 			exit(EXIT_FAILURE);
 		}
 
@@ -1038,7 +1031,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				if (errno == EINTR) {
 					continue;
 				}
-				perror("[KFMon] poll");
+				perror("[KFMon] Aborting: poll");
 				exit(EXIT_FAILURE);
 			}
 
