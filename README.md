@@ -61,7 +61,7 @@ As you would expect, a simple file/action pair only requires two entries:
 Note that the section all these key/value pairs fall under *has* to be named ```[watch]```!
 
 
-In addition to that, you can try to do some cool stuff with the Nickel database: updating the Title, Author and Comment entries of your "book" in the Library.
+In addition to that, you can try to do some cool but potentially dangerous stuff with the Nickel database: updating the Title, Author and Comment entries of your "book" in the Library.
 This is disabled by default, because ninja writing to the database behind Nickel's back *might* upset Nickel (meaning thrash your db!)...
 If you want to try it, you will have to first enable this knob:
 
