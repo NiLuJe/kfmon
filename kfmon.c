@@ -908,8 +908,10 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		//       IN_CREATE: Only applies to directories
 		//       IN_DELETE: Will trigger an IN_IGNORED, which we already handle
 		//       IN_MOVE_SELF: Highly unlikely on a Kobo, and somewhat annoying to handle with our design (we'd have to forget about it entirely and not try to re-watch for it on the next iteration of the loop).
-		// NOTE: inotify tracks the file's inode, which means that it goes *through* bind mouts, for instance (f.g., you won't get an event for unmounting a bind mount, since the original file hasn't actually been touched).
-		//       Relative to the earlier IN_MOVE_SELF mention, that means it'll keep tracking the file with its new name (provided it was moved to the *same* fs, as crossing an fs boundary will delete the original).
+		// NOTE: inotify tracks the file's inode, which means that it goes *through* bind mounts, for instance:
+		//           When bind-mounting file 'a' to file 'b', and setting up a watch to the path of file 'b', you won't get *any* event on that watch when unmounting that bind mount,
+		//           since the original file 'a' hasn't actually been touched, and, as it is the actual, real file, that is what inotify is actually tracking.
+		//       Relative to the earlier IN_MOVE_SELF mention, that means it'll keep tracking the file with its new name (provided it was moved to the *same* fs, as crossing a fs boundary will delete the original).
 		for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 			watch_config[watch_idx].inotify_wd = inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
