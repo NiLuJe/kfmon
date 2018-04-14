@@ -538,30 +538,41 @@ static void remove_process_from_table(int i) {
 
 void *reaper_thread(void *ptr) {
 	int i = *((int *) ptr);
+
 	pid_t tid;
 	tid = (pid_t) syscall(SYS_gettid);
-	MTLOG(". . . Waiting to reap process %ld (from watch idx %d) from thread %ld", (long) PT.spawn_pids[i], PT.spawn_watchids[i], (long) tid);
+
+	pid_t cpid;
+	int watch_idx;
+	pthread_mutex_lock(&ptlock);
+	cpid = PT.spawn_pids[i];
+	watch_idx = PT.spawn_watchids[i];
+	pthread_mutex_unlock(&ptlock);
+
+	MTLOG(". . . Waiting to reap process %ld (from watch idx %d) from thread %ld", (long) cpid, watch_idx, (long) tid);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
 	do {
-		ret = waitpid(PT.spawn_pids[i], &wstatus, 0);
+		ret = waitpid(cpid, &wstatus, 0);
 	} while (ret == -1 && errno == EINTR);
 	// Recap what happened to it
-	if (ret != PT.spawn_pids[i]) {
+	if (ret != cpid) {
 		perror("[KFMon] waitpid");
 		exit(EXIT_FAILURE);
 	} else {
 		if (WIFEXITED(wstatus)) {
-			MTLOG("Reaped process %d (from watch idx %d): It exited with status %d.", PT.spawn_pids[i], PT.spawn_watchids[i], WEXITSTATUS(wstatus));
+			MTLOG("Reaped process %ld (from watch idx %d): It exited with status %d.", (long) cpid, watch_idx, WEXITSTATUS(wstatus));
 		} else if (WIFSIGNALED(wstatus)) {
-			MTLOG("Reaped process %d (from watch idx %d): It was killed by signal %d (%s).", PT.spawn_pids[i], PT.spawn_watchids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
+			MTLOG("Reaped process %ld (from watch idx %d): It was killed by signal %d (%s).", (long) cpid, watch_idx, WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
 		}
 	}
+
 	// And now we can safely remove it from the process table
 	pthread_mutex_lock(&ptlock);
 	remove_process_from_table(i);
 	pthread_mutex_unlock(&ptlock);
+
 	free(ptr);
 
 	return (void*)NULL;
@@ -603,9 +614,11 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 	} else {
 		// Parent
 		// Keep track of the process
+		int i;
 		pthread_mutex_lock(&ptlock);
-		int i = get_next_available_pt_entry();
+		i = get_next_available_pt_entry();
 		pthread_mutex_unlock(&ptlock);
+
 		if (i < 0) {
 			// NOTE: If we ever hit this error codepath, we don't have to worry about leaving that last spawn as a zombie:
 			//       One of the benefits of the double-fork we do to daemonize is that, on our death, our children will get reparented to init,
@@ -616,6 +629,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			pthread_mutex_lock(&ptlock);
 			add_process_to_table(i, pid, watch_idx);
 			pthread_mutex_unlock(&ptlock);
+
 			DBGLOG("Assigned pid %ld (from watch idx %d) to process table entry idx %d", (long) pid, watch_idx, i);
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread for every spawn...
 			//       See #2 for an history of the previous failed attempts...
