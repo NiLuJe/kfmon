@@ -22,6 +22,7 @@
 #endif
 
 #include <sys/types.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -100,6 +101,7 @@
 typedef struct
 {
 	int db_timeout;
+	int tmp_use_syslog;
 	bool use_syslog;
 } DaemonConfig;
 
@@ -109,7 +111,9 @@ typedef struct
 {
 	char filename[PATH_MAX];
 	char action[PATH_MAX];
+	int tmp_do_db_update;
 	bool do_db_update;
+	int tmp_skip_db_checks;
 	bool skip_db_checks;
 	char db_title[DB_SZ_MAX];
 	char db_author[DB_SZ_MAX];

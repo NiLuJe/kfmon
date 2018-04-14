@@ -159,7 +159,7 @@ static void wait_for_target_mountpoint(void)
 
 		// If we can't find our mountpoint after that many changes, assume we're screwed...
 		if (changes > 15) {
-			LOG("Too many mountpoint changes without finding our target. Going buh-bye!");
+			LOG("Too many mountpoint changes without finding our target, aborting!");
 			close(mfd);
 			exit(EXIT_FAILURE);
 		}
@@ -168,19 +168,68 @@ static void wait_for_target_mountpoint(void)
 	close(mfd);
 }
 
+// Sanitize user input for keys expecting an integer
+static long int check_atoi(const char *str) {
+	char *endptr;
+	long val;
+
+	errno = 0;	// To distinguish success/failure after call
+	val = strtol(str, &endptr, 10);
+
+	if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0)) {
+		perror("[KFMon] strtol");
+		return -1;
+	}
+
+	if (endptr == str) {
+		LOG("No digits were found in a key expecting an int");
+		return -1;
+	}
+
+	// If we got here, strtol() successfully parsed at least part of a number.
+	// But check that the input really was *only* an int (accounting for comments)
+	if (*endptr != '\0' && *endptr != ';') {
+		LOG("Found trailing characters (%s) after a key expecting an int", endptr);
+		return -1;
+	}
+
+	return val;
+}
+
 // Handle parsing the main KFMon config
 static int daemon_handler(void *user, const char *section, const char *key, const char *value) {
 	DaemonConfig *pconfig = (DaemonConfig *)user;
 
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	if (MATCH("daemon", "db_timeout")) {
-		pconfig->db_timeout = atoi(value);
+		pconfig->db_timeout = (int) check_atoi(value);
 	} else if (MATCH("daemon", "use_syslog")) {
-		pconfig->use_syslog = atoi(value);
+		pconfig->tmp_use_syslog = (int) check_atoi(value);
 	} else {
 		return 0;	// unknown section/name, error
 	}
 	return 1;
+}
+
+// Check the sanity of the main KFMon config
+static bool validate_daemon_config(void *user) {
+	DaemonConfig *pconfig = (DaemonConfig *)user;
+
+	bool sane = false;
+
+	if (pconfig->db_timeout < 0) {
+		LOG("Passed an invalid value for db_timeout!");
+		sane = false;
+	}
+	// We kind of need to use an intermediary value stored as an int, because our final variable is a bool...
+	if (pconfig->tmp_use_syslog < 0) {
+		LOG("Passed an invalid value for use_syslog!");
+		sane = false;
+	} else {
+		pconfig->use_syslog = pconfig->tmp_use_syslog;
+	}
+
+	return sane;
 }
 
 // Handle parsing a watch config
@@ -194,9 +243,9 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	} else if (MATCH("watch", "action")) {
 		strncpy(pconfig->action, value, PATH_MAX-1);
 	} else if (MATCH("watch", "do_db_update")) {
-		pconfig->do_db_update = atoi(value);
+		pconfig->tmp_do_db_update = check_atoi(value);
 	} else if (MATCH("watch", "skip_db_checks")) {
-		pconfig->skip_db_checks = atoi(value);
+		pconfig->tmp_skip_db_checks = check_atoi(value);
 	} else if (MATCH("watch", "db_title")) {
 		strncpy(pconfig->db_title, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_author")) {
@@ -207,6 +256,37 @@ static int watch_handler(void *user, const char *section, const char *key, const
 		return 0;	// unknown section/name, error
 	}
 	return 1;
+}
+
+// Check the sanity of watch config
+static bool validate_watch_config(void *user) {
+	WatchConfig *pconfig = (WatchConfig *)user;
+
+	bool sane = false;
+
+	if (pconfig->filename[0] ==  '\0') {
+		LOG("Mandatory key 'filename' is missing!");
+		sane = false;
+	}
+	if (pconfig->action[0] ==  '\0') {
+		LOG("Mandatory key 'action' is missing!");
+		sane = false;
+	}
+	// Handle bool vars...
+	if (pconfig->tmp_do_db_update < 0) {
+		LOG("Passed an invalid value for do_db_update!");
+		sane = false;
+	} else {
+		pconfig->do_db_update = pconfig->tmp_do_db_update;
+	}
+	if (pconfig->tmp_skip_db_checks < 0) {
+		LOG("Passed an invalid value for skip_db_checks!");
+		sane = false;
+	} else {
+		pconfig->skip_db_checks = pconfig->tmp_skip_db_checks;
+	}
+
+	return sane;
 }
 
 // Load our config files...
@@ -248,35 +328,51 @@ static int load_config() {
 					if (strncasecmp(p->fts_name, "kfmon.ini", 4) == 0) {
 						if (ini_parse(p->fts_path, daemon_handler, &daemon_config) < 0) {
 							LOG("Failed to parse main config file '%s'!", p->fts_name);
-							// Flag as a failure...
+							// Flag as a hard failure...
 							rval = -1;
+						} else {
+							if (validate_daemon_config(&daemon_config)) {
+								LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
+							} else {
+								LOG("Main config file '%s' is not sane!", p->fts_name);
+								rval = -1;
+							}
 						}
-						LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 					} else {
 						// NOTE: Don't blow up when trying to store more watches than we have space for...
 						if (watch_count >= WATCH_MAX) {
 							LOG("We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX, p->fts_name);
 							// Don't flag this as a hard failure, just warn and go on...
+							rval = -2;
 							break;
 						}
 
+						// FIXME: Reset watch_config for said slot on soft fail? Annoying w/ our unsafe strncpy() usage... Scarp the concept? We parse every config before exiting, anyway...
+						// FIXME: Add an Abort: in front exi exiting() perror
+						// FIXME: We possibly need to prevent setting multiple actions on the same file? (cf. matching an inotfy wd to a watch_idx?)
 						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]) < 0) {
 							LOG("Failed to parse watch config file '%s'!", p->fts_name);
-							// Flag as a failure...
-							rval = -1;
+							// Flag as a soft failure...
+							rval = -2;
+						} else {
+							if (validate_watch_config(&watch_config[watch_count])) {
+								LOG("Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+									watch_count,
+									p->fts_name,
+									watch_config[watch_count].filename,
+									watch_config[watch_count].action,
+									watch_config[watch_count].do_db_update,
+									watch_config[watch_count].db_title,
+									watch_config[watch_count].db_author,
+									watch_config[watch_count].db_comment
+								);
+								// Switch to the next slot!
+								watch_count++;
+							} else {
+								LOG("Watch config file '%s' is not sane, discarding it!", p->fts_name);
+								rval = -2;
+							}
 						}
-						LOG("Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
-							watch_count,
-							p->fts_name,
-							watch_config[watch_count].filename,
-							watch_config[watch_count].action,
-							watch_config[watch_count].do_db_update,
-							watch_config[watch_count].db_title,
-							watch_config[watch_count].db_author,
-							watch_config[watch_count].db_comment
-						);
-						// Switch to the next slot!
-						watch_count++;
 					}
 				}
 				break;
@@ -287,7 +383,7 @@ static int load_config() {
 	fts_close(ftsp);
 
 #ifdef DEBUG
-	// Let's recap...
+	// Let's recap (including failures)...
 	DBGLOG("Daemon config recap: db_timeout=%d, use_syslog=%d", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, skip_db_checks=%d, db_title=%s, db_author=%s, db_comment=%s",
@@ -627,7 +723,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			// NOTE: If we ever hit this error codepath, we don't have to worry about leaving that last spawn as a zombie:
 			//       One of the benefits of the double-fork we do to daemonize is that, on our death, our children will get reparented to init,
 			//       which, by design, will handle the reaping automatically.
-			LOG("Failed to find an available entry in our process table for pid %ld!", (long) pid);
+			LOG("Failed to find an available entry in our process table for pid %ld, aborting!", (long) pid);
 			exit(EXIT_FAILURE);
 		} else {
 			pthread_mutex_lock(&ptlock);
@@ -640,7 +736,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			pthread_t rthread;
 			int *arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
-				LOG("Couldn't allocate memory for thread arg.");
+				LOG("Couldn't allocate memory for thread arg, aborting!");
 				exit(EXIT_FAILURE);
 			}
 			*arg = i;
@@ -839,6 +935,7 @@ static bool handle_events(int fd)
 
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
+	int ret;
 	int fd, poll_num;
 	struct pollfd pfd;
 
@@ -850,7 +947,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// Fly, little daemon!
 	if (daemonize() != 0) {
-		fprintf(stderr, "Failed to daemonize!\n");
+		fprintf(stderr, "Failed to daemonize, aborting!\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -858,9 +955,14 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	LOG("[PID: %ld] Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s)", (long) getpid(), KFMON_VERSION,  __DATE__, __TIME__, sqlite3_libversion(), SQLITE_VERSION);
 
 	// Load our configs
-	if (load_config() == -1) {
-		LOG("Failed to load one or more config files!");
-		exit(EXIT_FAILURE);
+	ret = load_config();
+	if (ret < 0) {
+		if (ret == -2) {
+			LOG("Failed to load one or more config files! Affected watches will NOT be functional.");
+		} else {
+			LOG("Something went awfully wrong when loading our main config, aborting!");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	// Squish stderr if we want to log to the syslog... (can't do that w/ the rest in daemonize, since we don't have our config yet at that point)
@@ -915,8 +1017,8 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 			watch_config[watch_idx].inotify_wd = inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
-				LOG("Cannot watch '%s'! Giving up.", watch_config[watch_idx].filename);
 				perror("[KFMon] inotify_add_watch");
+				LOG("Cannot watch '%s'! Giving up.", watch_config[watch_idx].filename);
 				exit(EXIT_FAILURE);
 				// NOTE: This effectively means we exit when any one of our target file cannot be found, which is not a bad thing, per se...
 				//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
