@@ -903,6 +903,13 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		}
 
 		// Flag each of our target files for 'file was opened' and 'file was closed' events
+		// NOTE: We don't check for:
+		//       IN_MODIFY: Highly unlikely (and sandwiched between an OPEN and a CLOSE anyway)
+		//       IN_CREATE: Only applies to directories
+		//       IN_DELETE: Will trigger an IN_IGNORED, which we already handle
+		//       IN_MOVE_SELF: Highly unlikely on a Kobo, and somewhat annoying to handle with our design (we'd have to forget about it entirely and not try to re-watch for it on the next iteration of the loop).
+		// NOTE: inotify tracks the file's inode, which means that it goes *through* bind mouts, for instance (f.g., you won't get an event for unmounting a bind mount, since the original file hasn't actually been touched).
+		//       Relative to the earlier IN_MOVE_SELF mention, that means it'll keep tracking the file with its new name (provided it was moved to the *same* fs, as crossing an fs boundary will delete the original).
 		for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 			watch_config[watch_idx].inotify_wd = inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
