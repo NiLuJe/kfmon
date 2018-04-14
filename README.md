@@ -101,4 +101,7 @@ Due to the exact timing at which Nickel parses books, for a completely new file,
 
 Note that right now, proper interaction with KOReader requires a bleeding-edge version of KOReader (i.e., current nightlies or OTAs, not the stable version).
 
-Right now, KFMon supports a maximum of [16](/kfmon.h#L122) file watches. Ping me if that's not enough for you ;).
+PSA about the proper syntax expected in an ini file: while the ';' character indeed marks the beginning of an inline comment, is must be preceded by some kind of whitespace to actually register as a comment. Otherwise, it's assumed to be part of the value.
+Meaning ```key=value;``` will probably not work as you might expect (it'll parse as ```key``` set to ```value;```, and not ```value```).
+
+Right now, KFMon supports a maximum of [16](/kfmon.h#L126) file watches. Ping me if that's not enough for you ;).
