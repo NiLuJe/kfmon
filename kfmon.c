@@ -188,7 +188,7 @@ static long int check_atoi(const char *str) {
 
 	// If we got here, strtol() successfully parsed at least part of a number.
 	// But check that the input really was *only* an int (accounting for comments)
-	if (*endptr != '\0' && *endptr != ';') {
+	if (*endptr != '\0') {
 		LOG("Found trailing characters (%s) behind value '%ld' assigned from string '%s' to a key expecting an int", endptr, val, str);
 		return -1;
 	}
@@ -369,7 +369,8 @@ static int load_config() {
 							}
 						}
 						// No matter what, switch to the next slot: we rely on zero-initialization (c.f., the comments around our strncpy() usage in watch_handler),
-						// so we can't reuse a slot in case of failure, which is why a broken watch config is flagged as a fatal failure.
+						// so we can't reuse a slot, even in case of failure, or we risk mixing values from different config files together,
+						// which is why a broken watch config is flagged as a fatal failure.
 						watch_count++;
 					}
 				}
