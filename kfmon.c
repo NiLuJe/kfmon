@@ -269,6 +269,20 @@ static bool validate_watch_config(void *user) {
 		LOG("Mandatory key 'filename' is missing!");
 		sane = false;
 		count++;
+	} else {
+		// Make sure we're not trying to set multiple watches on the same file... (because that would only actually register the first one parsed).
+		unsigned int watch_idx = 0;
+		unsigned int matches = 0;
+		for (watch_idx = 0; watch_idx < WATCH_MAX; watch_idx++) {
+			if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
+				matches++;
+			}
+		}
+		// Since we'll necessarily loop over ourselves, only warn if we matched two or more times.
+		if (matches >= 2) {
+			LOG("Tried to setup multiple watches on file '%s'!", pconfig->filename);
+			sane = false;
+		}
 	}
 	if (pconfig->action[0] == '\0') {
 		LOG("Mandatory key 'action' is missing!");
@@ -354,7 +368,6 @@ static int load_config() {
 							break;
 						}
 
-						// FIXME: We possibly need to prevent setting multiple actions on the same file? (cf. matching an inotfy wd to a watch_idx?)
 						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]) < 0) {
 							LOG("Failed to parse watch config file '%s', will abort!", p->fts_name);
 							// Flag as a failure...
