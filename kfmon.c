@@ -189,7 +189,7 @@ static long int check_atoi(const char *str) {
 	// If we got here, strtol() successfully parsed at least part of a number.
 	// But check that the input really was *only* an int (accounting for comments)
 	if (*endptr != '\0' && *endptr != ';') {
-		LOG("Found trailing characters (%s) behind value '%s' assigned to a key expecting an int", endptr, str);
+		LOG("Found trailing characters (%s) behind value '%ld' assigned from string '%s' to a key expecting an int", endptr, val, str);
 		return -1;
 	}
 
@@ -258,17 +258,17 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	return 1;
 }
 
-// Check the sanity of watch config
+// Check the sanity of a watch config
 static bool validate_watch_config(void *user) {
 	WatchConfig *pconfig = (WatchConfig *)user;
 
 	bool sane = true;
 
-	if (pconfig->filename[0] ==  '\0') {
+	if (pconfig->filename[0] == '\0') {
 		LOG("Mandatory key 'filename' is missing!");
 		sane = false;
 	}
-	if (pconfig->action[0] ==  '\0') {
+	if (pconfig->action[0] == '\0') {
 		LOG("Mandatory key 'action' is missing!");
 		sane = false;
 	}
@@ -363,13 +363,14 @@ static int load_config() {
 									watch_config[watch_count].db_author,
 									watch_config[watch_count].db_comment
 								);
-								// Switch to the next slot!
-								watch_count++;
 							} else {
 								LOG("Watch config file '%s' is not sane, will abort!", p->fts_name);
 								rval = -1;
 							}
 						}
+						// No matter what, switch to the next slot: we rely on zero-initialization (c.f., the comments around our strncpy() usage in watch_handler),
+						// so we can't reuse a slot in case of failure, which is why a broken watch config is flagged as a fatal failure.
+						watch_count++;
 					}
 				}
 				break;
