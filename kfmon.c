@@ -241,8 +241,8 @@ static int load_config() {
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
-				// Check if it's a .ini and not a Mac resource fork...
-				if (strncasecmp(p->fts_name+(p->fts_namelen-4), ".ini", 4) == 0 && strncasecmp(p->fts_name, "._", 2) != 0) {
+				// Check if it's a .ini and not eiher an unix hidden file or a Mac resource fork...
+				if (strncasecmp(p->fts_name+(p->fts_namelen-4), ".ini", 4) == 0 && strncasecmp(p->fts_name, ".", 1) != 0) {
 					LOG("Trying to load config file '%s' . . .", p->fts_path);
 					// The main config has to be parsed slightly differently...
 					if (strncasecmp(p->fts_name, "kfmon.ini", 4) == 0) {
