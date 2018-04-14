@@ -263,15 +263,23 @@ static bool validate_watch_config(void *user) {
 	WatchConfig *pconfig = (WatchConfig *)user;
 
 	bool sane = true;
+	unsigned int count = 0;
 
 	if (pconfig->filename[0] == '\0') {
 		LOG("Mandatory key 'filename' is missing!");
 		sane = false;
+		count++;
 	}
 	if (pconfig->action[0] == '\0') {
 		LOG("Mandatory key 'action' is missing!");
 		sane = false;
+		count++;
 	}
+	// Crappy potential detection of a missing section name
+	if (count == 2) {
+		LOG("Both mandatory keys are missing, you may have forgotten the [watch] section name?");
+	}
+
 	// Handle bool vars...
 	if (pconfig->tmp_do_db_update < 0) {
 		LOG("Passed an invalid value for do_db_update!");
