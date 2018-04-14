@@ -204,7 +204,7 @@ static int daemon_handler(void *user, const char *section, const char *key, cons
 	if (MATCH("daemon", "db_timeout")) {
 		pconfig->db_timeout = (int) check_atoi(value);
 	} else if (MATCH("daemon", "use_syslog")) {
-		pconfig->tmp_use_syslog = (int) check_atoi(value);
+		pconfig->tmp_use_syslog = check_atoi(value);
 	} else {
 		return 0;	// unknown section/name, error
 	}
@@ -215,7 +215,7 @@ static int daemon_handler(void *user, const char *section, const char *key, cons
 static bool validate_daemon_config(void *user) {
 	DaemonConfig *pconfig = (DaemonConfig *)user;
 
-	bool sane = false;
+	bool sane = true;
 
 	if (pconfig->db_timeout < 0) {
 		LOG("Passed an invalid value for db_timeout!");
@@ -262,7 +262,7 @@ static int watch_handler(void *user, const char *section, const char *key, const
 static bool validate_watch_config(void *user) {
 	WatchConfig *pconfig = (WatchConfig *)user;
 
-	bool sane = false;
+	bool sane = true;
 
 	if (pconfig->filename[0] ==  '\0') {
 		LOG("Mandatory key 'filename' is missing!");
@@ -656,7 +656,8 @@ void *reaper_thread(void *ptr) {
 	// Recap what happened to it
 	if (ret != cpid) {
 		perror("[KFMon] waitpid");
-		pthread_exit(EXIT_FAILURE);
+		free(ptr);
+		return (void*)NULL;
 	} else {
 		if (WIFEXITED(wstatus)) {
 			MTLOG("Reaped process %ld (from watch idx %d): It exited with status %d.", (long) cpid, watch_idx, WEXITSTATUS(wstatus));
