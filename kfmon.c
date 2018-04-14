@@ -536,6 +536,7 @@ static void remove_process_from_table(int i) {
 	PT.spawn_watchids[i] = -1;
 }
 
+// Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
 void *reaper_thread(void *ptr) {
 	int i = *((int *) ptr);
 
@@ -838,7 +839,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	int fd, poll_num;
 	struct pollfd pfd;
 
-	// Being launched via udev leaves us with a negative nice value, fix that.
+	// Make sure we're running at a neutral niceness (f.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
 		perror("[KFMon] setpriority");
 		exit(EXIT_FAILURE);
