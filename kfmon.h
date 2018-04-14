@@ -128,6 +128,7 @@ struct process_table {
 	pid_t spawn_pids[WATCH_MAX];
 	int spawn_watchids[WATCH_MAX];
 } PT;
+pthread_mutex_t ptlock = PTHREAD_MUTEX_INITIALIZER;
 static void init_process_table(void);
 static int get_next_available_pt_entry(void);
 static void add_process_to_table(int, pid_t, unsigned int);

@@ -540,7 +540,7 @@ void *reaper_thread(void *ptr) {
 	int i = *((int *) ptr);
 	pid_t tid;
 	tid = (pid_t) syscall(SYS_gettid);
-	MTLOG(". . . Waiting to reap process %ld from thread %ld", (long) PT.spawn_pids[i], (long) tid);
+	MTLOG(". . . Waiting to reap process %ld (from watch idx %d) from thread %ld", (long) PT.spawn_pids[i], PT.spawn_watchids[i], (long) tid);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
@@ -553,16 +553,18 @@ void *reaper_thread(void *ptr) {
 		exit(EXIT_FAILURE);
 	} else {
 		if (WIFEXITED(wstatus)) {
-			MTLOG("Reaped process %d: It exited with status %d.", PT.spawn_pids[i], WEXITSTATUS(wstatus));
+			MTLOG("Reaped process %d (from watch idx %d): It exited with status %d.", PT.spawn_pids[i], PT.spawn_watchids[i], WEXITSTATUS(wstatus));
 		} else if (WIFSIGNALED(wstatus)) {
-			MTLOG("Reaped process %d: It was killed by signal %d (%s).", PT.spawn_pids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
+			MTLOG("Reaped process %d (from watch idx %d): It was killed by signal %d (%s).", PT.spawn_pids[i], PT.spawn_watchids[i], WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
 		}
 	}
 	// And now we can safely remove it from the process table
+	pthread_mutex_lock(&ptlock);
 	remove_process_from_table(i);
+	pthread_mutex_unlock(&ptlock);
 	free(ptr);
 
-	return(EXIT_SUCCESS);
+	return (void*)NULL;
 }
 
 /* Spawn a process and return its pid...
@@ -582,7 +584,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
-		LOG("Spawned process %ld . . .", (long) getpid());
+		LOG("Spawned process %ld for watch idx %d. . .", (long) getpid(), watch_idx);
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
@@ -601,7 +603,9 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 	} else {
 		// Parent
 		// Keep track of the process
+		pthread_mutex_lock(&ptlock);
 		int i = get_next_available_pt_entry();
+		pthread_mutex_unlock(&ptlock);
 		if (i < 0) {
 			// NOTE: If we ever hit this error codepath, we don't have to worry about leaving that last spawn as a zombie:
 			//       One of the benefits of the double-fork we do to daemonize is that, on our death, our children will get reparented to init,
@@ -609,7 +613,9 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			LOG("Failed to find an available entry in our process table for pid %ld!", (long) pid);
 			exit(EXIT_FAILURE);
 		} else {
+			pthread_mutex_lock(&ptlock);
 			add_process_to_table(i, pid, watch_idx);
+			pthread_mutex_unlock(&ptlock);
 			DBGLOG("Assigned pid %ld (from watch idx %d) to process table entry idx %d", (long) pid, watch_idx, i);
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread for every spawn...
 			//       See #2 for an history of the previous failed attempts...
@@ -731,7 +737,7 @@ static bool handle_events(int fd)
 				if (!is_watch_already_spawned(watch_idx)) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
-						LOG("Spawning %s . . .", watch_config[watch_idx].action);
+						LOG("Preparing to spawn %s for watch idx %d . . .", watch_config[watch_idx].action, watch_idx);
 						// We're using execvp()...
 						char *const cmd[] = {watch_config[watch_idx].action, NULL};
 						spawn(cmd, watch_idx);
@@ -740,7 +746,7 @@ static bool handle_events(int fd)
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
 					}
 				} else {
-					LOG("Our last spawn (%ld) is still alive!", (long) get_spawn_pid_for_watch(watch_idx));
+					LOG("Watch idx %d's last spawn (%ld) is still alive!", watch_idx, (long) get_spawn_pid_for_watch(watch_idx));
 				}
 			}
 			if (event->mask & IN_UNMOUNT) {
