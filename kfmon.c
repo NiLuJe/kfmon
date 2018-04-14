@@ -731,7 +731,12 @@ static bool handle_events(int fd)
 			if (event->mask & IN_OPEN) {
 				LOG("Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
-				if (!is_watch_already_spawned(watch_idx)) {
+				bool is_watch_spawned;
+				pthread_mutex_lock(&ptlock);
+				is_watch_spawned = is_watch_already_spawned(watch_idx);
+				pthread_mutex_unlock(&ptlock);
+
+				if (!is_watch_spawned) {
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(watch_idx, false)) {
 						// It's not processed on OPEN, flag as pending...
@@ -748,7 +753,12 @@ static bool handle_events(int fd)
 				// NOTE: Make sure we won't run a specific command multiple times while an earlier instance of it is still running...
 				//       This is mostly of interest for KOReader/Plato: it means we can keep KFMon running while they're up, without risking
 				//       trying to spawn multiple instances of them in case they end up tripping their own inotify watch ;).
-				if (!is_watch_already_spawned(watch_idx)) {
+				bool is_watch_spawned;
+				pthread_mutex_lock(&ptlock);
+				is_watch_spawned = is_watch_already_spawned(watch_idx);
+				pthread_mutex_unlock(&ptlock);
+
+				if (!is_watch_spawned) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
 						LOG("Preparing to spawn %s for watch idx %d . . .", watch_config[watch_idx].action, watch_idx);
@@ -760,7 +770,12 @@ static bool handle_events(int fd)
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
 					}
 				} else {
-					LOG("Watch idx %d's last spawn (%ld) is still alive!", watch_idx, (long) get_spawn_pid_for_watch(watch_idx));
+					pid_t spid;
+					pthread_mutex_lock(&ptlock);
+					spid = get_spawn_pid_for_watch(watch_idx);
+					pthread_mutex_unlock(&ptlock);
+
+					LOG("Watch idx %d's last spawn (%ld) is still alive!", watch_idx, (long) spid);
 				}
 			}
 			if (event->mask & IN_UNMOUNT) {
