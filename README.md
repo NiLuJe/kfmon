@@ -100,7 +100,7 @@ If you delete one of the files being watched, don't forget to delete the matchin
 
 Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
 
-Note that right now, proper interaction with KOReader requires a bleeding-edge version of KOReader (i.e., current nightlies or OTAs, not the stable version).
+Note that right now, proper interaction with KOReader requires a recent version of KOReader (i.e., > 2015.11-1654).
 
 PSA about the proper syntax expected in an INI file: while the ```;``` character indeed marks the beginning of an inline comment, it must be preceded by some kind of whitespace to actually register as a comment. Otherwise, it's assumed to be part of the value.
 Meaning ```key=value;``` will probably not work as you might expect (it'll parse as ```key``` set to ```value;``` and not ```value```).
