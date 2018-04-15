@@ -160,7 +160,7 @@ char *get_current_time(void);
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static long int check_atoi(const char *);
+static long int sane_atoi(const char *);
 static int daemon_handler(void *, const char *, const char *, const char *);
 static bool validate_daemon_config(void *);
 static int watch_handler(void *, const char *, const char *, const char *);

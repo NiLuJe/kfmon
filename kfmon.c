@@ -169,7 +169,7 @@ static void wait_for_target_mountpoint(void)
 }
 
 // Sanitize user input for keys expecting an integer
-static long int check_atoi(const char *str) {
+static long int sane_atoi(const char *str) {
 	char *endptr;
 	long val;
 
@@ -187,7 +187,7 @@ static long int check_atoi(const char *str) {
 	}
 
 	// If we got here, strtol() successfully parsed at least part of a number.
-	// But check that the input really was *only* an int (accounting for comments)
+	// But we do want to enforce the fact that the input really was *only* an integer value.
 	if (*endptr != '\0') {
 		LOG("Found trailing characters (%s) behind value '%ld' assigned from string '%s' to a key expecting an int", endptr, val, str);
 		return -1;
@@ -202,16 +202,16 @@ static int daemon_handler(void *user, const char *section, const char *key, cons
 
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	if (MATCH("daemon", "db_timeout")) {
-		pconfig->db_timeout = (int) check_atoi(value);
+		pconfig->db_timeout = (int) sane_atoi(value);
 	} else if (MATCH("daemon", "use_syslog")) {
-		pconfig->tmp_use_syslog = check_atoi(value);
+		pconfig->tmp_use_syslog = sane_atoi(value);
 	} else {
 		return 0;	// unknown section/name, error
 	}
 	return 1;
 }
 
-// Check the sanity of the main KFMon config
+// Validate the main KFMon config
 static bool validate_daemon_config(void *user) {
 	DaemonConfig *pconfig = (DaemonConfig *)user;
 
@@ -243,9 +243,9 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	} else if (MATCH("watch", "action")) {
 		strncpy(pconfig->action, value, PATH_MAX-1);
 	} else if (MATCH("watch", "do_db_update")) {
-		pconfig->tmp_do_db_update = check_atoi(value);
+		pconfig->tmp_do_db_update = sane_atoi(value);
 	} else if (MATCH("watch", "skip_db_checks")) {
-		pconfig->tmp_skip_db_checks = check_atoi(value);
+		pconfig->tmp_skip_db_checks = sane_atoi(value);
 	} else if (MATCH("watch", "db_title")) {
 		strncpy(pconfig->db_title, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_author")) {
@@ -258,7 +258,7 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	return 1;
 }
 
-// Check the sanity of a watch config
+// Validate a watch config
 static bool validate_watch_config(void *user) {
 	WatchConfig *pconfig = (WatchConfig *)user;
 
@@ -343,7 +343,7 @@ static int load_config() {
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
-				// Check if it's a .ini and not eiher an unix hidden file or a Mac resource fork...
+				// Check if it's a .ini and not either an unix hidden file or a Mac resource fork...
 				if (strncasecmp(p->fts_name+(p->fts_namelen-4), ".ini", 4) == 0 && strncasecmp(p->fts_name, ".", 1) != 0) {
 					LOG("Trying to load config file '%s' . . .", p->fts_path);
 					// The main config has to be parsed slightly differently...
@@ -356,7 +356,7 @@ static int load_config() {
 							if (validate_daemon_config(&daemon_config)) {
 								LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 							} else {
-								LOG("Main config file '%s' is not sane, will abort!", p->fts_name);
+								LOG("Main config file '%s' is not valid, will abort!", p->fts_name);
 								rval = -1;
 							}
 						}
@@ -385,7 +385,7 @@ static int load_config() {
 									watch_config[watch_count].db_comment
 								);
 							} else {
-								LOG("Watch config file '%s' is not sane, will abort!", p->fts_name);
+								LOG("Watch config file '%s' is not valid, will abort!", p->fts_name);
 								rval = -1;
 							}
 						}
@@ -956,7 +956,6 @@ static bool handle_events(int fd)
 
 int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)))
 {
-	int ret;
 	int fd, poll_num;
 	struct pollfd pfd;
 
@@ -976,8 +975,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	LOG("[PID: %ld] Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s)", (long) getpid(), KFMON_VERSION,  __DATE__, __TIME__, sqlite3_libversion(), SQLITE_VERSION);
 
 	// Load our configs
-	ret = load_config();
-	if (ret < 0) {
+	if (load_config() == -1) {
 		LOG("Failed to load one or more config files, aborting!");
 		exit(EXIT_FAILURE);
 	}
