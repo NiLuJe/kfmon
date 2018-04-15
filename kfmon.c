@@ -253,7 +253,7 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	} else if (MATCH("watch", "db_comment")) {
 		strncpy(pconfig->db_comment, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "reboot_on_exit")) {
-		(void)0;
+		;
 	} else {
 		return 0;	// unknown section/name, error
 	}
