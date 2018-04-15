@@ -911,8 +911,9 @@ static bool handle_events(int fd)
 				was_unmounted = true;
 			}
 			// NOTE: Something (badly coalesced/ordered events?) is a bit wonky on the Kobos when onboard gets unmounted: we actually never get an IN_UNMOUNT event, only IN_IGNORED...
-			//       What's strange is that the inotify_rm_watch() calls we do later on all our other watches don't seem to error out...
-			//       In the end, we still behave properly, but it's still strange enough to document ;).
+			//       Another strange behavior is that we get them in a staggered mannered, and not in one batch, as I do on my sandbox when unmounting a tmpfs...
+			//       That may explain why the explicit inotify_rm_watch() calls we do later on all our other watches don't seem to error out...
+			//       In the end, we behave properly, but it's still strange enough to document ;).
 			if (event->mask & IN_IGNORED) {
 				LOG("Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
 				// Remember that the watch was automatically destroyed so we can break from the loop...
@@ -936,6 +937,10 @@ static bool handle_events(int fd)
 			}
 		}
 
+		// If we caught an unmount, explain why we don't explictly have to tear down our watches
+		if (was_unmounted) {
+			LOG("Unmount detected, nothing to do, all watches will naturally get destroyed.");
+		}
 		// If we caught an event indicating that a watch was automatically destroyed, break the loop.
 		if (destroyed_wd) {
 			// But before we do that, make sure we've removed *all* our *other* watches first (again, hoping matching was successful), since we'll be setting them up all again later...
