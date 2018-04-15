@@ -1033,7 +1033,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 			watch_config[watch_idx].inotify_wd = inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
 				perror("[KFMon] inotify_add_watch");
-				LOG("Cannot watch '%s'! Giving up.", watch_config[watch_idx].filename);
+				LOG("Cannot watch '%s', aborting!", watch_config[watch_idx].filename);
 				exit(EXIT_FAILURE);
 				// NOTE: This effectively means we exit when any one of our target file cannot be found, which is not a bad thing, per se...
 				//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
