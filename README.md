@@ -91,6 +91,7 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
 
 KFMon will abort if any of the watched files cannot be found when it starts up.
 KFMon will only parse config files at boot.
+KFMon only expects to watch for files in the internal storage of the device (be than onboard or the rootfs). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).
 
 Meaning you will need to reboot your device after adding new config files or modifying or removing existing ones ;).
 If it's a new config file, try to make sure it points to a file that has already been processed by Nickel (after an USBMS plug/eject session, for instance) to save you some puzzlement ;).
