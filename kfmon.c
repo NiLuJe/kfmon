@@ -252,6 +252,8 @@ static int watch_handler(void *user, const char *section, const char *key, const
 		strncpy(pconfig->db_author, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_comment")) {
 		strncpy(pconfig->db_comment, value, DB_SZ_MAX-1);
+	} else if (MATCH("watch", "reboot_on_exit")) {
+		(void)0;
 	} else {
 		return 0;	// unknown section/name, error
 	}
@@ -325,6 +327,7 @@ static int load_config() {
 	FTSENT *p, *chp;
 	// We only need to walk a single directory...
 	char *const cfg_path[] = {KFMON_CONFIGPATH, NULL};
+	int ret;
 	int rval = 0;
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
@@ -348,8 +351,10 @@ static int load_config() {
 					LOG("Trying to load config file '%s' . . .", p->fts_path);
 					// The main config has to be parsed slightly differently...
 					if (strncasecmp(p->fts_name, "kfmon.ini", 4) == 0) {
-						if (ini_parse(p->fts_path, daemon_handler, &daemon_config) < 0) {
-							LOG("Failed to parse main config file '%s', will abort!", p->fts_name);
+						// NOTE: Can technically return -1 on file open error, but that shouldn't really ever happen given the nature of the loop we're in ;).
+						ret = ini_parse(p->fts_path, daemon_handler, &daemon_config);
+						if (ret != 0) {
+							LOG("Failed to parse main config file '%s' (first error on line %d), will abort!", p->fts_name, ret);
 							// Flag as a failure...
 							rval = -1;
 						} else {
@@ -368,8 +373,9 @@ static int load_config() {
 							break;
 						}
 
-						if (ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]) < 0) {
-							LOG("Failed to parse watch config file '%s', will abort!", p->fts_name);
+						ret = ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]);
+						if (ret != 0) {
+							LOG("Failed to parse watch config file '%s' (first error on line %d), will abort!", p->fts_name, ret);
 							// Flag as a failure...
 							rval = -1;
 						} else {
