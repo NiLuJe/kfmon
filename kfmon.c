@@ -158,8 +158,8 @@ static void wait_for_target_mountpoint(void)
 		pfd.revents = 0;
 
 		// If we can't find our mountpoint after that many changes, assume we're screwed...
-		if (changes > 15) {
-			LOG("Too many mountpoint changes without finding our target, aborting!");
+		if (changes >= 5) {
+			LOG("Too many mountpoint changes without finding our target (shutdown?), aborting!");
 			close(mfd);
 			exit(EXIT_FAILURE);
 		}
