@@ -120,25 +120,25 @@ char *get_log_prefix(int prio)
 	// Reuse (part of) the syslog() priority constants
 	switch(prio) {
 		case LOG_CRIT:
-			strncpy(sz_loglevel, "CRIT", 5);
+			strncpy(sz_loglevel, "CRIT", sizeof(sz_loglevel));
 			break;
 		case LOG_ERR:
-			strncpy(sz_loglevel, "ERR!", 5);
+			strncpy(sz_loglevel, "ERR!", sizeof(sz_loglevel));
 			break;
 		case LOG_WARNING:
-			strncpy(sz_loglevel, "WARN", 5);
+			strncpy(sz_loglevel, "WARN", sizeof(sz_loglevel));
 			break;
 		case LOG_NOTICE:
-			strncpy(sz_loglevel, "NOTE", 5);
+			strncpy(sz_loglevel, "NOTE", sizeof(sz_loglevel));
 			break;
 		case LOG_INFO:
-			strncpy(sz_loglevel, "INFO", 5);
+			strncpy(sz_loglevel, "INFO", sizeof(sz_loglevel));
 			break;
 		case LOG_DEBUG:
-			strncpy(sz_loglevel, "DBG!", 5);
+			strncpy(sz_loglevel, "DBG!", sizeof(sz_loglevel));
 			break;
 		default:
-			strncpy(sz_loglevel, "OOPS", 5);
+			strncpy(sz_loglevel, "OOPS", sizeof(sz_loglevel));
 			break;
 	}
 
