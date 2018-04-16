@@ -708,7 +708,7 @@ void *reaper_thread(void *ptr)
 	watch_idx = PT.spawn_watchids[i];
 	pthread_mutex_unlock(&ptlock);
 
-	MTLOG(". . . Waiting to reap process %ld (from watch idx %d) via thread %ld", (long) cpid, watch_idx, (long) tid);
+	MTLOG("[TID: %ld] . . . Waiting to reap process %ld (from watch idx %d)", (long) tid, (long) cpid, watch_idx);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
@@ -722,9 +722,9 @@ void *reaper_thread(void *ptr)
 		return (void*)NULL;
 	} else {
 		if (WIFEXITED(wstatus)) {
-			MTLOG("Reaped process %ld (from watch idx %d): It exited with status %d.", (long) cpid, watch_idx, WEXITSTATUS(wstatus));
+			MTLOG("[TID: %ld] Reaped process %ld (from watch idx %d): It exited with status %d.", (long) tid, (long) cpid, watch_idx, WEXITSTATUS(wstatus));
 		} else if (WIFSIGNALED(wstatus)) {
-			MTLOG("Reaped process %ld (from watch idx %d): It was killed by signal %d (%s).", (long) cpid, watch_idx, WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
+			MTLOG("[TID: %ld] Reaped process %ld (from watch idx %d): It was killed by signal %d (%s).", (long) tid, (long) cpid, watch_idx, WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
 		}
 	}
 
