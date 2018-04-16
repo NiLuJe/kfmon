@@ -732,7 +732,7 @@ void *reaper_thread(void *ptr)
 	struct tm local_tm;
 	char sz_time[22];
 
-	MTLOG("[%s] [INFO] [TID: %ld] . . . Waiting to reap process %ld (from watch idx %d)", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, (long) cpid, watch_idx);
+	MTLOG("[%s] [INFO] [TID: %ld] Waiting to reap process %ld (from watch idx %d) . . .", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, (long) cpid, watch_idx);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
@@ -798,7 +798,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		// Sweet child o' mine!
 		// NOTE: Since we're a child process, we essentially get a *copy* of the global variable watch_config *at the time of forking*!
 		//       Our design *should* ensure its content to still be accurate at the time we'll be reading this copy, though.
-		LOG(LOG_NOTICE, "Spawned process %ld (%s -> %s @ watch idx %d). . .", (long) getpid(), watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_idx);
+		LOG(LOG_NOTICE, "Spawned process %ld (%s -> %s @ watch idx %d) . . .", (long) getpid(), watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_idx);
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
