@@ -16,7 +16,7 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// For syscall()?
+// For syscall, and the expected version of strerror_r
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif

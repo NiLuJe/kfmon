@@ -723,6 +723,13 @@ void *reaper_thread(void *ptr)
 	} else {
 		if (WIFEXITED(wstatus)) {
 			MTLOG("%15ld] [NOTE] Reaped process %ld (from watch idx %d): It exited with status %d.", (long) tid, (long) cpid, watch_idx, WEXITSTATUS(wstatus));
+			if (WEXITSTATUS(wstatus) != 0) {
+				// NOTE: Ugly hack to try to salvage execvp's potential error...
+				char buf[256];
+				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
+				char* str = strerror_r(WEXITSTATUS(wstatus), buf, sizeof(buf));
+				MTLOG("%15ld] [CRIT] If nothing was visibly launched, this *may* actually be an execvp error: %s.", (long) tid, str);
+			}
 		} else if (WIFSIGNALED(wstatus)) {
 			MTLOG("%15ld] [WARN] Reaped process %ld (from watch idx %d): It was killed by signal %d (%s).", (long) tid, (long) cpid, watch_idx, WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
 		}
@@ -771,9 +778,10 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
 		execvp(*command, command);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
-		// FIXME? stderr is now the original stderr, so this won't make it to the log ;'(
-		perror("[KFMon] [ERR!] Aborting: execvp");
-		exit(EXIT_FAILURE);
+		// NOTE: stderr is now the original stderr, so this won't make it to the log...
+		perror("[KFMon] [CRIT] execvp");
+		//       ...so resort to an ugly hack by exiting with execvp()'s errno, which we can then try to salvage in the reaper thread.
+		exit(errno);
 	} else {
 		// Parent
 		// Keep track of the process
