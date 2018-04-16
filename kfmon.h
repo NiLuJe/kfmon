@@ -158,6 +158,7 @@ static int daemonize(void);
 struct tm *get_localtime(struct tm *);
 char *format_localtime(struct tm *, char *, size_t);
 char *get_current_time(void);
+char *get_current_time_r(struct tm *, char *, size_t);
 const char *get_log_prefix(int);
 
 static bool is_target_mounted(void);
