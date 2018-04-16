@@ -708,7 +708,7 @@ void *reaper_thread(void *ptr)
 	watch_idx = PT.spawn_watchids[i];
 	pthread_mutex_unlock(&ptlock);
 
-	MTLOG(". . . Waiting to reap process %ld (from watch idx %d) from thread %ld", (long) cpid, watch_idx, (long) tid);
+	MTLOG(". . . Waiting to reap process %ld (from watch idx %d) via thread %ld", (long) cpid, watch_idx, (long) tid);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
@@ -755,7 +755,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
-		LOG(LOG_NOTICE, "Spawned process %ld for watch idx %d. . .", (long) getpid(), watch_idx);
+		LOG(LOG_NOTICE, "Spawned process %ld (%s -> %s @ watch idx %d). . .", (long) getpid(), watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_idx);
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
