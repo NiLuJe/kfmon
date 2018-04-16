@@ -837,9 +837,9 @@ static bool handle_events(int fd)
 
 		// Loop over all events in the buffer
 		for (ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
-			// NOTE: This trips -Wcast-align on ARM, but should be safe on the current Kobo CPUs, and it works, while saving us a bit of code ;).
+			// NOTE: This trips -Wcast-align on ARM, but should be safe nonetheless ;).
 			event = (const struct inotify_event *) ptr;
-			// NOTE: This *may* be a viable workaround.
+			// NOTE: This *may* be a viable alternative, but don't hold me to that.
 			//memcpy(&event, &ptr, sizeof(struct inotify_event *));
 
 			// Identify which of our target file we've caught an event for...
