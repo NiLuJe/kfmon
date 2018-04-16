@@ -138,7 +138,7 @@ char *get_log_prefix(int prio)
 			strncpy(sz_loglevel, "DBG!", 5);
 			break;
 		default:
-			strncpy(sz_loglevel, "LOG?", 5);
+			strncpy(sz_loglevel, "OOPS", 5);
 			break;
 	}
 
