@@ -959,7 +959,7 @@ static bool handle_events(int fd)
 					spid = get_spawn_pid_for_watch(watch_idx);
 					pthread_mutex_unlock(&ptlock);
 
-					LOG(LOG_INFO, "Watch idx %d's last spawn (%ld) is still alive!", watch_idx, (long) spid);
+					LOG(LOG_INFO, "As watch idx %d (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!", watch_idx, watch_config[watch_idx].filename, (long) spid, watch_config[watch_idx].action);
 				}
 			}
 			if (event->mask & IN_UNMOUNT) {
