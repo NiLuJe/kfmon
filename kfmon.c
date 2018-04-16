@@ -728,7 +728,7 @@ void *reaper_thread(void *ptr)
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
 				char* str = strerror_r(WEXITSTATUS(wstatus), buf, sizeof(buf));
-				MTLOG("%15ld] [CRIT] If nothing was visibly launched, this *may* actually be an execvp error: %s.", (long) tid, str);
+				MTLOG("%15ld] [CRIT] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp error: %s.", (long) tid, str);
 			}
 		} else if (WIFSIGNALED(wstatus)) {
 			MTLOG("%15ld] [WARN] Reaped process %ld (from watch idx %d): It was killed by signal %d (%s).", (long) tid, (long) cpid, watch_idx, WTERMSIG(wstatus), strsignal(WTERMSIG(wstatus)));
