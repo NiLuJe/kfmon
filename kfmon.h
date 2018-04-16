@@ -156,7 +156,7 @@ int orig_stderr;
 static int daemonize(void);
 
 char *get_current_time(void);
-char *get_log_prefix(int);
+const char *get_log_prefix(int);
 
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);

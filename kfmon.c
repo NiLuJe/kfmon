@@ -112,37 +112,25 @@ char *get_current_time(void)
 	return sz_time;
 }
 
-char *get_log_prefix(int prio)
+const char *get_log_prefix(int prio)
 {
-	// Again, static because I'm lazy
-	static char sz_loglevel[5];
-
 	// Reuse (part of) the syslog() priority constants
 	switch(prio) {
 		case LOG_CRIT:
-			strncpy(sz_loglevel, "CRIT", sizeof(sz_loglevel));
-			break;
+			return "CRIT";
 		case LOG_ERR:
-			strncpy(sz_loglevel, "ERR!", sizeof(sz_loglevel));
-			break;
+			return "ERR!";
 		case LOG_WARNING:
-			strncpy(sz_loglevel, "WARN", sizeof(sz_loglevel));
-			break;
+			return "WARN";
 		case LOG_NOTICE:
-			strncpy(sz_loglevel, "NOTE", sizeof(sz_loglevel));
-			break;
+			return "NOTE";
 		case LOG_INFO:
-			strncpy(sz_loglevel, "INFO", sizeof(sz_loglevel));
-			break;
+			return "INFO";
 		case LOG_DEBUG:
-			strncpy(sz_loglevel, "DBG!", sizeof(sz_loglevel));
-			break;
+			return "DBG!";
 		default:
-			strncpy(sz_loglevel, "OOPS", sizeof(sz_loglevel));
-			break;
+			return "OOPS";
 	}
-
-	return sz_loglevel;
 }
 
 // Check that our target mountpoint is indeed mounted...
