@@ -93,17 +93,22 @@ static int daemonize(void)
 	return 0;
 }
 
+// Wrapper around localtime_r, making sure this part is thread-safe (used for logging)
+struct tm *get_localtime(struct tm *lt)
+{
+	time_t t = time(NULL);
+
+	return localtime_r(&t, lt);
+}
+
 // Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
 // NOTE: None of this is particularly thread safe,
 //       it's mainly race-y because of the use of static variables.
 char *get_current_time(void)
 {
 	// cf. strftime(3) & https://stackoverflow.com/questions/7411301
-	time_t t;
-	struct tm *lt;
-
-	t = time(NULL);
-	lt = localtime(&t);
+	struct tm local_tm;
+	struct tm *lt = get_localtime(&local_tm);
 
 	// Needs to be static to avoid dealing with painful memory handling...
 	static char sz_time[22];

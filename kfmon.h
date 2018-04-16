@@ -155,6 +155,7 @@ int orig_stdout;
 int orig_stderr;
 static int daemonize(void);
 
+struct tm *get_localtime(struct tm *);
 char *get_current_time(void);
 const char *get_log_prefix(int);
 
