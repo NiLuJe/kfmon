@@ -112,6 +112,39 @@ char *get_current_time(void)
 	return sz_time;
 }
 
+char *get_log_prefix(int prio)
+{
+	// Again, static because I'm lazy
+	static char sz_loglevel[5];
+
+	// Reuse (part of) the syslog() priority constants
+	switch(prio) {
+		case LOG_CRIT:
+			strncpy(sz_loglevel, "CRIT", 5);
+			break;
+		case LOG_ERR:
+			strncpy(sz_loglevel, "ERR!", 5);
+			break;
+		case LOG_WARNING:
+			strncpy(sz_loglevel, "WARN", 5);
+			break;
+		case LOG_NOTICE:
+			strncpy(sz_loglevel, "NOTE", 5);
+			break;
+		case LOG_INFO:
+			strncpy(sz_loglevel, "INFO", 5);
+			break;
+		case LOG_DEBUG:
+			strncpy(sz_loglevel, "DBG!", 5);
+			break;
+		default:
+			strncpy(sz_loglevel, "LOG?", 5);
+			break;
+	}
+
+	return sz_loglevel;
+}
+
 // Check that our target mountpoint is indeed mounted...
 static bool is_target_mounted(void)
 {
@@ -147,11 +180,11 @@ static void wait_for_target_mountpoint(void)
 	pfd.revents = 0;
 	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
-			LOG("Mountpoints changed (iteration nr. %d)", changes++);
+			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %d)", changes++);
 
 			// Stop polling once we know our mountpoint is available...
 			if (is_target_mounted()) {
-				LOG("Yay! Target mountpoint is available!");
+				LOG(LOG_NOTICE, "Yay! Target mountpoint is available!");
 				break;
 			}
 		}
@@ -159,7 +192,7 @@ static void wait_for_target_mountpoint(void)
 
 		// If we can't find our mountpoint after that many changes, assume we're screwed...
 		if (changes >= 5) {
-			LOG("Too many mountpoint changes without finding our target (shutdown?), aborting!");
+			LOG(LOG_ERR, "Too many mountpoint changes without finding our target (shutdown?), aborting!");
 			close(mfd);
 			exit(EXIT_FAILURE);
 		}
@@ -178,19 +211,19 @@ static long int sane_atoi(const char *str)
 	val = strtol(str, &endptr, 10);
 
 	if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0)) {
-		perror("[KFMon] strtol");
+		perror("[KFMon] [ERR!] strtol");
 		return -1;
 	}
 
 	if (endptr == str) {
-		LOG("No digits were found in value '%s' assigned to a key expecting an int", str);
+		LOG(LOG_WARNING, "No digits were found in value '%s' assigned to a key expecting an int", str);
 		return -1;
 	}
 
 	// If we got here, strtol() successfully parsed at least part of a number.
 	// But we do want to enforce the fact that the input really was *only* an integer value.
 	if (*endptr != '\0') {
-		LOG("Found trailing characters (%s) behind value '%ld' assigned from string '%s' to a key expecting an int", endptr, val, str);
+		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%ld' assigned from string '%s' to a key expecting an int", endptr, val, str);
 		return -1;
 	}
 
@@ -221,12 +254,12 @@ static bool validate_daemon_config(void *user)
 	bool sane = true;
 
 	if (pconfig->db_timeout < 0) {
-		LOG("Passed an invalid value for db_timeout!");
+		LOG(LOG_CRIT, "Passed an invalid value for db_timeout!");
 		sane = false;
 	}
 	// We kind of need to use an intermediary value stored as an int, because our final variable is a bool...
 	if (pconfig->tmp_use_syslog < 0) {
-		LOG("Passed an invalid value for use_syslog!");
+		LOG(LOG_CRIT, "Passed an invalid value for use_syslog!");
 		sane = false;
 	} else {
 		pconfig->use_syslog = pconfig->tmp_use_syslog;
@@ -273,7 +306,7 @@ static bool validate_watch_config(void *user)
 	unsigned int count = 0;
 
 	if (pconfig->filename[0] == '\0') {
-		LOG("Mandatory key 'filename' is missing!");
+		LOG(LOG_CRIT, "Mandatory key 'filename' is missing!");
 		sane = false;
 		count++;
 	} else {
@@ -287,29 +320,29 @@ static bool validate_watch_config(void *user)
 		}
 		// Since we'll necessarily loop over ourselves, only warn if we matched two or more times.
 		if (matches >= 2) {
-			LOG("Tried to setup multiple watches on file '%s'!", pconfig->filename);
+			LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
 			sane = false;
 		}
 	}
 	if (pconfig->action[0] == '\0') {
-		LOG("Mandatory key 'action' is missing!");
+		LOG(LOG_CRIT, "Mandatory key 'action' is missing!");
 		sane = false;
 		count++;
 	}
 	// Crappy potential detection of a missing section name
 	if (count == 2) {
-		LOG("Both mandatory keys are missing, you may have forgotten the [watch] section name?");
+		LOG(LOG_INFO, "Both mandatory keys are missing, you may have forgotten the [watch] section name?");
 	}
 
 	// Handle bool vars...
 	if (pconfig->tmp_do_db_update < 0) {
-		LOG("Passed an invalid value for do_db_update!");
+		LOG(LOG_WARNING, "Passed an invalid value for do_db_update!");
 		sane = false;
 	} else {
 		pconfig->do_db_update = pconfig->tmp_do_db_update;
 	}
 	if (pconfig->tmp_skip_db_checks < 0) {
-		LOG("Passed an invalid value for skip_db_checks!");
+		LOG(LOG_WARNING, "Passed an invalid value for skip_db_checks!");
 		sane = false;
 	} else {
 		pconfig->skip_db_checks = pconfig->tmp_skip_db_checks;
@@ -323,7 +356,7 @@ static int load_config()
 {
 	// Our config files live in the target mountpoint...
 	if (!is_target_mounted()) {
-		LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
+		LOG(LOG_NOTICE, "%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
 		// If it's not, wait for it to be...
 		wait_for_target_mountpoint();
 	}
@@ -338,14 +371,14 @@ static int load_config()
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) == NULL) {
-		perror("[KFMon] fts_open");
+		perror("[KFMon] [ERR!] fts_open");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
 	chp = fts_children(ftsp, 0);
 	if (chp == NULL) {
 		// No files to traverse!
-		LOG("Config directory '%s' appears to be empty, aborting!", KFMON_CONFIGPATH);
+		LOG(LOG_ERR, "Config directory '%s' appears to be empty, aborting!", KFMON_CONFIGPATH);
 		fts_close(ftsp);
 		return -1;
 	}
@@ -354,39 +387,39 @@ static int load_config()
 			case FTS_F:
 				// Check if it's a .ini and not either an unix hidden file or a Mac resource fork...
 				if (strncasecmp(p->fts_name+(p->fts_namelen-4), ".ini", 4) == 0 && strncasecmp(p->fts_name, ".", 1) != 0) {
-					LOG("Trying to load config file '%s' . . .", p->fts_path);
+					LOG(LOG_INFO, "Trying to load config file '%s' . . .", p->fts_path);
 					// The main config has to be parsed slightly differently...
 					if (strncasecmp(p->fts_name, "kfmon.ini", 4) == 0) {
 						// NOTE: Can technically return -1 on file open error, but that shouldn't really ever happen given the nature of the loop we're in ;).
 						ret = ini_parse(p->fts_path, daemon_handler, &daemon_config);
 						if (ret != 0) {
-							LOG("Failed to parse main config file '%s' (first error on line %d), will abort!", p->fts_name, ret);
+							LOG(LOG_CRIT, "Failed to parse main config file '%s' (first error on line %d), will abort!", p->fts_name, ret);
 							// Flag as a failure...
 							rval = -1;
 						} else {
 							if (validate_daemon_config(&daemon_config)) {
-								LOG("Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
+								LOG(LOG_NOTICE, "Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 							} else {
-								LOG("Main config file '%s' is not valid, will abort!", p->fts_name);
+								LOG(LOG_CRIT, "Main config file '%s' is not valid, will abort!", p->fts_name);
 								rval = -1;
 							}
 						}
 					} else {
 						// NOTE: Don't blow up when trying to store more watches than we have space for...
 						if (watch_count >= WATCH_MAX) {
-							LOG("We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX, p->fts_name);
+							LOG(LOG_WARNING, "We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!", WATCH_MAX, p->fts_name);
 							// Don't flag this as a hard failure, just warn and go on...
 							break;
 						}
 
 						ret = ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]);
 						if (ret != 0) {
-							LOG("Failed to parse watch config file '%s' (first error on line %d), will abort!", p->fts_name, ret);
+							LOG(LOG_CRIT, "Failed to parse watch config file '%s' (first error on line %d), will abort!", p->fts_name, ret);
 							// Flag as a failure...
 							rval = -1;
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
-								LOG("Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+								LOG(LOG_NOTICE, "Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 									watch_count,
 									p->fts_name,
 									watch_config[watch_count].filename,
@@ -397,7 +430,7 @@ static int load_config()
 									watch_config[watch_count].db_comment
 								);
 							} else {
-								LOG("Watch config file '%s' is not valid, will abort!", p->fts_name);
+								LOG(LOG_CRIT, "Watch config file '%s' is not valid, will abort!", p->fts_name);
 								rval = -1;
 							}
 						}
@@ -538,7 +571,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 			if (access(ss_path, F_OK) == 0) {
 				thumbnails_num++;
 			} else {
-				LOG("Full-size screensaver hasn't been parsed yet!");
+				LOG(LOG_INFO, "Full-size screensaver hasn't been parsed yet!");
 			}
 
 			// Then the Homescreen tile...
@@ -550,7 +583,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 			if (access(tile_path, F_OK) == 0) {
 				thumbnails_num++;
 			} else {
-				LOG("Homescreen tile hasn't been parsed yet!");
+				LOG(LOG_INFO, "Homescreen tile hasn't been parsed yet!");
 			}
 
 			// And finally the Library thumbnail...
@@ -559,7 +592,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 			if (access(thumb_path, F_OK) == 0) {
 				thumbnails_num++;
 			} else {
-				LOG("Library thumbnail hasn't been parsed yet!");
+				LOG(LOG_INFO, "Library thumbnail hasn't been parsed yet!");
 			}
 
 			// Only give a greenlight if we got all three!
@@ -607,9 +640,9 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 
 		rc = sqlite3_step(stmt);
 		if (rc != SQLITE_DONE) {
-			LOG("UPDATE SQL query failed: %s", sqlite3_errmsg(db));
+			LOG(LOG_WARNING, "UPDATE SQL query failed: %s", sqlite3_errmsg(db));
 		} else {
-			LOG("Successfully updated DB data for the target PNG");
+			LOG(LOG_NOTICE, "Successfully updated DB data for the target PNG");
 		}
 
 		sqlite3_finalize(stmt);
@@ -622,11 +655,11 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 		//       This doesn't appear to be the case anymore, on FW 4.7.x (and possibly earlier, I haven't looked at this stuff in quite a while), it's now using WAL (which makes sense).
 		unsigned int count = 0;
 		while (access(KOBO_DB_PATH"-journal", F_OK) == 0) {
-			LOG("Found a SQLite rollback journal, waiting for it to go away (iteration nr. %d) . . .", count++);
+			LOG(LOG_INFO, "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %d) . . .", count++);
 			usleep(250 * 1000);
 			// NOTE: Don't wait more than 10s
 			if (count > 40) {
-				LOG("Waited for the SQLite rollback journal to go away for far too long, going on anyway.");
+				LOG(LOG_WARNING, "Waited for the SQLite rollback journal to go away for far too long, going on anyway.");
 				break;
 			}
 		}
@@ -696,7 +729,7 @@ void *reaper_thread(void *ptr)
 	} while (ret == -1 && errno == EINTR);
 	// Recap what happened to it
 	if (ret != cpid) {
-		perror("[KFMon] waitpid");
+		perror("[KFMon] [ERR!] waitpid");
 		free(ptr);
 		return (void*)NULL;
 	} else {
@@ -730,11 +763,11 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 
 	if (pid < 0) {
 		// Fork failed?
-		perror("[KFMon] Aborting: fork");
+		perror("[KFMon] [ERR!] Aborting: fork");
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
-		LOG("Spawned process %ld for watch idx %d. . .", (long) getpid(), watch_idx);
+		LOG(LOG_NOTICE, "Spawned process %ld for watch idx %d. . .", (long) getpid(), watch_idx);
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
@@ -748,7 +781,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
 		execvp(*command, command);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
-		perror("[KFMon] Aborting: execvp");
+		perror("[KFMon] [ERR!] Aborting: execvp");
 		exit(EXIT_FAILURE);
 	} else {
 		// Parent
@@ -762,7 +795,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			// NOTE: If we ever hit this error codepath, we don't have to worry about leaving that last spawn as a zombie:
 			//       One of the benefits of the double-fork we do to daemonize is that, on our death, our children will get reparented to init,
 			//       which, by design, will handle the reaping automatically.
-			LOG("Failed to find an available entry in our process table for pid %ld, aborting!", (long) pid);
+			LOG(LOG_ERR, "Failed to find an available entry in our process table for pid %ld, aborting!", (long) pid);
 			exit(EXIT_FAILURE);
 		} else {
 			pthread_mutex_lock(&ptlock);
@@ -775,12 +808,12 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			pthread_t rthread;
 			int *arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
-				LOG("Couldn't allocate memory for thread arg, aborting!");
+				LOG(LOG_ERR, "Couldn't allocate memory for thread arg, aborting!");
 				exit(EXIT_FAILURE);
 			}
 			*arg = i;
 			if (pthread_create(&rthread, NULL, reaper_thread, arg) < 0) {
-				perror("[KFMon] Aborting: pthread_create");
+				perror("[KFMon] [ERR!] Aborting: pthread_create");
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -837,7 +870,7 @@ static bool handle_events(int fd)
 		// Read some events.
 		len = read(fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
-			perror("[KFMon] Aborting: read");
+			perror("[KFMon] [ERR!] Aborting: read");
 			exit(EXIT_FAILURE);
 		}
 
@@ -866,12 +899,12 @@ static bool handle_events(int fd)
 			}
 			if (!found_watch_idx) {
 				// NOTE: Err, that should (hopefully) never happen!
-				LOG("!! Failed to match the current inotify event to any of our watched file! !!");
+				LOG(LOG_CRIT, "!! Failed to match the current inotify event to any of our watched file! !!");
 			}
 
 			// Print event type
 			if (event->mask & IN_OPEN) {
-				LOG("Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
+				LOG(LOG_NOTICE, "Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
 				bool is_watch_spawned;
 				pthread_mutex_lock(&ptlock);
@@ -883,7 +916,7 @@ static bool handle_events(int fd)
 					if (!is_target_processed(watch_idx, false)) {
 						// It's not processed on OPEN, flag as pending...
 						pending_processing = true;
-						LOG("Flagged target icon '%s' as pending processing ...", watch_config[watch_idx].filename);
+						LOG(LOG_INFO, "Flagged target icon '%s' as pending processing ...", watch_config[watch_idx].filename);
 					} else {
 						// It's already processed, we're good!
 						pending_processing = false;
@@ -891,7 +924,7 @@ static bool handle_events(int fd)
 				}
 			}
 			if (event->mask & IN_CLOSE) {
-				LOG("Tripped IN_CLOSE for %s", watch_config[watch_idx].filename);
+				LOG(LOG_NOTICE, "Tripped IN_CLOSE for %s", watch_config[watch_idx].filename);
 				// NOTE: Make sure we won't run a specific command multiple times while an earlier instance of it is still running...
 				//       This is mostly of interest for KOReader/Plato: it means we can keep KFMon running while they're up, without risking
 				//       trying to spawn multiple instances of them in case they end up tripping their own inotify watch ;).
@@ -903,12 +936,12 @@ static bool handle_events(int fd)
 				if (!is_watch_spawned) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
-						LOG("Preparing to spawn %s for watch idx %d . . .", watch_config[watch_idx].action, watch_idx);
+						LOG(LOG_INFO, "Preparing to spawn %s for watch idx %d . . .", watch_config[watch_idx].action, watch_idx);
 						// We're using execvp()...
 						char *const cmd[] = {watch_config[watch_idx].action, NULL};
 						spawn(cmd, watch_idx);
 					} else {
-						LOG("Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
+						LOG(LOG_NOTICE, "Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.", watch_config[watch_idx].filename);
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
 					}
 				} else {
@@ -917,11 +950,11 @@ static bool handle_events(int fd)
 					spid = get_spawn_pid_for_watch(watch_idx);
 					pthread_mutex_unlock(&ptlock);
 
-					LOG("Watch idx %d's last spawn (%ld) is still alive!", watch_idx, (long) spid);
+					LOG(LOG_INFO, "Watch idx %d's last spawn (%ld) is still alive!", watch_idx, (long) spid);
 				}
 			}
 			if (event->mask & IN_UNMOUNT) {
-				LOG("Tripped IN_UNMOUNT for %s", watch_config[watch_idx].filename);
+				LOG(LOG_NOTICE, "Tripped IN_UNMOUNT for %s", watch_config[watch_idx].filename);
 				// Remember that we encountered an unmount, so we don't try to manually remove watches that are already gone...
 				was_unmounted = true;
 			}
@@ -930,22 +963,22 @@ static bool handle_events(int fd)
 			//       That may explain why the explicit inotify_rm_watch() calls we do later on all our other watches don't seem to error out...
 			//       In the end, we behave properly, but it's still strange enough to document ;).
 			if (event->mask & IN_IGNORED) {
-				LOG("Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
+				LOG(LOG_NOTICE, "Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
 				// Remember that the watch was automatically destroyed so we can break from the loop...
 				destroyed_wd = true;
 				watch_config[watch_idx].wd_was_destroyed = true;
 			}
 			if (event->mask & IN_Q_OVERFLOW) {
 				if (event->len) {
-					LOG("Huh oh... Tripped IN_Q_OVERFLOW for %s", event->name);
+					LOG(LOG_WARNING, "Huh oh... Tripped IN_Q_OVERFLOW for %s", event->name);
 				} else {
-					LOG("Huh oh... Tripped IN_Q_OVERFLOW for... something?");
+					LOG(LOG_WARNING, "Huh oh... Tripped IN_Q_OVERFLOW for... something?");
 				}
 				// Try to remove the inotify watch we matched (... hoping matching actually was succesful), and break the loop.
-				LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+				LOG(LOG_INFO, "Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
 				if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
 					// That's too bad, but may not be fatal, so warn only...
-					perror("[KFMon] inotify_rm_watch");
+					perror("[KFMon] [WARN] inotify_rm_watch");
 				}
 				destroyed_wd = true;
 				watch_config[watch_idx].wd_was_destroyed = true;
@@ -954,7 +987,7 @@ static bool handle_events(int fd)
 
 		// If we caught an unmount, explain why we don't explictly have to tear down our watches
 		if (was_unmounted) {
-			LOG("Unmount detected, nothing to do, all watches will naturally get destroyed.");
+			LOG(LOG_INFO, "Unmount detected, nothing to do, all watches will naturally get destroyed.");
 		}
 		// If we caught an event indicating that a watch was automatically destroyed, break the loop.
 		if (destroyed_wd) {
@@ -964,10 +997,10 @@ static bool handle_events(int fd)
 					// Don't do anything if that was because of an unmount... Because that assures us that everything is/will soon be gone (since by design, we're sure all our target files live on the same mountpoint), even if we didn't get to parse all the events in one go to flag them as destroyed one by one.
 					if (!was_unmounted) {
 						// Log what we're doing...
-						LOG("Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+						LOG(LOG_INFO, "Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
 						if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
 							// That's too bad, but may not be fatal, so warn only...
-							perror("[KFMon] inotify_rm_watch");
+							perror("[KFMon] [WARN] inotify_rm_watch");
 						}
 					}
 				} else {
@@ -990,7 +1023,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// Make sure we're running at a neutral niceness (f.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
-		perror("[KFMon] Aborting: setpriority");
+		perror("[KFMon] [ERR!] Aborting: setpriority");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1001,11 +1034,11 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 	}
 
 	// Say hello :)
-	LOG("[PID: %ld] Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s)", (long) getpid(), KFMON_VERSION,  __DATE__, __TIME__, sqlite3_libversion(), SQLITE_VERSION);
+	LOG(LOG_INFO, "[PID: %ld] Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s)", (long) getpid(), KFMON_VERSION,  __DATE__, __TIME__, sqlite3_libversion(), SQLITE_VERSION);
 
 	// Load our configs
 	if (load_config() == -1) {
-		LOG("Failed to load one or more config files, aborting!");
+		LOG(LOG_ERR, "Failed to load one or more config files, aborting!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1031,19 +1064,19 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 
 	// We pretty much want to loop forever...
 	while (1) {
-		LOG("Beginning the main loop.");
+		LOG(LOG_INFO, "Beginning the main loop.");
 
 		// Create the file descriptor for accessing the inotify API
-		LOG("Initializing inotify.");
+		LOG(LOG_INFO, "Initializing inotify.");
 		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
-			perror("[KFMon] Aborting: inotify_init1");
+			perror("[KFMon] [ERR!] Aborting: inotify_init1");
 			exit(EXIT_FAILURE);
 		}
 
 		// Make sure our target file is available (i.e., the partition it resides in is mounted)
 		if (!is_target_mounted()) {
-			LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
+			LOG(LOG_INFO, "%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
 			// If it's not, wait for it to be...
 			wait_for_target_mountpoint();
 		}
@@ -1061,13 +1094,13 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 			watch_config[watch_idx].inotify_wd = inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
-				perror("[KFMon] inotify_add_watch");
-				LOG("Cannot watch '%s', aborting!", watch_config[watch_idx].filename);
+				perror("[KFMon] [ERR!] inotify_add_watch");
+				LOG(LOG_ERR, "Cannot watch '%s', aborting!", watch_config[watch_idx].filename);
 				exit(EXIT_FAILURE);
 				// NOTE: This effectively means we exit when any one of our target file cannot be found, which is not a bad thing, per se...
 				//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
 			}
-			LOG("Setup an inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+			LOG(LOG_NOTICE, "Setup an inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
 		}
 
 		// Inotify input
@@ -1075,14 +1108,14 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		pfd.events = POLLIN;
 
 		// Wait for events
-		LOG("Listening for events.");
+		LOG(LOG_INFO, "Listening for events.");
 		while (1) {
 			poll_num = poll(&pfd, 1, -1);
 			if (poll_num == -1) {
 				if (errno == EINTR) {
 					continue;
 				}
-				perror("[KFMon] Aborting: poll");
+				perror("[KFMon] [ERR!] Aborting: poll");
 				exit(EXIT_FAILURE);
 			}
 
@@ -1096,7 +1129,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				}
 			}
 		}
-		LOG("Stopped listening for events.");
+		LOG(LOG_INFO, "Stopped listening for events.");
 
 		// Close inotify file descriptor
 		close(fd);

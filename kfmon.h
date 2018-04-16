@@ -68,20 +68,20 @@
 #endif
 
 // Log everything to stderr (which actually points to our logfile)
-#define LOG(fmt, ...) ({									\
-	if (daemon_config.use_syslog) {								\
-		syslog(LOG_INFO, fmt "\n", ## __VA_ARGS__);					\
-	} else {										\
-		fprintf(stderr, "[KFMon] [%s] " fmt "\n", get_current_time(), ## __VA_ARGS__);	\
-	}											\
-})												\
+#define LOG(prio, fmt, ...) ({													\
+	if (daemon_config.use_syslog) {												\
+		syslog(prio, fmt "\n", ## __VA_ARGS__);										\
+	} else {														\
+		fprintf(stderr, "[KFMon] [%s] [%s] " fmt "\n", get_current_time(), get_log_prefix(prio), ## __VA_ARGS__);	\
+	}															\
+})																\
 
 // Slight variation without date/time handling to ensure thread safety
 #define MTLOG(fmt, ...) ({									\
 	if (daemon_config.use_syslog) {								\
-		syslog(LOG_INFO, fmt "\n", ## __VA_ARGS__);					\
+		syslog(LOG_NOTICE, fmt "\n", ## __VA_ARGS__);					\
 	} else {										\
-		fprintf(stderr, "[KFMon] " fmt "\n", ## __VA_ARGS__);	\
+		fprintf(stderr, "[KFMon] [THRD] " fmt "\n", ## __VA_ARGS__);			\
 	}											\
 })												\
 
@@ -91,11 +91,11 @@
 #else
 #define DEBUG_LOG 0
 #endif
-#define DBGLOG(fmt, ...) ({			\
-	if (DEBUG_LOG) {			\
-		LOG(fmt, ## __VA_ARGS__);	\
-	}					\
-})						\
+#define DBGLOG(fmt, ...) ({				\
+	if (DEBUG_LOG) {				\
+		LOG(LOG_DEBUG, fmt, ## __VA_ARGS__);	\
+	}						\
+})							\
 
 // What the daemon config should look like
 typedef struct
@@ -139,15 +139,15 @@ static void add_process_to_table(int, pid_t, unsigned int);
 static void remove_process_from_table(int);
 
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
-#define CALL_SQLITE(f) ({				\
-	int i;						\
-	i = sqlite3_ ## f;				\
-	if (i != SQLITE_OK) {				\
-		LOG("%s failed with status %d: %s",	\
-			#f, i, sqlite3_errmsg(db));	\
-		return is_processed;			\
-	}						\
-})							\
+#define CALL_SQLITE(f) ({					\
+	int i;							\
+	i = sqlite3_ ## f;					\
+	if (i != SQLITE_OK) {					\
+		LOG(LOG_CRIT, "%s failed with status %d: %s",	\
+			#f, i, sqlite3_errmsg(db));		\
+		return is_processed;				\
+	}							\
+})								\
 
 // Remember stdin/stdout/stderr to restore them in our children
 int orig_stdin;
@@ -156,6 +156,7 @@ int orig_stderr;
 static int daemonize(void);
 
 char *get_current_time(void);
+char *get_log_prefix(int);
 
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
