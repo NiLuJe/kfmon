@@ -81,7 +81,7 @@
 	if (daemon_config.use_syslog) {								\
 		syslog(LOG_NOTICE, fmt "\n", ## __VA_ARGS__);					\
 	} else {										\
-		fprintf(stderr, "[KFMon] [THRD: " fmt "\n", ## __VA_ARGS__);			\
+		fprintf(stderr, "[KFMon] " fmt "\n", ## __VA_ARGS__);			\
 	}											\
 })												\
 
@@ -156,6 +156,7 @@ int orig_stderr;
 static int daemonize(void);
 
 struct tm *get_localtime(struct tm *);
+char *format_localtime(struct tm *, char *, size_t);
 char *get_current_time(void);
 const char *get_log_prefix(int);
 

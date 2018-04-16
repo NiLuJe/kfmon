@@ -97,25 +97,32 @@ static int daemonize(void)
 struct tm *get_localtime(struct tm *lt)
 {
 	time_t t = time(NULL);
+	tzset();
 
 	return localtime_r(&t, lt);
 }
 
-// Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
-// NOTE: None of this is particularly thread safe,
-//       it's mainly race-y because of the use of static variables.
-char *get_current_time(void)
+// Wrapper around strftime, making sure this part is thread-safe (used for logging)
+char *format_localtime(struct tm *lt, char *sz_time, size_t len)
 {
 	// cf. strftime(3) & https://stackoverflow.com/questions/7411301
+	strftime(sz_time, len, "%Y-%m-%d @ %H:%M:%S", lt);
+
+	return sz_time;
+}
+
+// Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
+// NOTE: The use of a static variable prevents this from being thread-safe.
+//       Which is why we do things a bit differently when in a thread.
+char *get_current_time(void)
+{
 	struct tm local_tm;
-	tzset();
 	struct tm *lt = get_localtime(&local_tm);
 
 	// Needs to be static to avoid dealing with painful memory handling...
 	static char sz_time[22];
-	strftime(sz_time, sizeof(sz_time), "%Y-%m-%d @ %H:%M:%S", lt);
 
-	return sz_time;
+	return format_localtime(lt, sz_time, sizeof(sz_time));
 }
 
 const char *get_log_prefix(int prio)
@@ -714,7 +721,11 @@ void *reaper_thread(void *ptr)
 	watch_idx = PT.spawn_watchids[i];
 	pthread_mutex_unlock(&ptlock);
 
-	MTLOG("%15ld] [INFO] . . . Waiting to reap process %ld (from watch idx %d)", (long) tid, (long) cpid, watch_idx);
+	// Needed for the 'format_localtime(get_localtime(&local_tm), sz_time, sizeof(sz_time))' calls
+	struct tm local_tm;
+	char sz_time[22];
+
+	MTLOG("[%s] [THRD: %ld] [INFO] . . . Waiting to reap process %ld (from watch idx %d)", format_localtime(get_localtime(&local_tm), sz_time, sizeof(sz_time)), (long) tid, (long) cpid, watch_idx);
 	pid_t ret;
 	int wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
@@ -729,19 +740,19 @@ void *reaper_thread(void *ptr)
 	} else {
 		if (WIFEXITED(wstatus)) {
 			int exitcode = WEXITSTATUS(wstatus);
-			MTLOG("%15ld] [NOTE] Reaped process %ld (from watch idx %d): It exited with status %d.", (long) tid, (long) cpid, watch_idx, exitcode);
+			MTLOG("[%s] [THRD: %ld] [NOTE] Reaped process %ld (from watch idx %d): It exited with status %d.", format_localtime(get_localtime(&local_tm), sz_time, sizeof(sz_time)), (long) tid, (long) cpid, watch_idx, exitcode);
 			if (exitcode != 0) {
 				// NOTE: Ugly hack to try to salvage execvp's potential error...
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
 				char* str = strerror_r(exitcode, buf, sizeof(buf));
-				MTLOG("%15ld] [CRIT] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.", (long) tid, str);
+				MTLOG("[%s] [THRD: %ld] [CRIT] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.", format_localtime(get_localtime(&local_tm), sz_time, sizeof(sz_time)), (long) tid, str);
 			}
 		} else if (WIFSIGNALED(wstatus)) {
 			// NOTE: strsignal is not thread safe... Use psignal instead.
 			int sigcode = WTERMSIG(wstatus);
 			char buf[256];
-			snprintf(buf, sizeof(buf), "[KFMon] [THRD: %15ld] [WARN] Reaped process %ld (from watch idx %d): It was killed by signal %d", (long) tid, (long) cpid, watch_idx, sigcode);
+			snprintf(buf, sizeof(buf), "[KFMon] [%s] [THRD: %ld] [WARN] Reaped process %ld (from watch idx %d): It was killed by signal %d", format_localtime(get_localtime(&local_tm), sz_time, sizeof(sz_time)), (long) tid, (long) cpid, watch_idx, sigcode);
 			if (daemon_config.use_syslog) {
 				// NOTE: No strsignal means no human-readable interpretation of the signal w/ syslog (the %m token only works for errno)...
 				syslog(LOG_NOTICE, "%s", buf);
