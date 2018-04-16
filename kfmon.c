@@ -108,6 +108,7 @@ char *get_current_time(void)
 {
 	// cf. strftime(3) & https://stackoverflow.com/questions/7411301
 	struct tm local_tm;
+	tzset();
 	struct tm *lt = get_localtime(&local_tm);
 
 	// Needs to be static to avoid dealing with painful memory handling...
