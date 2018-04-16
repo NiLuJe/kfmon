@@ -169,7 +169,8 @@ static void wait_for_target_mountpoint(void)
 }
 
 // Sanitize user input for keys expecting an integer
-static long int sane_atoi(const char *str) {
+static long int sane_atoi(const char *str)
+{
 	char *endptr;
 	long val;
 
@@ -197,7 +198,8 @@ static long int sane_atoi(const char *str) {
 }
 
 // Handle parsing the main KFMon config
-static int daemon_handler(void *user, const char *section, const char *key, const char *value) {
+static int daemon_handler(void *user, const char *section, const char *key, const char *value)
+{
 	DaemonConfig *pconfig = (DaemonConfig *)user;
 
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
@@ -212,7 +214,8 @@ static int daemon_handler(void *user, const char *section, const char *key, cons
 }
 
 // Validate the main KFMon config
-static bool validate_daemon_config(void *user) {
+static bool validate_daemon_config(void *user)
+{
 	DaemonConfig *pconfig = (DaemonConfig *)user;
 
 	bool sane = true;
@@ -233,7 +236,8 @@ static bool validate_daemon_config(void *user) {
 }
 
 // Handle parsing a watch config
-static int watch_handler(void *user, const char *section, const char *key, const char *value) {
+static int watch_handler(void *user, const char *section, const char *key, const char *value)
+{
 	WatchConfig *pconfig = (WatchConfig *)user;
 
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
@@ -261,7 +265,8 @@ static int watch_handler(void *user, const char *section, const char *key, const
 }
 
 // Validate a watch config
-static bool validate_watch_config(void *user) {
+static bool validate_watch_config(void *user)
+{
 	WatchConfig *pconfig = (WatchConfig *)user;
 
 	bool sane = true;
@@ -314,7 +319,8 @@ static bool validate_watch_config(void *user) {
 }
 
 // Load our config files...
-static int load_config() {
+static int load_config()
+{
 	// Our config files live in the target mountpoint...
 	if (!is_target_mounted()) {
 		LOG("%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
@@ -429,7 +435,8 @@ static int load_config() {
 }
 
 // Implementation of Qt4's QtHash (cf. qhash @ https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L37)
-static unsigned int qhash(const unsigned char *bytes, size_t length) {
+static unsigned int qhash(const unsigned char *bytes, size_t length)
+{
 	unsigned int h = 0;
 	unsigned int i;
 
@@ -632,7 +639,8 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 
 // Heavily inspired from https://stackoverflow.com/a/35235950
 // Initializes the process table. -1 means the entry in the table is available.
-static void init_process_table(void) {
+static void init_process_table(void)
+{
 	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		PT.spawn_pids[i] = -1;
 		PT.spawn_watchids[i] = -1;
@@ -640,7 +648,8 @@ static void init_process_table(void) {
 }
 
 // Returns the index of the next available entry in the process table.
-static int get_next_available_pt_entry(void) {
+static int get_next_available_pt_entry(void)
+{
 	for (int i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == -1) {
 			return i;
@@ -650,19 +659,22 @@ static int get_next_available_pt_entry(void) {
 }
 
 // Adds information about a new spawn to the process table.
-static void add_process_to_table(int i, pid_t pid, unsigned int watch_idx) {
+static void add_process_to_table(int i, pid_t pid, unsigned int watch_idx)
+{
 	PT.spawn_pids[i] = pid;
 	PT.spawn_watchids[i] = (int) watch_idx;
 }
 
 // Removes information about a spawn from the process table.
-static void remove_process_from_table(int i) {
+static void remove_process_from_table(int i)
+{
 	PT.spawn_pids[i] = -1;
 	PT.spawn_watchids[i] = -1;
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
-void *reaper_thread(void *ptr) {
+void *reaper_thread(void *ptr)
+{
 	int i = *((int *) ptr);
 
 	pid_t tid;
@@ -793,7 +805,8 @@ static bool is_watch_already_spawned(unsigned int watch_idx)
 }
 
 // Return the pid of the spawn of a given inotify watch
-static pid_t get_spawn_pid_for_watch(unsigned int watch_idx) {
+static pid_t get_spawn_pid_for_watch(unsigned int watch_idx)
+{
 	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == (int) watch_idx) {
 			return PT.spawn_pids[i];
