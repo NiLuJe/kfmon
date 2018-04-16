@@ -366,7 +366,7 @@ static int load_config()
 	chp = fts_children(ftsp, 0);
 	if (chp == NULL) {
 		// No files to traverse!
-		LOG(LOG_ERR, "Config directory '%s' appears to be empty, aborting!", KFMON_CONFIGPATH);
+		LOG(LOG_CRIT, "Config directory '%s' appears to be empty, aborting!", KFMON_CONFIGPATH);
 		fts_close(ftsp);
 		return -1;
 	}
