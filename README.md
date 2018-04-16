@@ -95,7 +95,7 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
   * If it's a new config file, try to make sure it points to a file that has already been processed by Nickel (after an USBMS plug/eject session, for instance) to save you some puzzlement ;).
   * If you delete one of the files being watched, don't forget to delete the matching config file, and then to reboot your device!
 * Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
-  * NOTE: If your FW version is recent enough to feature the new Homescreen, this may not always hold true anymore ;).
+  * Good news: If your FW version is recent enough to feature the new Homescreen, there's a good chance things will work in a more logical fashion ;).
 * KFMon only expects to watch for files in the internal storage of the device (be than onboard or the rootfs). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).
 
 * Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1662).
