@@ -199,7 +199,7 @@ static long int sane_atoi(const char *str)
 	val = strtol(str, &endptr, 10);
 
 	if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0)) {
-		perror("[KFMon] [ERR!] strtol");
+		perror("[KFMon] [WARN] strtol");
 		return -1;
 	}
 
@@ -359,7 +359,7 @@ static int load_config()
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) == NULL) {
-		perror("[KFMon] [ERR!] fts_open");
+		perror("[KFMon] [CRIT] fts_open");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
@@ -717,7 +717,7 @@ void *reaper_thread(void *ptr)
 	} while (ret == -1 && errno == EINTR);
 	// Recap what happened to it
 	if (ret != cpid) {
-		perror("[KFMon] [ERR!] waitpid");
+		perror("[KFMon] [CRIT] waitpid");
 		free(ptr);
 		return (void*)NULL;
 	} else {
@@ -1082,7 +1082,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 		for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 			watch_config[watch_idx].inotify_wd = inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
-				perror("[KFMon] [ERR!] inotify_add_watch");
+				perror("[KFMon] [CRIT] inotify_add_watch");
 				LOG(LOG_ERR, "Cannot watch '%s', aborting!", watch_config[watch_idx].filename);
 				exit(EXIT_FAILURE);
 				// NOTE: This effectively means we exit when any one of our target file cannot be found, which is not a bad thing, per se...
