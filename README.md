@@ -97,10 +97,14 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
 * Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
 * KFMon only expects to watch for files in the internal storage of the device (be than onboard or the rootfs). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).
 
-* Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1662), and as for successfully restarting nickel on exit, I'd also recommend a current FW version (last tested on FW 4.7.x).
+
+* Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1662).
+  * A far as for successfully restarting nickel on exit is concerned, I'd also recommend a current FW version (last tested on FW 4.7.x).
+
 
 * PSA about the proper syntax expected in an INI file: while the ```;``` character indeed marks the beginning of an inline comment, it must be preceded by some kind of whitespace to actually register as a comment. Otherwise, it's assumed to be part of the value.
   * Meaning ```key=value;``` will probably not work as you might expect (it'll parse as ```key``` set to ```value;``` and not ```value```).
 * On a related note, a line cannot exceed 200 bytes. If the log reports a parsing error on a seemingly benign line, but one which happens to feature an humonguous amount of inline comments, that may very well be the reason ;).
+
 
 * Right now, KFMon supports a maximum of [16](/kfmon.h#L126) file watches. Ping me if that's not enough for you ;).
