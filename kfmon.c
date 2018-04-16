@@ -755,6 +755,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
+		// NOTE: We get a *copy* of the global variable watch_config *at the time of forking*, which *should* be accurate enough for our purpose...
 		LOG(LOG_NOTICE, "Spawned process %ld (%s -> %s @ watch idx %d). . .", (long) getpid(), watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_idx);
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
