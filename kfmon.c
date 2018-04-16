@@ -771,6 +771,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
 		execvp(*command, command);
 		// This will only ever be reached on error, hence the lack of actual return value check ;).
+		// FIXME? stderr is now the original stderr, so this won't make it to the log ;'(
 		perror("[KFMon] [ERR!] Aborting: execvp");
 		exit(EXIT_FAILURE);
 	} else {
