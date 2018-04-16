@@ -81,7 +81,7 @@
 	if (daemon_config.use_syslog) {								\
 		syslog(LOG_NOTICE, fmt "\n", ## __VA_ARGS__);					\
 	} else {										\
-		fprintf(stderr, "[KFMon] [THRD] " fmt "\n", ## __VA_ARGS__);			\
+		fprintf(stderr, "[KFMon] [THRD: " fmt "\n", ## __VA_ARGS__);			\
 	}											\
 })												\
 
