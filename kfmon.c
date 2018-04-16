@@ -737,7 +737,7 @@ void *reaper_thread(void *ptr)
 			char buf[256];
 			snprintf(buf, sizeof(buf), "[KFMon] [THRD: %15ld] [WARN] Reaped process %ld (from watch idx %d): It was killed by signal %d", (long) tid, (long) cpid, watch_idx, sigcode);
 			if (daemon_config.use_syslog) {
-				// NOTE: No human-readable interpretation of the signal w/ syslog (the %m token only works for errno)...
+				// NOTE: No strsignal means no human-readable interpretation of the signal w/ syslog (the %m token only works for errno)...
 				syslog(LOG_NOTICE, "%s", buf);
 			} else {
 				psignal(sigcode, buf);
