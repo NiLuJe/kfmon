@@ -722,12 +722,13 @@ void *reaper_thread(void *ptr)
 		return (void*)NULL;
 	} else {
 		if (WIFEXITED(wstatus)) {
-			MTLOG("%15ld] [NOTE] Reaped process %ld (from watch idx %d): It exited with status %d.", (long) tid, (long) cpid, watch_idx, WEXITSTATUS(wstatus));
-			if (WEXITSTATUS(wstatus) != 0) {
+			int exitcode = WEXITSTATUS(wstatus);
+			MTLOG("%15ld] [NOTE] Reaped process %ld (from watch idx %d): It exited with status %d.", (long) tid, (long) cpid, watch_idx, exitcode);
+			if (exitcode != 0) {
 				// NOTE: Ugly hack to try to salvage execvp's potential error...
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
-				char* str = strerror_r(WEXITSTATUS(wstatus), buf, sizeof(buf));
+				char* str = strerror_r(exitcode, buf, sizeof(buf));
 				MTLOG("%15ld] [CRIT] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp error: %s.", (long) tid, str);
 			}
 		} else if (WIFSIGNALED(wstatus)) {
