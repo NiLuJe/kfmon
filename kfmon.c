@@ -279,6 +279,8 @@ static bool validate_daemon_config(void *user)
 	if (pconfig->use_syslog == ULONG_MAX) {
 		LOG(LOG_CRIT, "Passed an invalid value for use_syslog!");
 		sane = false;
+		// NOTE: As an exception to ease debugging, sanitize this to 0 to ensure we'll log to a file
+		pconfig->use_syslog = 0;
 	}
 
 	return sane;
