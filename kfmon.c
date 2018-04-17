@@ -849,8 +849,23 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 				exit(EXIT_FAILURE);
 			}
 			*arg = i;
-			if (pthread_create(&rthread, NULL, reaper_thread, arg) < 0) {
+
+			// NOTE: We will *never* wait for one of these threads to die from the main thread, so, start them in detached state to make sure their resources will be released when they terminate.
+			pthread_attr_t attr;
+			if (pthread_attr_init(&attr) != 0) {
+				perror("[KFMon] [ERR!] Aborting: pthread_attr_init");
+				exit(EXIT_FAILURE);
+			}
+			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
+				perror("[KFMon] [ERR!] Aborting: pthread_attr_setdetachstate");
+				exit(EXIT_FAILURE);
+			}
+			if (pthread_create(&rthread, &attr, reaper_thread, arg) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_create");
+				exit(EXIT_FAILURE);
+			}
+			if (pthread_attr_destroy(&attr) != 0) {
+				perror("[KFMon] [ERR!] Aborting: pthread_attr_destroy");
 				exit(EXIT_FAILURE);
 			}
 		}
