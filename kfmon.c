@@ -210,31 +210,17 @@ static void wait_for_target_mountpoint(void)
 }
 
 // Sanitize user input for keys expecting an (unsigned) integer
+// NOTE: See git's strtoul_ui in git-compat-util.h for a better and more generic implementation
 static unsigned long int sane_strtoul(const char *str)
 {
-	char *endptr;
-
-	// NOTE: Since we want to *reject* negative values (which strtoul does not), we first have to convert our string to an int...
-	//       We can safely do this because we won't ever need to pass values > INT_MAX (in fact, we clamp them to that),
-	//       so we don't care about the loss of range that incurs in our final unsigned value.
-	long int ival;
-
-	errno = 0;	// To distinguish success/failure after call
-	ival = strtol(str, &endptr, 10);
-
-	// We only need to do basic error checking
-	if ((errno == ERANGE && (ival == LONG_MAX || ival == LONG_MIN)) || (errno != 0 && ival == 0)) {
-		perror("[KFMon] [WARN] strtol");
-		return ULONG_MAX;
-	}
-
-	// And now we can check that it's positive :).
-	if (ival < 0) {
-		LOG(LOG_WARNING, "Assigned a negative value (%ld) to a key expecting an unsigned int.", ival);
+	// NOTE: We want to *reject* negative values (which strtoul does not)!
+	if (strchr(str, '-')) {
+		LOG(LOG_WARNING, "Assigned a negative value (%s) to a key expecting an unsigned int.", str);
 		return ULONG_MAX;
 	}
 
 	// Now that we know it's positive, we can go on with strtoul...
+	char *endptr;
 	unsigned long int val;
 
 	errno = 0;	// To distinguish success/failure after call
@@ -244,7 +230,7 @@ static unsigned long int sane_strtoul(const char *str)
 	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
 		perror("[KFMon] [WARN] strtoul");
 		return ULONG_MAX;
-	//       ... this means that if we were passed a legitimate ULONG_MAX (which, granted, should *never* happen given the strtol call before us),
+	//       ... this means that if we were passed a legitimate ULONG_MAX (which, granted, should *never* happen in our context),
 	//       we have to modify it to pass our sanity checks down the line.
 	} else if (val == ULONG_MAX) {
 		LOG(LOG_WARNING, "Encountered a legitimate ULONG_MAX assigned to a key, clamping it down to UINT_MAX");
