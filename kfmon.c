@@ -112,20 +112,20 @@ char *format_localtime(struct tm *lt, char *sz_time, size_t len)
 }
 
 // Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
-// NOTE: The use of static variables prevents this from being thread-safe.
-//       Which is why we do things a bit differently when in a thread.
+// NOTE: The use of static variables prevents this from being thread-safe,
+//       but in the main thread, we use static storage for simplicity's sake.
 char *get_current_time(void)
 {
 	static struct tm local_tm = {0};
 	struct tm *lt = get_localtime(&local_tm);
 
-	// Needs to be static to avoid dealing with painful memory handling...
 	static char sz_time[22];
 
 	return format_localtime(lt, sz_time, sizeof(sz_time));
 }
 
-// And now the same, but with user supplied storage, thus potentially thread-safe
+// And now the same, but with user supplied storage, thus potentially thread-safe:
+// f.g., we use the stack in reaper_thread().
 char *get_current_time_r(struct tm *local_tm, char *sz_time, size_t len)
 {
 	struct tm *lt = get_localtime(local_tm);
