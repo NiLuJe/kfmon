@@ -752,8 +752,8 @@ void *reaper_thread(void *ptr)
 				// NOTE: Ugly hack to try to salvage execvp's potential error...
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
-				char* str = strerror_r(exitcode, buf, sizeof(buf));
-				MTLOG("[%s] [CRIT] [THRD: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, str);
+				char *sz_error = strerror_r(exitcode, buf, sizeof(buf));
+				MTLOG("[%s] [CRIT] [THRD: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, sz_error);
 			}
 		} else if (WIFSIGNALED(wstatus)) {
 			// NOTE: strsignal is not thread safe... Use psignal instead.
