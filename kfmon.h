@@ -116,6 +116,7 @@ typedef struct
 	char db_title[DB_SZ_MAX];
 	char db_author[DB_SZ_MAX];
 	char db_comment[DB_SZ_MAX];
+	unsigned long int block_spawns;
 	int inotify_wd;
 	bool wd_was_destroyed;
 } WatchConfig;

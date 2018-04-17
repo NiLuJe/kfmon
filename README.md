@@ -60,6 +60,9 @@ As you would expect, a simple file/action pair only requires two entries:
 
 Note that the section all these key/value pairs fall under *has* to be named ```[watch]```!
 
+Next comes optional entries:
+
+```block_spawns = 0```, which, when set to 1, prevents *anything* from being launched by KFMon while the command from the watch marked as such is still running. This is mainly useful for document readers, since they could otherwise unwittingly trigger a number of other watches (usually through their background metadata reader, their thumbnailer, or more generally their file manager). Which is precisely why this is set to 1 for KOReader & Plato ;).
 
 In addition to that, you can try to do some cool but potentially dangerous stuff with the Nickel database: updating the Title, Author and Comment entries of your "book" in the Library.
 This is disabled by default, because ninja writing to the database behind Nickel's back *might* upset Nickel (meaning thrash your db!)...

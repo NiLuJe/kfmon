@@ -300,6 +300,8 @@ static int watch_handler(void *user, const char *section, const char *key, const
 		strncpy(pconfig->db_author, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_comment")) {
 		strncpy(pconfig->db_comment, value, DB_SZ_MAX-1);
+	} else if (MATCH("watch", "block_spawns")) {
+		pconfig->block_spawns = sane_strtoul(value);
 	} else if (MATCH("watch", "reboot_on_exit")) {
 		;
 	} else {
@@ -362,6 +364,11 @@ static bool validate_watch_config(void *user)
 			LOG(LOG_CRIT, "Mandatory key 'db_comment' is missing!");
 			sane = false;
 		}
+	}
+
+	if (pconfig->block_spawns == ULONG_MAX) {
+		LOG(LOG_WARNING, "Passed an invalid value for block_spawns!");
+		sane = false;
 	}
 
 	return sane;
@@ -435,11 +442,12 @@ static int load_config(void)
 							rval = -1;
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
-								LOG(LOG_NOTICE, "Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%lu, db_title=%s, db_author=%s, db_comment=%s",
+								LOG(LOG_NOTICE, "Watch config @ index %zd loaded from '%s': filename=%s, action=%s, block_spawns=%lu, do_db_update=%lu, db_title=%s, db_author=%s, db_comment=%s",
 									watch_count,
 									p->fts_name,
 									watch_config[watch_count].filename,
 									watch_config[watch_count].action,
+									watch_config[watch_count].block_spawns,
 									watch_config[watch_count].do_db_update,
 									watch_config[watch_count].db_title,
 									watch_config[watch_count].db_author,
@@ -467,10 +475,11 @@ static int load_config(void)
 	// Let's recap (including failures)...
 	DBGLOG("Daemon config recap: db_timeout=%lu, use_syslog=%lu", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%lu, skip_db_checks=%lu, db_title=%s, db_author=%s, db_comment=%s",
+		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, block_spawns=%lu, do_db_update=%lu, skip_db_checks=%lu, db_title=%s, db_author=%s, db_comment=%s",
 			watch_idx,
 			watch_config[watch_idx].filename,
 			watch_config[watch_idx].action,
+			watch_config[watch_count].block_spawns,
 			watch_config[watch_idx].do_db_update,
 			watch_config[watch_idx].skip_db_checks,
 			watch_config[watch_idx].db_title,
@@ -903,42 +912,25 @@ static bool is_watch_already_spawned(unsigned int watch_idx)
 	return false;
 }
 
-// Check if KOReader or Plato is already running
+// Check if a watch flagged as a spawn blocker (f.g., KOReader or Plato) is already running
 // NOTE: This is mainly to prevent spurious spawns that might be unwittingly caused by their file manager (be it through metadata reading, thumbnails creation, or whatever).
 //       Another workaround is of course to kill KFMon as part of their startup process...
 static bool is_blocker_running(void) {
 	// Walk our process table to identify watches with a currently running process
 	for (unsigned int i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] != -1) {
-			// Walk the registered watch list to match that currently running watch to its filename & action
+			// Walk the registered watch list to match that currently running watch to its block_spawns flag
 			for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 				if (PT.spawn_watchids[i] == (int) watch_idx) {
-					// NOTE: We match on the final folder + script name. This assumes stuff is installed more or less in their default location.
-					//       Don't match on filename because people *might* want to modify the icon.
-					size_t needle_len;
-					size_t haystack_len = strlen(watch_config[watch_idx].action);
-					needle_len = 21;
-					if (haystack_len > needle_len) {
-						DBGLOG("Matching '%s' against KOReader's location", watch_config[watch_idx].action+(haystack_len - needle_len));
-						if (strncmp(watch_config[watch_idx].action+(haystack_len - needle_len), "/koreader/koreader.sh", needle_len) == 0) {
-							// KOReader is running, block new spawns!
-							return true;
-						}
-					}
-					needle_len = 15;
-					if (haystack_len > needle_len) {
-						DBGLOG("Matching '%s' against Plato's location", watch_config[watch_idx].action+(haystack_len - needle_len));
-						if (strncmp(watch_config[watch_idx].action+(haystack_len - needle_len), "/plato/plato.sh", needle_len) == 0) {
-							// Plato is running, block new spawns!
-							return true;
-						}
+					if (watch_config[watch_idx].block_spawns) {
+						return true;
 					}
 				}
 			}
 		}
 	}
 
-	// None of them are running, we're good to go!
+	// Nothing currently running is a spawn blocker, we're good to go!
 	return false;
 }
 
