@@ -228,6 +228,11 @@ static unsigned long int sane_strtoul(const char *str)
 		LOG(LOG_WARNING, "Encountered a legitimate ULONG_MAX assigned to a key, nerfing it down to UINT_MAX");
 		val = UINT_MAX;
 	}
+	// NOTE: It fact, always clamp to INT_MAX, since some of these may end up casted to an int (f.g., db_timeout)
+	if (val > INT_MAX) {
+		LOG(LOG_WARNING, "Encountered a value larger than INT_MAX assigned to a key, nerfing it down to UINT_MAX");
+		val = INT_MAX;
+	}
 
 	if (endptr == str) {
 		LOG(LOG_WARNING, "No digits were found in value '%s' assigned to a key expecting an unsigned int", str);
