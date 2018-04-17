@@ -753,11 +753,11 @@ void *reaper_thread(void *ptr)
 			MTLOG("[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %d): It exited with status %d.", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, (long) cpid, watch_idx, exitcode);
 			// NOTE: Ugly hack to try to salvage execvp's potential error... If the process exited with a non-zero status code, within (roughly) a second of being launched, assume the exit code is actually inherited from execvp's errno...
 			time_t now = time(NULL);
-			if (exitcode != 0 && difftime(now, then) < 1) {
+			if (exitcode != 0 && difftime(now, then) <= 1) {
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
 				char *sz_error = strerror_r(exitcode, buf, sizeof(buf));
-				MTLOG("[%s] [CRIT] [THRD: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, sz_error);
+				MTLOG("[%s] [CRIT] [TID: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, sz_error);
 			}
 		} else if (WIFSIGNALED(wstatus)) {
 			// NOTE: strsignal is not thread safe... Use psignal instead.
