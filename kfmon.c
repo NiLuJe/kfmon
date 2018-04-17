@@ -1067,6 +1067,9 @@ static bool handle_events(int fd)
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
 						LOG(LOG_INFO, "Preparing to spawn %s for watch idx %u . . .", watch_config[watch_idx].action, watch_idx);
+						if (watch_config[watch_idx].block_spawns) {
+							LOG(LOG_NOTICE, "This watch's process is flagged as a spawn blocker, it will prevent *any* event from triggering a spawn while it is still running!");
+						}
 						// We're using execvp()...
 						char *const cmd[] = {watch_config[watch_idx].action, NULL};
 						spawn(cmd, watch_idx);
@@ -1083,7 +1086,7 @@ static bool handle_events(int fd)
 
 						LOG(LOG_INFO, "As watch idx %u (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!", watch_idx, watch_config[watch_idx].filename, (long) spid, watch_config[watch_idx].action);
 					} else if (is_reader_spawned) {
-						LOG(LOG_INFO, "As a document reader (KOReader or Plato) is currently running, we won't be spawning anything else to prevent unwanted behavior!");
+						LOG(LOG_INFO, "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
 					}
 				}
 			}
