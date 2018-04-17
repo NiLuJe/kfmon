@@ -899,14 +899,15 @@ static bool is_blocker_running(void) {
 			// Walk the registered watch list to match that currently running watch to its filename & action
 			for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 				if (PT.spawn_watchids[i] == (int) watch_idx) {
-					// NOTE: We match on the full action. This assumes stuff is installed in their default location.
-					//       We might want to match on either the script name only, or the last folder+script?
+					// NOTE: We match on the final folder + script name. This assumes stuff is installed more or less in their default location.
 					//       Don't match on filename because people *might* want to modify the icon.
-					if (strcmp(watch_config[watch_idx].action, "/mnt/onboard/.adds/koreader/koreader.sh") == 0) {
+					DBGLOG("Matching '%s' against KOReader's location", watch_config[watch_idx].action+(strlen(watch_config[watch_idx].action) - 21));
+					if (strncmp(watch_config[watch_idx].action+(strlen(watch_config[watch_idx].action) - 21), "/koreader/koreader.sh", 21) == 0) {
 						// KOReader is running, block new spawns!
 						return true;
 					}
-					if (strcmp(watch_config[watch_idx].action, "/mnt/onboard/.adds/plato/plato.sh") == 0) {
+					DBGLOG("Matching '%s' against Plato's location", watch_config[watch_idx].action+(strlen(watch_config[watch_idx].action) - 15));
+					if (strncmp(watch_config[watch_idx].action+(strlen(watch_config[watch_idx].action) - 15), "/plato/plato.sh", 15) == 0) {
 						// Plato is running, block new spawns!
 						return true;
 					}
