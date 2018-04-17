@@ -732,6 +732,9 @@ void *reaper_thread(void *ptr)
 	struct tm local_tm;
 	char sz_time[22];
 
+	// Remember the current time for the execvp errno/exitcode heuristic...
+	time_t then = time(NULL);
+
 	MTLOG("[%s] [INFO] [TID: %ld] Waiting to reap process %ld (from watch idx %d) . . .", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, (long) cpid, watch_idx);
 	pid_t ret;
 	int wstatus;
@@ -748,8 +751,9 @@ void *reaper_thread(void *ptr)
 		if (WIFEXITED(wstatus)) {
 			int exitcode = WEXITSTATUS(wstatus);
 			MTLOG("[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %d): It exited with status %d.", get_current_time_r(&local_tm, sz_time, sizeof(sz_time)), (long) tid, (long) cpid, watch_idx, exitcode);
-			if (exitcode != 0) {
-				// NOTE: Ugly hack to try to salvage execvp's potential error...
+			// NOTE: Ugly hack to try to salvage execvp's potential error... If the process exited with a non-zero status code, within (roughly) a second of being launched, assume the exit code is actually inherited from execvp's errno...
+			time_t now = time(NULL);
+			if (exitcode != 0 && difftime(now, then) < 1) {
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
 				char *sz_error = strerror_r(exitcode, buf, sizeof(buf));
