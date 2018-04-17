@@ -101,7 +101,7 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
   * Good news: If your FW version is recent enough to feature the new Homescreen, there's a good chance things will work in a more logical fashion ;).
 * KFMon only expects to watch for files in the internal storage of the device (be than onboard or the rootfs). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).
 
-* Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1662).
+* Proper interaction with KOReader in general requires a recent version of KOReader (i.e., > 2015.11-1667).
   * A far as for successfully restarting nickel on exit is concerned, I'd also recommend a current FW version (last tested on FW 4.7.x).
 * When either KOReader or Plato is launched *through KFMon*, __nothing__ will be allowed to spawn while that document reader is still running. This is to prevent spurious events that may be triggered by their file manager.
   * This heuristic relies on them being installed in a sensible location, and launched via their default script (i.e., ```koreader/koreader.sh``` and ```plato/plato.sh```).
