@@ -339,7 +339,7 @@ static bool validate_watch_config(void *user)
 	}
 	// Crappy potential detection of a missing section name
 	if (count == 2) {
-		LOG(LOG_INFO, "Both mandatory keys are missing, you may have forgotten the [watch] section name?");
+		LOG(LOG_INFO, "Both mandatory keys are missing, you may have misspelled the [watch] section name?");
 	}
 
 	// Handle bool vars...
