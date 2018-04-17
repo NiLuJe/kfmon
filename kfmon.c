@@ -350,7 +350,7 @@ static bool validate_watch_config(void *user)
 	}
 
 	// If we asked for a database update, the next three keys become mandatory
-	if (pconfig->tmp_do_db_update) {
+	if (pconfig->do_db_update) {
 		if (pconfig->db_title[0] == '\0') {
 			LOG(LOG_CRIT, "Mandatory key 'db_title' is missing!");
 			sane = false;
