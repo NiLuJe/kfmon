@@ -1068,7 +1068,7 @@ static bool handle_events(int fd)
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
 						LOG(LOG_INFO, "Preparing to spawn %s for watch idx %u . . .", watch_config[watch_idx].action, watch_idx);
 						if (watch_config[watch_idx].block_spawns) {
-							LOG(LOG_NOTICE, "This watch's process is flagged as a spawn blocker, it will prevent *any* event from triggering a spawn while it is still running!");
+							LOG(LOG_NOTICE, "%s is flagged as a spawn blocker, it will prevent *any* event from triggering a spawn while it is still running!", watch_config[watch_idx].action);
 						}
 						// We're using execvp()...
 						char *const cmd[] = {watch_config[watch_idx].action, NULL};
