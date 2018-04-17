@@ -397,7 +397,7 @@ static int load_config(void)
 				if (p->fts_namelen > 4 && strncasecmp(p->fts_name+(p->fts_namelen-4), ".ini", 4) == 0 && strncasecmp(p->fts_name, ".", 1) != 0) {
 					LOG(LOG_INFO, "Trying to load config file '%s' . . .", p->fts_path);
 					// The main config has to be parsed slightly differently...
-					if (strncasecmp(p->fts_name, "kfmon.ini", 4) == 0) {
+					if (strcasecmp(p->fts_name, "kfmon.ini") == 0) {
 						// NOTE: Can technically return -1 on file open error, but that shouldn't really ever happen given the nature of the loop we're in ;).
 						ret = ini_parse(p->fts_path, daemon_handler, &daemon_config);
 						if (ret != 0) {
