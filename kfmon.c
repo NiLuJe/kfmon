@@ -901,15 +901,23 @@ static bool is_blocker_running(void) {
 				if (PT.spawn_watchids[i] == (int) watch_idx) {
 					// NOTE: We match on the final folder + script name. This assumes stuff is installed more or less in their default location.
 					//       Don't match on filename because people *might* want to modify the icon.
-					DBGLOG("Matching '%s' against KOReader's location", watch_config[watch_idx].action+(strlen(watch_config[watch_idx].action) - 21));
-					if (strncmp(watch_config[watch_idx].action+(strlen(watch_config[watch_idx].action) - 21), "/koreader/koreader.sh", 21) == 0) {
-						// KOReader is running, block new spawns!
-						return true;
+					size_t needle_len;
+					size_t haystack_len = strlen(watch_config[watch_idx].action);
+					needle_len = 21;
+					if (haystack_len > needle_len) {
+						DBGLOG("Matching '%s' against KOReader's location", watch_config[watch_idx].action+(haystack_len - needle_len));
+						if (strncmp(watch_config[watch_idx].action+(haystack_len - needle_len), "/koreader/koreader.sh", needle_len) == 0) {
+							// KOReader is running, block new spawns!
+							return true;
+						}
 					}
-					DBGLOG("Matching '%s' against Plato's location", watch_config[watch_idx].action+(strlen(watch_config[watch_idx].action) - 15));
-					if (strncmp(watch_config[watch_idx].action+(strlen(watch_config[watch_idx].action) - 15), "/plato/plato.sh", 15) == 0) {
-						// Plato is running, block new spawns!
-						return true;
+					needle_len = 15;
+					if (haystack_len > needle_len) {
+						DBGLOG("Matching '%s' against Plato's location", watch_config[watch_idx].action+(haystack_len - needle_len));
+						if (strncmp(watch_config[watch_idx].action+(haystack_len - needle_len), "/plato/plato.sh", needle_len) == 0) {
+							// Plato is running, block new spawns!
+							return true;
+						}
 					}
 				}
 			}
