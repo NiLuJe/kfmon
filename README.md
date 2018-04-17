@@ -100,7 +100,7 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
 
 * Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1662).
   * A far as for successfully restarting nickel on exit is concerned, I'd also recommend a current FW version (last tested on FW 4.7.x).
-* When either KOReader or Plato is launched *through KFMon*, _nothing_ will be allowed to spawn while that document reader is still running. This is to prevent spurious events that may be triggered by their file manager.
+* When either KOReader or Plato is launched *through KFMon*, __nothing__ will be allowed to spawn while that document reader is still running. This is to prevent spurious events that may be triggered by their file manager.
   * This heuristic relies on them being installed in a sensible location, and launched via their default script (i.e., ```koreader/koreader.sh``` and ```plato/plato.sh```).
 
 * PSA about the proper syntax expected in an INI file: while the ```;``` character indeed marks the beginning of an inline comment, it must be preceded by some kind of whitespace to actually register as a comment. Otherwise, it's assumed to be part of the value.
