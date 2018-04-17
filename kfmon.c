@@ -242,7 +242,7 @@ static unsigned long int sane_strtoul(const char *str)
 	// If we got here, strtol() successfully parsed at least part of a number.
 	// But we do want to enforce the fact that the input really was *only* an integer value.
 	if (*endptr != '\0') {
-		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%ld' assigned from string '%s' to a key expecting an unsigned int", endptr, val, str);
+		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%lu' assigned from string '%s' to a key expecting an unsigned int", endptr, val, str);
 		return ULONG_MAX;
 	}
 
@@ -480,7 +480,7 @@ static int load_config(void)
 	// Let's recap (including failures)...
 	DBGLOG("Daemon config recap: db_timeout=%lu, use_syslog=%lu", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, block_spawns=%lu, do_db_update=%lu, skip_db_checks=%lu, db_title=%s, db_author=%s, db_comment=%s",
+		DBGLOG("Watch config @ index %u recap: filename=%s, action=%s, block_spawns=%lu, do_db_update=%lu, skip_db_checks=%lu, db_title=%s, db_author=%s, db_comment=%s",
 			watch_idx,
 			watch_config[watch_idx].filename,
 			watch_config[watch_idx].action,
@@ -824,7 +824,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		// Sweet child o' mine!
 		// NOTE: Since we're a child process, we essentially get a *copy* of the global variable watch_config *at the time of forking*!
 		//       Our design *should* ensure its content to still be accurate at the time we'll be reading this copy, though.
-		LOG(LOG_NOTICE, "Spawned process %ld (%s -> %s @ watch idx %d) . . .", (long) getpid(), watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_idx);
+		LOG(LOG_NOTICE, "Spawned process %ld (%s -> %s @ watch idx %u) . . .", (long) getpid(), watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_idx);
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
@@ -861,7 +861,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			add_process_to_table(i, pid, watch_idx);
 			pthread_mutex_unlock(&ptlock);
 
-			DBGLOG("Assigned pid %ld (from watch idx %d) to process table entry idx %d", (long) pid, watch_idx, i);
+			DBGLOG("Assigned pid %ld (from watch idx %u) to process table entry idx %d", (long) pid, watch_idx, i);
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread for every spawn...
 			//       See #2 for an history of the previous failed attempts...
 			pthread_t rthread;
@@ -1042,7 +1042,7 @@ static bool handle_events(int fd)
 				if (!is_watch_spawned && !is_reader_spawned) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
-						LOG(LOG_INFO, "Preparing to spawn %s for watch idx %d . . .", watch_config[watch_idx].action, watch_idx);
+						LOG(LOG_INFO, "Preparing to spawn %s for watch idx %u . . .", watch_config[watch_idx].action, watch_idx);
 						// We're using execvp()...
 						char *const cmd[] = {watch_config[watch_idx].action, NULL};
 						spawn(cmd, watch_idx);
@@ -1057,7 +1057,7 @@ static bool handle_events(int fd)
 						spid = get_spawn_pid_for_watch(watch_idx);
 						pthread_mutex_unlock(&ptlock);
 
-						LOG(LOG_INFO, "As watch idx %d (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!", watch_idx, watch_config[watch_idx].filename, (long) spid, watch_config[watch_idx].action);
+						LOG(LOG_INFO, "As watch idx %u (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!", watch_idx, watch_config[watch_idx].filename, (long) spid, watch_config[watch_idx].action);
 					} else if (is_reader_spawned) {
 						LOG(LOG_INFO, "As a document reader (KOReader or Plato) is currently running, we won't be spawning anything else to prevent unwanted behavior!");
 					}
@@ -1085,7 +1085,7 @@ static bool handle_events(int fd)
 					LOG(LOG_WARNING, "Huh oh... Tripped IN_Q_OVERFLOW for... something?");
 				}
 				// Try to remove the inotify watch we matched (... hoping matching actually was succesful), and break the loop.
-				LOG(LOG_INFO, "Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+				LOG(LOG_INFO, "Trying to remove inotify watch for '%s' @ index %u.", watch_config[watch_idx].filename, watch_idx);
 				if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
 					// That's too bad, but may not be fatal, so warn only...
 					perror("[KFMon] [WARN] inotify_rm_watch");
@@ -1107,7 +1107,7 @@ static bool handle_events(int fd)
 					// Don't do anything if that was because of an unmount... Because that assures us that everything is/will soon be gone (since by design, we're sure all our target files live on the same mountpoint), even if we didn't get to parse all the events in one go to flag them as destroyed one by one.
 					if (!was_unmounted) {
 						// Log what we're doing...
-						LOG(LOG_INFO, "Trying to remove inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+						LOG(LOG_INFO, "Trying to remove inotify watch for '%s' @ index %u.", watch_config[watch_idx].filename, watch_idx);
 						if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
 							// That's too bad, but may not be fatal, so warn only...
 							perror("[KFMon] [WARN] inotify_rm_watch");
@@ -1210,7 +1210,7 @@ int main(int argc __attribute__ ((unused)), char* argv[] __attribute__ ((unused)
 				// NOTE: This effectively means we exit when any one of our target file cannot be found, which is not a bad thing, per se...
 				//	 This basically means that it takes some kind of effort to actually be running during Nickel's processing of said target file ;).
 			}
-			LOG(LOG_NOTICE, "Setup an inotify watch for '%s' @ index %d.", watch_config[watch_idx].filename, watch_idx);
+			LOG(LOG_NOTICE, "Setup an inotify watch for '%s' @ index %u.", watch_config[watch_idx].filename, watch_idx);
 		}
 
 		// Inotify input
