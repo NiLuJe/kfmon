@@ -869,6 +869,12 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setdetachstate");
 				exit(EXIT_FAILURE);
 			}
+			// NOTE: Use a smaller stack (ulimit -s is 8MB on the Kobos). Base it on pointer size, aiming for 2MB on x64. Floor it at 1MB to be safe, though.
+			//       In the grand scheme of things, this won't really change much ;).
+			if (pthread_attr_setstacksize(&attr, MIN(1 * 1024 * 1024, sizeof(void *) * 1024 * 1024 / 4)) != 0) {
+				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
+				exit(EXIT_FAILURE);
+			}
 			if (pthread_create(&rthread, &attr, reaper_thread, arg) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_create");
 				exit(EXIT_FAILURE);

@@ -108,4 +108,4 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
 * On a related note, a line cannot exceed 200 bytes. If the log reports a parsing error on a seemingly benign line, but one which happens to feature an humonguous amount of inline comments, that may very well be the reason ;).
 * If the log reports a parsing error at (or near, depending on commented lines) the top of the config file, check that you haven't forgotten the ```[watch]``` section name ;).
 
-* Right now, KFMon supports a maximum of [16](/kfmon.h#L126) file watches. Ping me if that's not enough for you ;).
+* Right now, KFMon supports a maximum of [16](/kfmon.h#L127) file watches. Ping me if that's not enough for you ;).

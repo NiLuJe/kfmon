@@ -44,6 +44,7 @@
 #include <sys/resource.h>
 #include <pthread.h>
 #include <sys/syscall.h>
+#include <sys/param.h>
 #include <sqlite3.h>
 #include "inih/ini.h"
 
