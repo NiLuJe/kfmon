@@ -644,7 +644,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	if (needs_update) {
 		CALL_SQLITE(prepare_v2(db, "UPDATE content SET Title = @title, Attribution = @author, Description = @comment WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
 
-		// NOTE: No sanity checks are done to confirm that those watch configs are sane... The example config ships with a strong warning not to forget them if wanted, but that's it.
+		// NOTE: No sanity checks are done to confirm that those watch configs are sane, we only check that they are *present*... The example config ships with a strong warning not to forget them if wanted, but that's it.
 		idx = sqlite3_bind_parameter_index(stmt, "@title");
 		CALL_SQLITE(bind_text(stmt, idx, watch_config[watch_idx].db_title, -1, SQLITE_STATIC));
 		idx = sqlite3_bind_parameter_index(stmt, "@author");
