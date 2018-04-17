@@ -188,7 +188,7 @@ static void wait_for_target_mountpoint(void)
 	pfd.revents = 0;
 	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
-			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %d)", changes++);
+			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %u)", changes++);
 
 			// Stop polling once we know our mountpoint is available...
 			if (is_target_mounted()) {
@@ -209,30 +209,36 @@ static void wait_for_target_mountpoint(void)
 	close(mfd);
 }
 
-// Sanitize user input for keys expecting an integer
-static long int sane_atoi(const char *str)
+// Sanitize user input for keys expecting an (unsigned) integer
+static unsigned long int sane_strtoul(const char *str)
 {
 	char *endptr;
-	long val;
+	unsigned long int val;
 
 	errno = 0;	// To distinguish success/failure after call
-	val = strtol(str, &endptr, 10);
+	val = strtoul(str, &endptr, 10);
 
-	if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0)) {
-		perror("[KFMon] [WARN] strtol");
-		return -1;
+	// NOTE: To make things simpler for us, we return ULONG_MAX on error...
+	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
+		perror("[KFMon] [WARN] strtoul");
+		return ULONG_MAX;
+	//       ... this means that if we were passed a legitimate ULONG_MAX (which, granted, should *never* happen in our context),
+	//       we have to modify it to pass our sanity checks down the line.
+	} else if (val == ULONG_MAX) {
+		LOG(LOG_WARNING, "Encountered a legitimate ULONG_MAX assigned to a key, nerfing it down to UINT_MAX");
+		val = UINT_MAX;
 	}
 
 	if (endptr == str) {
-		LOG(LOG_WARNING, "No digits were found in value '%s' assigned to a key expecting an int", str);
-		return -1;
+		LOG(LOG_WARNING, "No digits were found in value '%s' assigned to a key expecting an unsigned int", str);
+		return ULONG_MAX;
 	}
 
 	// If we got here, strtol() successfully parsed at least part of a number.
 	// But we do want to enforce the fact that the input really was *only* an integer value.
 	if (*endptr != '\0') {
-		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%ld' assigned from string '%s' to a key expecting an int", endptr, val, str);
-		return -1;
+		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%ld' assigned from string '%s' to a key expecting an unsigned int", endptr, val, str);
+		return ULONG_MAX;
 	}
 
 	return val;
@@ -245,9 +251,9 @@ static int daemon_handler(void *user, const char *section, const char *key, cons
 
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	if (MATCH("daemon", "db_timeout")) {
-		pconfig->db_timeout = (int) sane_atoi(value);
+		pconfig->db_timeout = sane_strtoul(value);
 	} else if (MATCH("daemon", "use_syslog")) {
-		pconfig->tmp_use_syslog = sane_atoi(value);
+		pconfig->use_syslog = sane_strtoul(value);
 	} else {
 		return 0;	// unknown section/name, error
 	}
@@ -261,16 +267,13 @@ static bool validate_daemon_config(void *user)
 
 	bool sane = true;
 
-	if (pconfig->db_timeout < 0) {
+	if (pconfig->db_timeout == ULONG_MAX) {
 		LOG(LOG_CRIT, "Passed an invalid value for db_timeout!");
 		sane = false;
 	}
-	// We kind of need to use an intermediary value stored as an int, because our final variable is a bool...
-	if (pconfig->tmp_use_syslog < 0) {
+	if (pconfig->use_syslog == ULONG_MAX) {
 		LOG(LOG_CRIT, "Passed an invalid value for use_syslog!");
 		sane = false;
-	} else {
-		pconfig->use_syslog = pconfig->tmp_use_syslog;
 	}
 
 	return sane;
@@ -288,9 +291,9 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	} else if (MATCH("watch", "action")) {
 		strncpy(pconfig->action, value, PATH_MAX-1);
 	} else if (MATCH("watch", "do_db_update")) {
-		pconfig->tmp_do_db_update = sane_atoi(value);
+		pconfig->do_db_update = sane_strtoul(value);
 	} else if (MATCH("watch", "skip_db_checks")) {
-		pconfig->tmp_skip_db_checks = sane_atoi(value);
+		pconfig->skip_db_checks = sane_strtoul(value);
 	} else if (MATCH("watch", "db_title")) {
 		strncpy(pconfig->db_title, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_author")) {
@@ -335,18 +338,14 @@ static bool validate_watch_config(void *user)
 		sane = false;
 	}
 
-	// Handle bool vars...
-	if (pconfig->tmp_do_db_update < 0) {
+	// Handle the uint vars
+	if (pconfig->do_db_update == ULONG_MAX) {
 		LOG(LOG_WARNING, "Passed an invalid value for do_db_update!");
 		sane = false;
-	} else {
-		pconfig->do_db_update = pconfig->tmp_do_db_update;
 	}
-	if (pconfig->tmp_skip_db_checks < 0) {
+	if (pconfig->skip_db_checks == ULONG_MAX) {
 		LOG(LOG_WARNING, "Passed an invalid value for skip_db_checks!");
 		sane = false;
-	} else {
-		pconfig->skip_db_checks = pconfig->tmp_skip_db_checks;
 	}
 
 	// If we asked for a database update, the next three keys become mandatory
@@ -415,7 +414,7 @@ static int load_config(void)
 							rval = -1;
 						} else {
 							if (validate_daemon_config(&daemon_config)) {
-								LOG(LOG_NOTICE, "Daemon config loaded from '%s': db_timeout=%d, use_syslog=%d", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
+								LOG(LOG_NOTICE, "Daemon config loaded from '%s': db_timeout=%lu, use_syslog=%lu", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 							} else {
 								LOG(LOG_CRIT, "Main config file '%s' is not valid, will abort!", p->fts_name);
 								rval = -1;
@@ -436,7 +435,7 @@ static int load_config(void)
 							rval = -1;
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
-								LOG(LOG_NOTICE, "Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+								LOG(LOG_NOTICE, "Watch config @ index %zd loaded from '%s': filename=%s, action=%s, do_db_update=%lu, db_title=%s, db_author=%s, db_comment=%s",
 									watch_count,
 									p->fts_name,
 									watch_config[watch_count].filename,
@@ -466,9 +465,9 @@ static int load_config(void)
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
-	DBGLOG("Daemon config recap: db_timeout=%d, use_syslog=%d", daemon_config.db_timeout, daemon_config.use_syslog);
+	DBGLOG("Daemon config recap: db_timeout=%lu, use_syslog=%lu", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%d, skip_db_checks=%d, db_title=%s, db_author=%s, db_comment=%s",
+		DBGLOG("Watch config @ index %d recap: filename=%s, action=%s, do_db_update=%lu, skip_db_checks=%lu, db_title=%s, db_author=%s, db_comment=%s",
 			watch_idx,
 			watch_config[watch_idx].filename,
 			watch_config[watch_idx].action,
@@ -528,8 +527,8 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 	// Wait at most for Nms on OPEN & N*2ms on CLOSE if we ever hit a locked database during any of our proceedings...
 	// NOTE: The defaults timings (steps of 500ms) appear to work reasonably well on my H2O with a 50MB Nickel DB... (i.e., it trips on OPEN when Nickel is moderately busy, but if everything's quiet, we're good).
 	//	 Time will tell if that's a good middle-ground or not ;). This is user configurable in kfmon.ini (db_timeout key).
-	sqlite3_busy_timeout(db, daemon_config.db_timeout * (wait_for_db + 1));
-	DBGLOG("SQLite busy timeout set to %dms", daemon_config.db_timeout * (wait_for_db + 1));
+	sqlite3_busy_timeout(db, (int) daemon_config.db_timeout * (wait_for_db + 1));
+	DBGLOG("SQLite busy timeout set to %dms", (int) daemon_config.db_timeout * (wait_for_db + 1));
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book? Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
 	CALL_SQLITE(prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
@@ -576,7 +575,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
 
 			char images_path[PATH_MAX];
-			snprintf(images_path, PATH_MAX, "%s/.kobo-images/%d/%d", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
+			snprintf(images_path, PATH_MAX, "%s/.kobo-images/%u/%u", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
@@ -672,7 +671,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 		//       This doesn't appear to be the case anymore, on FW 4.7.x (and possibly earlier, I haven't looked at this stuff in quite a while), it's now using WAL (which makes sense).
 		unsigned int count = 0;
 		while (access(KOBO_DB_PATH"-journal", F_OK) == 0) {
-			LOG(LOG_INFO, "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %d) . . .", count++);
+			LOG(LOG_INFO, "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %u) . . .", count++);
 			usleep(250 * 1000);
 			// NOTE: Don't wait more than 10s
 			if (count > 40) {

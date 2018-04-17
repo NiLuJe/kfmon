@@ -101,9 +101,8 @@
 // What the daemon config should look like
 typedef struct
 {
-	int db_timeout;
-	long int tmp_use_syslog;
-	bool use_syslog;
+	unsigned long int db_timeout;
+	unsigned long int use_syslog;
 } DaemonConfig;
 
 // What a watch config should look like
@@ -112,10 +111,8 @@ typedef struct
 {
 	char filename[PATH_MAX];
 	char action[PATH_MAX];
-	long int tmp_do_db_update;
-	bool do_db_update;
-	long int tmp_skip_db_checks;
-	bool skip_db_checks;
+	unsigned long int do_db_update;
+	unsigned long int skip_db_checks;
 	char db_title[DB_SZ_MAX];
 	char db_author[DB_SZ_MAX];
 	char db_comment[DB_SZ_MAX];
@@ -165,7 +162,7 @@ const char *get_log_prefix(int);
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static long int sane_atoi(const char *);
+static unsigned long int sane_strtoul(const char *);
 static int daemon_handler(void *, const char *, const char *, const char *);
 static bool validate_daemon_config(void *);
 static int watch_handler(void *, const char *, const char *, const char *);
