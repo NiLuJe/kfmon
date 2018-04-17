@@ -213,6 +213,28 @@ static void wait_for_target_mountpoint(void)
 static unsigned long int sane_strtoul(const char *str)
 {
 	char *endptr;
+
+	// NOTE: Since we want to *reject* negative values (which strtoul does not), we first have to convert our string to an int...
+	//       We can safely do this because we won't ever need to pass values > INT_MAX (in fact, we clamp them to that),
+	//       so we don't care about the loss of range that incurs in our final unsigned value.
+	long int ival;
+
+	errno = 0;	// To distinguish success/failure after call
+	ival = strtol(str, &endptr, 10);
+
+	// We only need to do basic error checking
+	if ((errno == ERANGE && (ival == LONG_MAX || ival == LONG_MIN)) || (errno != 0 && ival == 0)) {
+		perror("[KFMon] [WARN] strtol");
+		return ULONG_MAX;
+	}
+
+	// And now we can check that it's positive :).
+	if (ival < 0) {
+		LOG(LOG_WARNING, "Assigned a negative value (%ld) to a key expecting an unsigned int.", ival);
+		return ULONG_MAX;
+	}
+
+	// Now that we know it's positive, we can go on with strtoul...
 	unsigned long int val;
 
 	errno = 0;	// To distinguish success/failure after call
@@ -222,7 +244,7 @@ static unsigned long int sane_strtoul(const char *str)
 	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
 		perror("[KFMon] [WARN] strtoul");
 		return ULONG_MAX;
-	//       ... this means that if we were passed a legitimate ULONG_MAX (which, granted, should *never* happen in our context),
+	//       ... this means that if we were passed a legitimate ULONG_MAX (which, granted, should *never* happen given the strtol call before us),
 	//       we have to modify it to pass our sanity checks down the line.
 	} else if (val == ULONG_MAX) {
 		LOG(LOG_WARNING, "Encountered a legitimate ULONG_MAX assigned to a key, clamping it down to UINT_MAX");
@@ -231,20 +253,18 @@ static unsigned long int sane_strtoul(const char *str)
 	// NOTE: It fact, always clamp to INT_MAX, since some of these may end up casted to an int (f.g., db_timeout)
 	if (val > INT_MAX) {
 		LOG(LOG_WARNING, "Encountered a value larger than INT_MAX assigned to a key, clamping it down to INT_MAX");
-		// Warn that this may be due to being fed a negative value (following strtoul's behavior: -1 -> ULONG_MAX, etc.).
-		LOG(LOG_INFO, "The value you assigned to the key (%s) may mistakenly be negative!", str);
 		val = INT_MAX;
 	}
 
 	if (endptr == str) {
-		LOG(LOG_WARNING, "No digits were found in value '%s' assigned to a key expecting an unsigned int", str);
+		LOG(LOG_WARNING, "No digits were found in value '%s' assigned to a key expecting an unsigned int.", str);
 		return ULONG_MAX;
 	}
 
 	// If we got here, strtoul() successfully parsed at least part of a number.
 	// But we do want to enforce the fact that the input really was *only* an integer value.
 	if (*endptr != '\0') {
-		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%lu' assigned from string '%s' to a key expecting an unsigned int", endptr, val, str);
+		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%lu' assigned from string '%s' to a key expecting an unsigned int.", endptr, val, str);
 		return ULONG_MAX;
 	}
 
