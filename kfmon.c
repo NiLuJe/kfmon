@@ -230,7 +230,7 @@ static unsigned long int sane_strtoul(const char *str)
 	}
 	// NOTE: It fact, always clamp to INT_MAX, since some of these may end up casted to an int (f.g., db_timeout)
 	if (val > INT_MAX) {
-		LOG(LOG_WARNING, "Encountered a value larger than INT_MAX assigned to a key, nerfing it down to UINT_MAX");
+		LOG(LOG_WARNING, "Encountered a value larger than INT_MAX assigned to a key, nerfing it down to INT_MAX");
 		val = INT_MAX;
 	}
 
