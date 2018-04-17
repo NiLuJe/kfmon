@@ -239,7 +239,7 @@ static unsigned long int sane_strtoul(const char *str)
 		return ULONG_MAX;
 	}
 
-	// If we got here, strtol() successfully parsed at least part of a number.
+	// If we got here, strtoul() successfully parsed at least part of a number.
 	// But we do want to enforce the fact that the input really was *only* an integer value.
 	if (*endptr != '\0') {
 		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%lu' assigned from string '%s' to a key expecting an unsigned int", endptr, val, str);
