@@ -360,7 +360,7 @@ static bool validate_watch_config(void *user)
 }
 
 // Load our config files...
-static int load_config()
+static int load_config(void)
 {
 	// Our config files live in the target mountpoint...
 	if (!is_target_mounted()) {
@@ -889,6 +889,36 @@ static bool is_watch_already_spawned(unsigned int watch_idx)
 	return false;
 }
 
+// Check if KOReader or Plato is already running
+// NOTE: This is mainly to prevent spurious spawns that might be unwittingly caused by their file manager (be it through metadata reading, thumbnails creation, or whatever).
+//       Another workaround is of course to kill KFMon as part of their startup process...
+static bool is_blocker_running(void) {
+	// Walk our process table to identify watches with a currently running process
+	for (unsigned int i = 0; i < WATCH_MAX; i++) {
+		if (PT.spawn_watchids[i] != -1) {
+			// Walk the registered watch list to match that currently running watch to its filename & action
+			for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+				if (PT.spawn_watchids[i] == (int) watch_idx) {
+					// NOTE: We match on the full action. This assumes stuff is installed in their default location.
+					//       We might want to match on either the script name only, or the last folder+script?
+					//       Don't match on filename because people *might* want to modify the icon.
+					if (strcmp(watch_config[watch_idx].action, "/mnt/onboard/.adds/koreader/koreader.sh") == 0) {
+						// KOReader is running, block new spawns!
+						return true;
+					}
+					if (strcmp(watch_config[watch_idx].action, "/mnt/onboard/.adds/plato/plato.sh") == 0) {
+						// Plato is running, block new spawns!
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	// None of them are running, we're good to go!
+	return false;
+}
+
 // Return the pid of the spawn of a given inotify watch
 static pid_t get_spawn_pid_for_watch(unsigned int watch_idx)
 {
@@ -959,11 +989,13 @@ static bool handle_events(int fd)
 				LOG(LOG_NOTICE, "Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
 				bool is_watch_spawned;
+				bool is_reader_spawned;
 				pthread_mutex_lock(&ptlock);
 				is_watch_spawned = is_watch_already_spawned(watch_idx);
+				is_reader_spawned = is_blocker_running();
 				pthread_mutex_unlock(&ptlock);
 
-				if (!is_watch_spawned) {
+				if (!is_watch_spawned && !is_reader_spawned) {
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(watch_idx, false)) {
 						// It's not processed on OPEN, flag as pending...
@@ -981,11 +1013,13 @@ static bool handle_events(int fd)
 				//       This is mostly of interest for KOReader/Plato: it means we can keep KFMon running while they're up, without risking
 				//       trying to spawn multiple instances of them in case they end up tripping their own inotify watch ;).
 				bool is_watch_spawned;
+				bool is_reader_spawned;
 				pthread_mutex_lock(&ptlock);
 				is_watch_spawned = is_watch_already_spawned(watch_idx);
+				is_reader_spawned = is_blocker_running();
 				pthread_mutex_unlock(&ptlock);
 
-				if (!is_watch_spawned) {
+				if (!is_watch_spawned && !is_reader_spawned) {
 					// Check that our target file has already fully been processed by Nickel before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
 						LOG(LOG_INFO, "Preparing to spawn %s for watch idx %d . . .", watch_config[watch_idx].action, watch_idx);
@@ -997,12 +1031,16 @@ static bool handle_events(int fd)
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN, which tripped our 'pending processing' check.
 					}
 				} else {
-					pid_t spid;
-					pthread_mutex_lock(&ptlock);
-					spid = get_spawn_pid_for_watch(watch_idx);
-					pthread_mutex_unlock(&ptlock);
+					if (is_watch_spawned) {
+						pid_t spid;
+						pthread_mutex_lock(&ptlock);
+						spid = get_spawn_pid_for_watch(watch_idx);
+						pthread_mutex_unlock(&ptlock);
 
-					LOG(LOG_INFO, "As watch idx %d (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!", watch_idx, watch_config[watch_idx].filename, (long) spid, watch_config[watch_idx].action);
+						LOG(LOG_INFO, "As watch idx %d (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!", watch_idx, watch_config[watch_idx].filename, (long) spid, watch_config[watch_idx].action);
+					} else if (is_reader_spawned) {
+						LOG(LOG_INFO, "As a document reader (KOReader or Plato) is currently running, we won't be spawning anything else to prevent unwanted behavior!");
+					}
 				}
 			}
 			if (event->mask & IN_UNMOUNT) {
