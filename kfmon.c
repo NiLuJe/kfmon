@@ -349,6 +349,22 @@ static bool validate_watch_config(void *user)
 		pconfig->skip_db_checks = pconfig->tmp_skip_db_checks;
 	}
 
+	// If we asked for a database update, the next three keys become mandatory
+	if (pconfig->tmp_do_db_update) {
+		if (pconfig->db_title[0] == '\0') {
+			LOG(LOG_CRIT, "Mandatory key 'db_title' is missing!");
+			sane = false;
+		}
+		if (pconfig->db_author[0] == '\0') {
+			LOG(LOG_CRIT, "Mandatory key 'db_author' is missing!");
+			sane = false;
+		}
+		if (pconfig->db_comment[0] == '\0') {
+			LOG(LOG_CRIT, "Mandatory key 'db_comment' is missing!");
+			sane = false;
+		}
+	}
+
 	return sane;
 }
 
