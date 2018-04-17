@@ -225,12 +225,12 @@ static unsigned long int sane_strtoul(const char *str)
 	//       ... this means that if we were passed a legitimate ULONG_MAX (which, granted, should *never* happen in our context),
 	//       we have to modify it to pass our sanity checks down the line.
 	} else if (val == ULONG_MAX) {
-		LOG(LOG_WARNING, "Encountered a legitimate ULONG_MAX assigned to a key, nerfing it down to UINT_MAX");
+		LOG(LOG_WARNING, "Encountered a legitimate ULONG_MAX assigned to a key, clamping it down to UINT_MAX");
 		val = UINT_MAX;
 	}
 	// NOTE: It fact, always clamp to INT_MAX, since some of these may end up casted to an int (f.g., db_timeout)
 	if (val > INT_MAX) {
-		LOG(LOG_WARNING, "Encountered a value larger than INT_MAX assigned to a key, nerfing it down to INT_MAX");
+		LOG(LOG_WARNING, "Encountered a value larger than INT_MAX assigned to a key, clamping it down to INT_MAX");
 		val = INT_MAX;
 	}
 
