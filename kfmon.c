@@ -808,9 +808,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
-		// NOTE: Since we're a child process, we essentially get a *copy* of the global variable watch_config *at the time of forking*!
-		//       Our design *should* ensure its content to still be accurate at the time we'll be reading this copy, though.
-		LOG(LOG_NOTICE, "Spawned process %ld (%s -> %s @ watch idx %u) . . .", (long) getpid(), watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_idx);
+		// NOTE: We're multithreaded & forking, this means that from this point on until execve(), we can only use async-safe functions!
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
@@ -823,10 +821,8 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 		// NOTE: We used to use execvpe when being launched from udev in order to sanitize all the crap we inherited from udev's env ;).
 		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
 		execvp(*command, command);
-		// This will only ever be reached on error, hence the lack of actual return value check ;).
-		// NOTE: Since stderr is now the original stderr, this won't make it to the log...
-		perror("[KFMon] [CRIT] execvp");
-		//       ...so resort to an ugly hack by exiting with execvp()'s errno, which we can then try to salvage in the reaper thread.
+		// NOTE: This will only ever be reached on error, hence the lack of actual return value check ;).
+		//       Resort to an ugly hack by exiting with execvp()'s errno, which we can then try to salvage in the reaper thread.
 		exit(errno);
 	} else {
 		// Parent
