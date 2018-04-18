@@ -210,13 +210,13 @@ static void wait_for_target_mountpoint(void)
 }
 
 // Sanitize user input for keys expecting an (unsigned) integer
-// NOTE: See git's strtoul_ui in git-compat-util.h for a better and more generic implementation
-static unsigned long int sane_strtoul(const char *str)
+// NOTE: Inspired from git's strtoul_ui @ git-compat-util.h
+static int strtoul_ui(const char *str, unsigned int *result)
 {
 	// NOTE: We want to *reject* negative values (which strtoul does not)!
 	if (strchr(str, '-')) {
 		LOG(LOG_WARNING, "Assigned a negative value (%s) to a key expecting an unsigned int.", str);
-		return ULONG_MAX;
+		return -1;
 	}
 
 	// Now that we know it's positive, we can go on with strtoul...
@@ -226,16 +226,11 @@ static unsigned long int sane_strtoul(const char *str)
 	errno = 0;	// To distinguish success/failure after call
 	val = strtoul(str, &endptr, 10);
 
-	// NOTE: To make things simpler for us, we return ULONG_MAX on error...
 	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
 		perror("[KFMon] [WARN] strtoul");
-		return ULONG_MAX;
-	//       ... this means that if we were passed a legitimate ULONG_MAX (which, granted, should *never* happen in our context),
-	//       we have to modify it to pass our sanity checks down the line.
-	} else if (val == ULONG_MAX) {
-		LOG(LOG_WARNING, "Encountered a legitimate ULONG_MAX assigned to a key, clamping it down to UINT_MAX");
-		val = UINT_MAX;
+		return -1;
 	}
+
 	// NOTE: It fact, always clamp to INT_MAX, since some of these may end up casted to an int (f.g., db_timeout)
 	if (val > INT_MAX) {
 		LOG(LOG_WARNING, "Encountered a value larger than INT_MAX assigned to a key, clamping it down to INT_MAX");
@@ -244,17 +239,24 @@ static unsigned long int sane_strtoul(const char *str)
 
 	if (endptr == str) {
 		LOG(LOG_WARNING, "No digits were found in value '%s' assigned to a key expecting an unsigned int.", str);
-		return ULONG_MAX;
+		return -1;
 	}
 
 	// If we got here, strtoul() successfully parsed at least part of a number.
 	// But we do want to enforce the fact that the input really was *only* an integer value.
 	if (*endptr != '\0') {
 		LOG(LOG_WARNING, "Found trailing characters (%s) behind value '%lu' assigned from string '%s' to a key expecting an unsigned int.", endptr, val, str);
-		return ULONG_MAX;
+		return -1;
 	}
 
-	return val;
+	// Make sure there isn't a loss of precision on this arch when casting explictly
+	if ((unsigned int) val != val) {
+		LOG(LOG_WARNING, "Loss of precision when casting value '%lu' to an unsigned int.", val);
+		return -1;
+	}
+
+	*result = (unsigned int) val;
+	return 0;
 }
 
 // Handle parsing the main KFMon config
@@ -264,34 +266,19 @@ static int daemon_handler(void *user, const char *section, const char *key, cons
 
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	if (MATCH("daemon", "db_timeout")) {
-		pconfig->db_timeout = sane_strtoul(value);
+		if (strtoul_ui(value, &pconfig->db_timeout) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for db_timeout!");
+			return 0;
+		}
 	} else if (MATCH("daemon", "use_syslog")) {
-		pconfig->use_syslog = sane_strtoul(value);
+		if (strtoul_ui(value, &pconfig->use_syslog) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for use_syslog!");
+			return 0;
+		}
 	} else {
 		return 0;	// unknown section/name, error
 	}
 	return 1;
-}
-
-// Validate the main KFMon config
-static bool validate_daemon_config(void *user)
-{
-	DaemonConfig *pconfig = (DaemonConfig *)user;
-
-	bool sane = true;
-
-	if (pconfig->db_timeout == ULONG_MAX) {
-		LOG(LOG_CRIT, "Passed an invalid value for db_timeout!");
-		sane = false;
-	}
-	if (pconfig->use_syslog == ULONG_MAX) {
-		LOG(LOG_CRIT, "Passed an invalid value for use_syslog!");
-		sane = false;
-		// NOTE: As an exception to ease debugging, sanitize this to 0 to ensure we'll log to a file
-		pconfig->use_syslog = 0;
-	}
-
-	return sane;
 }
 
 // Handle parsing a watch config
@@ -306,9 +293,15 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	} else if (MATCH("watch", "action")) {
 		strncpy(pconfig->action, value, PATH_MAX-1);
 	} else if (MATCH("watch", "do_db_update")) {
-		pconfig->do_db_update = sane_strtoul(value);
+		if (strtoul_ui(value, &pconfig->do_db_update) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for do_db_update!");
+			return 0;
+		}
 	} else if (MATCH("watch", "skip_db_checks")) {
-		pconfig->skip_db_checks = sane_strtoul(value);
+		if (strtoul_ui(value, &pconfig->skip_db_checks) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
+			return 0;
+		}
 	} else if (MATCH("watch", "db_title")) {
 		strncpy(pconfig->db_title, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "db_author")) {
@@ -316,7 +309,10 @@ static int watch_handler(void *user, const char *section, const char *key, const
 	} else if (MATCH("watch", "db_comment")) {
 		strncpy(pconfig->db_comment, value, DB_SZ_MAX-1);
 	} else if (MATCH("watch", "block_spawns")) {
-		pconfig->block_spawns = sane_strtoul(value);
+		if (strtoul_ui(value, &pconfig->block_spawns) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
+			return 0;
+		}
 	} else if (MATCH("watch", "reboot_on_exit")) {
 		;
 	} else {
@@ -355,16 +351,6 @@ static bool validate_watch_config(void *user)
 		sane = false;
 	}
 
-	// Handle the uint vars
-	if (pconfig->do_db_update == ULONG_MAX) {
-		LOG(LOG_WARNING, "Passed an invalid value for do_db_update!");
-		sane = false;
-	}
-	if (pconfig->skip_db_checks == ULONG_MAX) {
-		LOG(LOG_WARNING, "Passed an invalid value for skip_db_checks!");
-		sane = false;
-	}
-
 	// If we asked for a database update, the next three keys become mandatory
 	if (pconfig->do_db_update) {
 		if (pconfig->db_title[0] == '\0') {
@@ -379,11 +365,6 @@ static bool validate_watch_config(void *user)
 			LOG(LOG_CRIT, "Mandatory key 'db_comment' is missing!");
 			sane = false;
 		}
-	}
-
-	if (pconfig->block_spawns == ULONG_MAX) {
-		LOG(LOG_WARNING, "Passed an invalid value for block_spawns!");
-		sane = false;
 	}
 
 	return sane;
@@ -435,12 +416,7 @@ static int load_config(void)
 							// Flag as a failure...
 							rval = -1;
 						} else {
-							if (validate_daemon_config(&daemon_config)) {
-								LOG(LOG_NOTICE, "Daemon config loaded from '%s': db_timeout=%lu, use_syslog=%lu", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
-							} else {
-								LOG(LOG_CRIT, "Main config file '%s' is not valid, will abort!", p->fts_name);
-								rval = -1;
-							}
+							LOG(LOG_NOTICE, "Daemon config loaded from '%s': db_timeout=%u, use_syslog=%u", p->fts_name, daemon_config.db_timeout, daemon_config.use_syslog);
 						}
 					} else {
 						// NOTE: Don't blow up when trying to store more watches than we have space for...
@@ -457,7 +433,7 @@ static int load_config(void)
 							rval = -1;
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
-								LOG(LOG_NOTICE, "Watch config @ index %zd loaded from '%s': filename=%s, action=%s, block_spawns=%lu, do_db_update=%lu, db_title=%s, db_author=%s, db_comment=%s",
+								LOG(LOG_NOTICE, "Watch config @ index %zd loaded from '%s': filename=%s, action=%s, block_spawns=%u, do_db_update=%u, db_title=%s, db_author=%s, db_comment=%s",
 									watch_count,
 									p->fts_name,
 									watch_config[watch_count].filename,
@@ -488,9 +464,9 @@ static int load_config(void)
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
-	DBGLOG("Daemon config recap: db_timeout=%lu, use_syslog=%lu", daemon_config.db_timeout, daemon_config.use_syslog);
+	DBGLOG("Daemon config recap: db_timeout=%u, use_syslog=%u", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-		DBGLOG("Watch config @ index %u recap: filename=%s, action=%s, block_spawns=%lu, do_db_update=%lu, skip_db_checks=%lu, db_title=%s, db_author=%s, db_comment=%s",
+		DBGLOG("Watch config @ index %u recap: filename=%s, action=%s, block_spawns=%u, do_db_update=%u, skip_db_checks=%u, db_title=%s, db_author=%s, db_comment=%s",
 			watch_idx,
 			watch_config[watch_idx].filename,
 			watch_config[watch_idx].action,
