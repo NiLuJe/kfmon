@@ -231,7 +231,7 @@ static int strtoul_ui(const char *str, unsigned int *result)
 		return -1;
 	}
 
-	// NOTE: It fact, always clamp to INT_MAX, since some of these may end up casted to an int (f.g., db_timeout)
+	// NOTE: It fact, always clamp to INT_MAX, since some of these may end up cast to an int (f.g., db_timeout)
 	if (val > INT_MAX) {
 		LOG(LOG_WARNING, "Encountered a value larger than INT_MAX assigned to a key, clamping it down to INT_MAX");
 		val = INT_MAX;
@@ -329,7 +329,7 @@ static bool validate_watch_config(void *user)
 	bool sane = true;
 
 	if (pconfig->filename[0] == '\0') {
-		LOG(LOG_CRIT, "Mandatory key 'filename' is missing!");
+		LOG(LOG_CRIT, "Mandatory key 'filename' is missing or blank!");
 		sane = false;
 	} else {
 		// Make sure we're not trying to set multiple watches on the same file... (because that would only actually register the first one parsed).
@@ -347,22 +347,22 @@ static bool validate_watch_config(void *user)
 		}
 	}
 	if (pconfig->action[0] == '\0') {
-		LOG(LOG_CRIT, "Mandatory key 'action' is missing!");
+		LOG(LOG_CRIT, "Mandatory key 'action' is missing or blank!");
 		sane = false;
 	}
 
 	// If we asked for a database update, the next three keys become mandatory
 	if (pconfig->do_db_update) {
 		if (pconfig->db_title[0] == '\0') {
-			LOG(LOG_CRIT, "Mandatory key 'db_title' is missing!");
+			LOG(LOG_CRIT, "Mandatory key 'db_title' is missing or blank!");
 			sane = false;
 		}
 		if (pconfig->db_author[0] == '\0') {
-			LOG(LOG_CRIT, "Mandatory key 'db_author' is missing!");
+			LOG(LOG_CRIT, "Mandatory key 'db_author' is missing or blank!");
 			sane = false;
 		}
 		if (pconfig->db_comment[0] == '\0') {
-			LOG(LOG_CRIT, "Mandatory key 'db_comment' is missing!");
+			LOG(LOG_CRIT, "Mandatory key 'db_comment' is missing or blank!");
 			sane = false;
 		}
 	}
