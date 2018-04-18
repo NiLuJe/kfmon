@@ -14,9 +14,6 @@ SRCS=kfmon.c inih/ini.c
 
 default: all
 
-# We use pthreads, let GCC do its thing to do it right.
-EXTRA_CFLAGS+=-pthread
-
 # NOTE: For some weird reason, tabs suddenly confuse the hell out of make outside of targets...
 ifdef NILUJE
     LIBS=-lsqlite3
@@ -63,6 +60,9 @@ ifeq "$(SQLITE)" "true"
     EXTRA_CPPFLAGS=-ISQLiteBuild
     EXTRA_LDFLAGS=-LSQLiteBuild/.libs
 endif
+
+# We use pthreads, let GCC do its thing to do it right.
+EXTRA_CPPFLAGS+=-pthread
 
 OBJS:=$(SRCS:%.c=$(OUT_DIR)/%.o)
 
@@ -119,7 +119,7 @@ sqlite.built:
 	cd sqlite && \
 	../sqlite-export/create-fossil-manifest && \
 	cd ../SQLiteBuild && \
-	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && \
+	env CPPFLAGS="$(CPPFLAGS) $(EXTRA_CPPFLAGS)" ../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && \
 	$(MAKE) SHELL_OPT=""
 	touch sqlite.built
 
