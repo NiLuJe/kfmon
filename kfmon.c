@@ -809,6 +809,7 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 	} else if (pid == 0) {
 		// Sweet child o' mine!
 		// NOTE: We're multithreaded & forking, this means that from this point on until execve(), we can only use async-safe functions!
+		//       See pthread_atfork(3) for details.
 		// Do the whole stdin/stdout/stderr dance again to ensure that child process doesn't inherit our tweaked fds...
 		dup2(orig_stdin, fileno(stdin));
 		dup2(orig_stdout, fileno(stdout));
@@ -844,6 +845,8 @@ static pid_t spawn(char *const *command, unsigned int watch_idx)
 			pthread_mutex_unlock(&ptlock);
 
 			DBGLOG("Assigned pid %ld (from watch idx %u) to process table entry idx %d", (long) pid, watch_idx, i);
+			// NOTE: We can't do that from the child proper, because it's not async-safe, so do it from here.
+			LOG(LOG_NOTICE, "Spawned process %ld (%s -> %s @ watch idx %u) . . .", (long) pid, watch_config[watch_idx].filename, watch_config[watch_idx].action, watch_idx);
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread for every spawn...
 			//       See #2 for an history of the previous failed attempts...
 			pthread_t rthread;
