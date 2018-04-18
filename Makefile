@@ -14,6 +14,9 @@ SRCS=kfmon.c inih/ini.c
 
 default: all
 
+# We use pthreads, let GCC do its thing to do it right.
+EXTRA_CFLAGS+=-pthread
+
 # NOTE: For some weird reason, tabs suddenly confuse the hell out of make outside of targets...
 ifdef NILUJE
     LIBS=-lsqlite3
