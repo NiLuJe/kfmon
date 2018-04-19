@@ -11,35 +11,33 @@ else
 endif
 
 DEBUG_CFLAGS=-O0 -fno-omit-frame-pointer -pipe -g
+# Fallback CFLAGS, we honor the env first and foremost!
 OPT_CFLAGS=-O2 -fomit-frame-pointer -pipe
 
-SRCS=kfmon.c inih/ini.c
-
-default: all
-
-# NOTE: For some weird reason, tabs suddenly confuse the hell out of make outside of targets...
 ifdef NILUJE
-    LIBS=-lsqlite3
-    LIBS+=-lpthread
-    EXTRA_CFLAGS+=-DNILUJE
+	# Use the system's sqlite on my sandbox
+	LIBS=-lsqlite3
+	LIBS+=-lpthread
+	# And the sandbox's custom paths
+	EXTRA_CFLAGS+=-DNILUJE
 else
-    # We want to link to sqlite3 explicitly statically
-    LIBS=-l:libsqlite3.a
-    # Depending on how SQLite was built, we might need...
-    LIBS+=-lpthread
-    # And in turn...
-    LIBS+=-ldl
-    LIBS+=-lm
+	# We want to link to sqlite3 explicitly statically
+	LIBS=-l:libsqlite3.a
+	# Depending on how SQLite was built, we might need...
+	LIBS+=-lpthread
+	# And in turn...
+	LIBS+=-ldl
+	LIBS+=-lm
 endif
 
 # NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
 ifeq "$(DEBUG)" "true"
-    OUT_DIR=Debug
-    CFLAGS:=$(DEBUG_CFLAGS)
-    EXTRA_CFLAGS+=-DDEBUG
+	OUT_DIR=Debug
+	CFLAGS:=$(DEBUG_CFLAGS)
+	EXTRA_CFLAGS+=-DDEBUG
 else
-    OUT_DIR=Release
-    CFLAGS?=$(OPT_CFLAGS)
+	OUT_DIR=Release
+	CFLAGS?=$(OPT_CFLAGS)
 endif
 
 # Moar warnings!
@@ -58,14 +56,21 @@ EXTRA_CFLAGS+=-DKFMON_VERSION='"$(KFMON_VERSION)"'
 # NOTE: Always use as-needed to avoid unecessary DT_NEEDED entries with our funky SQLite linking :)
 LDFLAGS?=-Wl,--as-needed
 
-# Pick up our vendored build of SQLite at worse...
+# Pick up our vendored build of SQLite when asked to
 ifeq "$(SQLITE)" "true"
-    EXTRA_CPPFLAGS=-ISQLiteBuild
-    EXTRA_LDFLAGS=-LSQLiteBuild/.libs
+	EXTRA_CPPFLAGS=-ISQLiteBuild
+	EXTRA_LDFLAGS=-LSQLiteBuild/.libs
 endif
 
 # We use pthreads, let GCC do its thing to do it right.
 EXTRA_CPPFLAGS+=-pthread
+
+
+##
+# Now that we're done fiddling with flags, let's build stuff!
+SRCS=kfmon.c inih/ini.c
+
+default: all
 
 OBJS:=$(SRCS:%.c=$(OUT_DIR)/%.o)
 
