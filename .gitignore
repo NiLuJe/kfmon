@@ -2,3 +2,9 @@
 Release/
 Debug/
 Kobo/
+# Same, for our vendored SQLite
+SQLiteBuild/
+sqlite.built
+# KDevelop
+kfmon.kdev4
+.kdev4/
