@@ -44,7 +44,8 @@ KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with t
 
 ```db_timeout = 500```, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
 This default value (500ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.
-You can confirm KFMon's behavior by checking its log, which we'll come to presently.
+Note that on current FW versions (i.e., >= 4.6.x), the potential issue behind the design of this option is far less likely to ever happen, so you shouldn't have to worry about it ;).
+In any case, you can confirm KFMon's behavior by checking its log, which we'll come to presently.
 
 ```use_syslog = 0```, which dictates whether KFMon logs to a dedicated log file (located in */usr/local/kfmon/kfmon.log*), or to the syslog (which you can access via the *logread* tool on the Kobo). Might be useful if you're paranoid about flash wear. Disabled by default. Be aware that the log file will be trimmed if it grows over 1MB.
 
