@@ -1,4 +1,7 @@
 # Pickup our cross-toolchains automatically...
+# c.f., http://trac.ak-team.com/trac/browser/niluje/Configs/trunk/Kindle/Misc/x-compile.sh
+#       https://github.com/NiLuJe/crosstool-ng
+#       https://github.com/koreader/koxtoolchain
 ifdef CROSS_TC
 	CC=$(CROSS_TC)-gcc
 	STRIP=$(CROSS_TC)-strip
