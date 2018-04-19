@@ -15,6 +15,9 @@ KFMon tries to alleviate this issue by doing a number of checks before deeming t
 On top of that, we have a few extra features: instead of launching one instance per book/action pair, KFMon is a centralized daemon, which simply parses a number of simple INI config files. Each book/action pair gets a dedicated config file.
 
 It also keeps track of processes it has launched, mainly to ensure that for a given watch, only one single instance of its action can ever be run concurrently. As a practical exemple, this means that if you use KFMon to launch KOReader (by tapping its PNG icon), and, once inside KOReader, you try to do the very same thing, KFMon will remember that KOReader is already running, and will refuse to launch a second instance until the previous one has exited. This means that long-running apps don't necessarily need to kill KFMon when they start.
+
+There's also an extra layer of protection (user configurable, enabled for KOReader & Plato) that'll prevent simply *anything* from being launched as long as that custom document reader is still running.
+
 In the same vein, KFMon's startup script will also refuse to run concurrent instances of KFMon itself.
 
 ~~It's also integrated in the Kobo boot process in an unobtrusive manner (an udev hook), unlike fmon (which modifies a startup script).~~ (See [Issue #2](https://github.com/NiLuJe/kfmon/issues/2) for the various troubles that caused us ;)).
@@ -45,6 +48,7 @@ KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with t
 ```db_timeout = 500```, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
 This default value (500ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.
 Note that on current FW versions (i.e., >= 4.6.x), the potential issue behind the design of this option is far less likely to ever happen, so you shouldn't have to worry about it ;).
+
 In any case, you can confirm KFMon's behavior by checking its log, which we'll come to presently.
 
 ```use_syslog = 0```, which dictates whether KFMon logs to a dedicated log file (located in */usr/local/kfmon/kfmon.log*), or to the syslog (which you can access via the *logread* tool on the Kobo). Might be useful if you're paranoid about flash wear. Disabled by default. Be aware that the log file will be trimmed if it grows over 1MB.
@@ -55,7 +59,7 @@ Each action gets a [dedicated INI file](/config/koreader.ini) in the config fold
 This should make it trivial to port existing fmon setups.
 As you would expect, a simple file/action pair only requires two entries:
 
-```filename = /mnt/onboard/my_pretty_icon.png```, which points to the "book" file you want to tie your action to. In this example, it's a simple PNG file named ```my_pretty_icon.png``` located at the USB root of the device. This has to be an absolute path, and, of course, has to point to a location Nickel will parse (i.e., not the rootfs, and not nested in a dotfolder).
+```filename = /mnt/onboard/my_pretty_icon.png```, which points to the "book" file you want to tie your action to. In this example, it's a simple PNG file named ```my_pretty_icon.png``` located at the USB root of the device. This has to be an absolute path, and, of course, has to point to a location Nickel will parse (i.e., usually somewhere in */mnt/onboard*, and not nested in a dotfolder).
 
 ```action = /mnt/onboard/.adds/mycoolapp/app.sh```, which points to the binary/script you want to trigger when your "book" is opened. This has to be an absolute path. And if this points to somewhere on the rootfs, it has to have the exec bit set.
 
@@ -66,7 +70,7 @@ Next comes optional entries:
 ```block_spawns = 0```, which, when set to 1, prevents *anything* from being launched by KFMon while the command from the watch marked as such is still running. This is mainly useful for document readers, since they could otherwise unwittingly trigger a number of other watches (usually through their background metadata reader, their thumbnailer, or more generally their file manager). Which is precisely why this is set to 1 for KOReader & Plato ;).
 
 In addition to that, you can try to do some cool but potentially dangerous stuff with the Nickel database: updating the Title, Author and Comment entries of your "book" in the Library.
-This is disabled by default, because ninja writing to the database behind Nickel's back *might* upset Nickel (meaning thrash your db!)...
+This is disabled by default, because ninja writing to the database behind Nickel's back *might* upset Nickel, and in turn corrupt the database...
 If you want to try it, you will have to first enable this knob:
 
 ```do_db_update = 1```
@@ -89,7 +93,7 @@ The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, de
 
 And the folders ```/usr/local/kfmon``` & ```/mnt/onboard/.adds/kfmon```.
 
-Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (f.g., [commit 8710a31](https://github.com/NiLuJe/kfmon/commit/8710a31d2e6d998ba315bafff37fd4ba8d1cc7a1) features one such version).
+Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (f.g., [commit 8710a31](https://github.com/NiLuJe/kfmon/commit/8710a31d2e6d998ba315bafff37fd4ba8d1cc7a1) features one such version), although nothing untoward will happen if you don't.
 
 # Things to watch out for
 
@@ -100,16 +104,15 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
   * If you delete one of the files being watched, don't forget to delete the matching config file, and then to reboot your device!
 * Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
   * Good news: If your FW version is recent enough to feature the new Homescreen, there's a good chance things will work in a more logical fashion ;).
-* KFMon only expects to watch for files in the internal storage of the device (be than onboard or the rootfs). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).
+* KFMon only expects to watch for files in the internal storage of the device (i.e., *onboard*). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).
 
 * Proper interaction with KOReader in general requires a recent version of KOReader (i.e., > 2015.11-1667).
   * A far as for successfully restarting nickel on exit is concerned, I'd also recommend a current FW version (last tested on FW 4.7.x).
 * When either KOReader or Plato is launched *through KFMon*, __nothing__ will be allowed to spawn while that document reader is still running. This is to prevent spurious events that may be triggered by their file manager.
-  * This heuristic relies on them being installed in a sensible location, and launched via their default script (i.e., ```koreader/koreader.sh``` and ```plato/plato.sh```).
 
 * PSA about the proper syntax expected in an INI file: while the ```;``` character indeed marks the beginning of an inline comment, it must be preceded by some kind of whitespace to actually register as a comment. Otherwise, it's assumed to be part of the value.
   * Meaning ```key=value;``` will probably not work as you might expect (it'll parse as ```key``` set to ```value;``` and not ```value```).
-* On a related note, a line cannot exceed 200 bytes. If the log reports a parsing error on a seemingly benign line, but one which happens to feature an humonguous amount of inline comments, that may very well be the reason ;).
+* On a related note, a line cannot exceed 200 bytes. If the log reports a parsing error on a seemingly benign line, but one which happens to feature a humonguous amount of inline comments, that may very well be the reason ;).
 * If the log reports a parsing error at (or near, depending on commented lines) the top of the config file, check that you haven't forgotten the ```[watch]``` section name ;).
 
 * Right now, KFMon supports a maximum of [16](/kfmon.h#L127) file watches. Ping me if that's not enough for you ;).
