@@ -863,6 +863,9 @@ void *
 			if (exitcode != 0 && difftime(now, then) <= 1) {
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
+				// NOTE: Even if it's not entirely clear from the manpage, printf's %m *is* thread-safe,
+				//       c.f., stdio-common/vfprintf.c:962 (it's using strerror_r).
+				//       But since we're not checking errno but a custom variable, do it the hard way :)
 				char *sz_error = strerror_r(exitcode, buf, sizeof(buf));
 				MTLOG(
 				    "[%s] [CRIT] [TID: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.",
