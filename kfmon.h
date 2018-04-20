@@ -172,7 +172,7 @@ static int watch_handler(void *, const char *, const char *, const char *);
 static bool validate_watch_config(void *);
 static int load_config(void);
 // Ugly global. Remember how many watches we set up...
-size_t watch_count = 0;
+unsigned int watch_count = 0;
 // Make our config global, because I'm terrible at C.
 DaemonConfig daemon_config = {0};
 WatchConfig watch_config[WATCH_MAX] = {0};

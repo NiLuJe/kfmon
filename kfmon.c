@@ -433,7 +433,7 @@ static int load_config(void)
 							rval = -1;
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
-								LOG(LOG_NOTICE, "Watch config @ index %zd loaded from '%s': filename=%s, action=%s, block_spawns=%u, do_db_update=%u, db_title=%s, db_author=%s, db_comment=%s",
+								LOG(LOG_NOTICE, "Watch config @ index %u loaded from '%s': filename=%s, action=%s, block_spawns=%u, do_db_update=%u, db_title=%s, db_author=%s, db_comment=%s",
 									watch_count,
 									p->fts_name,
 									watch_config[watch_count].filename,
