@@ -114,8 +114,8 @@ typedef struct
 {
 	char filename[PATH_MAX];
 	char action[PATH_MAX];
-	unsigned int do_db_update;
 	unsigned int skip_db_checks;
+	unsigned int do_db_update;
 	char db_title[DB_SZ_MAX];
 	char db_author[DB_SZ_MAX];
 	char db_comment[DB_SZ_MAX];
