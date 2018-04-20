@@ -673,7 +673,7 @@ static bool is_target_processed(unsigned int watch_idx, bool wait_for_db)
 		unsigned int count = 0;
 		while (access(KOBO_DB_PATH"-journal", F_OK) == 0) {
 			LOG(LOG_INFO, "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %u) . . .", count++);
-			usleep(250 * 1000);
+			nanosleep((const struct timespec[]){{0, 250000000L}}, NULL);
 			// NOTE: Don't wait more than 10s
 			if (count > 40) {
 				LOG(LOG_WARNING, "Waited for the SQLite rollback journal to go away for far too long, going on anyway.");
