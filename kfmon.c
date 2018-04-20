@@ -470,7 +470,7 @@ static int load_config(void)
 			watch_idx,
 			watch_config[watch_idx].filename,
 			watch_config[watch_idx].action,
-			watch_config[watch_count].block_spawns,
+			watch_config[watch_idx].block_spawns,
 			watch_config[watch_idx].skip_db_checks,
 			watch_config[watch_idx].do_db_update,
 			watch_config[watch_idx].db_title,
