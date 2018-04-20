@@ -292,14 +292,14 @@ static int watch_handler(void *user, const char *section, const char *key, const
 		strncpy(pconfig->filename, value, PATH_MAX-1);
 	} else if (MATCH("watch", "action")) {
 		strncpy(pconfig->action, value, PATH_MAX-1);
-	} else if (MATCH("watch", "do_db_update")) {
-		if (strtoul_ui(value, &pconfig->do_db_update) < 0) {
-			LOG(LOG_CRIT, "Passed an invalid value for do_db_update!");
-			return 0;
-		}
 	} else if (MATCH("watch", "skip_db_checks")) {
 		if (strtoul_ui(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
+			return 0;
+		}
+	} else if (MATCH("watch", "do_db_update")) {
+		if (strtoul_ui(value, &pconfig->do_db_update) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for do_db_update!");
 			return 0;
 		}
 	} else if (MATCH("watch", "db_title")) {
@@ -466,13 +466,13 @@ static int load_config(void)
 	// Let's recap (including failures)...
 	DBGLOG("Daemon config recap: db_timeout=%u, use_syslog=%u", daemon_config.db_timeout, daemon_config.use_syslog);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-		DBGLOG("Watch config @ index %u recap: filename=%s, action=%s, block_spawns=%u, do_db_update=%u, skip_db_checks=%u, db_title=%s, db_author=%s, db_comment=%s",
+		DBGLOG("Watch config @ index %u recap: filename=%s, action=%s, block_spawns=%u, skip_db_checks=%u, do_db_update=%u, db_title=%s, db_author=%s, db_comment=%s",
 			watch_idx,
 			watch_config[watch_idx].filename,
 			watch_config[watch_idx].action,
 			watch_config[watch_count].block_spawns,
-			watch_config[watch_idx].do_db_update,
 			watch_config[watch_idx].skip_db_checks,
+			watch_config[watch_idx].do_db_update,
 			watch_config[watch_idx].db_title,
 			watch_config[watch_idx].db_author,
 			watch_config[watch_idx].db_comment
