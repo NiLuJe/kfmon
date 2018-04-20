@@ -16,6 +16,9 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef __KFMON_H
+#define __KFMON_H
+
 // For syscall, and the expected version of strerror_r
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -185,3 +188,5 @@ static bool is_blocker_running(void);
 static pid_t get_spawn_pid_for_watch(unsigned int);
 
 static bool handle_events(int);
+
+#endif
