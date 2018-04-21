@@ -405,7 +405,8 @@ static int
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
 	FTS*    ftsp;
-	FTSENT *p, *chp;
+	FTSENT* p;
+	FTSENT* chp;
 	// We only need to walk a single directory...
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 	int         ret;
