@@ -165,19 +165,19 @@ int        orig_stdout;
 int        orig_stderr;
 static int daemonize(void);
 
-struct tm * get_localtime(struct tm *);
-char *      format_localtime(struct tm *, char *, size_t);
-char *      get_current_time(void);
-char *      get_current_time_r(struct tm *, char *, size_t);
-const char *get_log_prefix(int);
+struct tm*  get_localtime(struct tm*);
+char*       format_localtime(struct tm*, char*, size_t);
+char*       get_current_time(void);
+char*       get_current_time_r(struct tm*, char*, size_t);
+const char* get_log_prefix(int);
 
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static int  strtoul_ui(const char *, unsigned int *);
-static int  daemon_handler(void *, const char *, const char *, const char *);
-static int  watch_handler(void *, const char *, const char *, const char *);
-static bool validate_watch_config(void *);
+static int  strtoul_ui(const char*, unsigned int*);
+static int  daemon_handler(void*, const char*, const char*, const char*);
+static int  watch_handler(void*, const char*, const char*, const char*);
+static bool validate_watch_config(void*);
 static int  load_config(void);
 // Ugly global. Remember how many watches we set up...
 unsigned int watch_count = 0;
@@ -185,11 +185,11 @@ unsigned int watch_count = 0;
 DaemonConfig daemon_config           = { 0 };
 WatchConfig  watch_config[WATCH_MAX] = { 0 };
 
-static unsigned int qhash(const unsigned char *, size_t);
+static unsigned int qhash(const unsigned char*, size_t);
 static bool         is_target_processed(unsigned int, bool);
 
-void *       reaper_thread(void *);
-static pid_t spawn(char *const *, unsigned int);
+void*        reaper_thread(void*);
+static pid_t spawn(char* const*, unsigned int);
 
 static bool  is_watch_already_spawned(unsigned int);
 static bool  is_blocker_running(void);

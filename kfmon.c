@@ -95,8 +95,8 @@ static int
 }
 
 // Wrapper around localtime_r, making sure this part is thread-safe (used for logging)
-struct tm *
-    get_localtime(struct tm *lt)
+struct tm*
+    get_localtime(struct tm* lt)
 {
 	time_t t = time(NULL);
 	tzset();
@@ -105,8 +105,8 @@ struct tm *
 }
 
 // Wrapper around strftime, making sure this part is thread-safe (used for logging)
-char *
-    format_localtime(struct tm *lt, char *sz_time, size_t len)
+char*
+    format_localtime(struct tm* lt, char* sz_time, size_t len)
 {
 	// cf. strftime(3) & https://stackoverflow.com/questions/7411301
 	strftime(sz_time, len, "%Y-%m-%d @ %H:%M:%S", lt);
@@ -117,11 +117,11 @@ char *
 // Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
 // NOTE: The use of static variables prevents this from being thread-safe,
 //       but in the main thread, we use static storage for simplicity's sake.
-char *
+char*
     get_current_time(void)
 {
 	static struct tm local_tm = { 0 };
-	struct tm *      lt       = get_localtime(&local_tm);
+	struct tm*       lt       = get_localtime(&local_tm);
 
 	static char sz_time[22];
 
@@ -130,14 +130,14 @@ char *
 
 // And now the same, but with user supplied storage, thus potentially thread-safe:
 // f.g., we use the stack in reaper_thread().
-char *
-    get_current_time_r(struct tm *local_tm, char *sz_time, size_t len)
+char*
+    get_current_time_r(struct tm* local_tm, char* sz_time, size_t len)
 {
-	struct tm *lt = get_localtime(local_tm);
+	struct tm* lt = get_localtime(local_tm);
 	return format_localtime(lt, sz_time, len);
 }
 
-const char *
+const char*
     get_log_prefix(int prio)
 {
 	// Reuse (part of) the syslog() priority constants
@@ -164,8 +164,8 @@ static bool
     is_target_mounted(void)
 {
 	// cf. http://program-nix.blogspot.fr/2008/08/c-language-check-filesystem-is-mounted.html
-	FILE *         mtab       = NULL;
-	struct mntent *part       = NULL;
+	FILE*          mtab       = NULL;
+	struct mntent* part       = NULL;
 	bool           is_mounted = false;
 
 	if ((mtab = setmntent("/proc/mounts", "r")) != NULL) {
@@ -220,7 +220,7 @@ static void
 // Sanitize user input for keys expecting an (unsigned) integer
 // NOTE: Inspired from git's strtoul_ui @ git-compat-util.h
 static int
-    strtoul_ui(const char *str, unsigned int *result)
+    strtoul_ui(const char* str, unsigned int* result)
 {
 	// NOTE: We want to *reject* negative values (which strtoul does not)!
 	if (strchr(str, '-')) {
@@ -229,7 +229,7 @@ static int
 	}
 
 	// Now that we know it's positive, we can go on with strtoul...
-	char *            endptr;
+	char*             endptr;
 	unsigned long int val;
 
 	errno = 0;    // To distinguish success/failure after call
@@ -277,9 +277,9 @@ static int
 
 // Handle parsing the main KFMon config
 static int
-    daemon_handler(void *user, const char *section, const char *key, const char *value)
+    daemon_handler(void* user, const char* section, const char* key, const char* value)
 {
-	DaemonConfig *pconfig = (DaemonConfig *) user;
+	DaemonConfig* pconfig = (DaemonConfig*) user;
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	if (MATCH("daemon", "db_timeout")) {
@@ -300,9 +300,9 @@ static int
 
 // Handle parsing a watch config
 static int
-    watch_handler(void *user, const char *section, const char *key, const char *value)
+    watch_handler(void* user, const char* section, const char* key, const char* value)
 {
-	WatchConfig *pconfig = (WatchConfig *) user;
+	WatchConfig* pconfig = (WatchConfig*) user;
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	// NOTE: Crappy strncpy() usage, but those char arrays are zeroed first
@@ -342,9 +342,9 @@ static int
 
 // Validate a watch config
 static bool
-    validate_watch_config(void *user)
+    validate_watch_config(void* user)
 {
-	WatchConfig *pconfig = (WatchConfig *) user;
+	WatchConfig* pconfig = (WatchConfig*) user;
 
 	bool sane = true;
 
@@ -404,10 +404,10 @@ static int
 
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
-	FTS *   ftsp;
+	FTS*    ftsp;
 	FTSENT *p, *chp;
 	// We only need to walk a single directory...
-	char *const cfg_path[] = { KFMON_CONFIGPATH, NULL };
+	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 	int         ret;
 	int         rval = 0;
 
@@ -533,7 +533,7 @@ static int
 // Implementation of Qt4's QtHash (cf. qhash @
 // https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L37)
 static unsigned int
-    qhash(const unsigned char *bytes, size_t length)
+    qhash(const unsigned char* bytes, size_t length)
 {
 	unsigned int h = 0;
 	unsigned int i;
@@ -551,8 +551,8 @@ static unsigned int
 static bool
     is_target_processed(unsigned int watch_idx, bool wait_for_db)
 {
-	sqlite3 *     db;
-	sqlite3_stmt *stmt;
+	sqlite3*      db;
+	sqlite3_stmt* stmt;
 	int           rc;
 	int           idx;
 	bool          is_processed = false;
@@ -623,7 +623,7 @@ static bool
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			DBGLOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
-			const unsigned char *image_id = sqlite3_column_text(stmt, 0);
+			const unsigned char* image_id = sqlite3_column_text(stmt, 0);
 			size_t               len      = (size_t) sqlite3_column_bytes(stmt, 0);
 
 			// Then we need the proper hashes Nickel devises...
@@ -703,8 +703,7 @@ static bool
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			DBGLOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
-			if (strcmp((const char *) sqlite3_column_text(stmt, 0), watch_config[watch_idx].db_title) !=
-			    0) {
+			if (strcmp((const char*) sqlite3_column_text(stmt, 0), watch_config[watch_idx].db_title) != 0) {
 				needs_update = true;
 			}
 		}
@@ -807,10 +806,10 @@ static void
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
-void *
-    reaper_thread(void *ptr)
+void*
+    reaper_thread(void* ptr)
 {
-	int i = *((int *) ptr);
+	int i = *((int*) ptr);
 
 	pid_t tid;
 	tid = (pid_t) syscall(SYS_gettid);
@@ -844,7 +843,7 @@ void *
 	if (ret != cpid) {
 		perror("[KFMon] [CRIT] waitpid");
 		free(ptr);
-		return (void *) NULL;
+		return (void*) NULL;
 	} else {
 		if (WIFEXITED(wstatus)) {
 			int exitcode = WEXITSTATUS(wstatus);
@@ -866,7 +865,7 @@ void *
 				// NOTE: Even if it's not entirely clear from the manpage, printf's %m *is* thread-safe,
 				//       c.f., stdio-common/vfprintf.c:962 (it's using strerror_r).
 				//       But since we're not checking errno but a custom variable, do it the hard way :)
-				char *sz_error = strerror_r(exitcode, buf, sizeof(buf));
+				char* sz_error = strerror_r(exitcode, buf, sizeof(buf));
 				MTLOG(
 				    "[%s] [CRIT] [TID: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.",
 				    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
@@ -903,7 +902,7 @@ void *
 
 	free(ptr);
 
-	return (void *) NULL;
+	return (void*) NULL;
 }
 
 // Spawn a process and return its pid...
@@ -911,7 +910,7 @@ void *
 // As well as the glibc's system() call,
 // With a bit of added tracking to handle reaping without a SIGCHLD handler.
 static pid_t
-    spawn(char *const *command, unsigned int watch_idx)
+    spawn(char* const* command, unsigned int watch_idx)
 {
 	pid_t pid;
 
@@ -983,7 +982,7 @@ static pid_t
 			//       for every spawn...
 			//       See #2 for an history of the previous failed attempts...
 			pthread_t rthread;
-			int *     arg = malloc(sizeof(*arg));
+			int*      arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
 				LOG(LOG_ERR, "Couldn't allocate memory for thread arg, aborting!");
 				exit(EXIT_FAILURE);
@@ -1005,7 +1004,7 @@ static pid_t
 			// NOTE: Use a smaller stack (ulimit -s is 8MB on the Kobos).
 			//       Base it on pointer size, aiming for 2MB on x64. Floor it at 1MB to be safe, though.
 			//       In the grand scheme of things, this won't really change much ;).
-			if (pthread_attr_setstacksize(&attr, MIN(1 * 1024 * 1024, sizeof(void *) * 1024 * 1024 / 4)) !=
+			if (pthread_attr_setstacksize(&attr, MIN(1 * 1024 * 1024, sizeof(void*) * 1024 * 1024 / 4)) !=
 			    0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
 				exit(EXIT_FAILURE);
@@ -1088,9 +1087,9 @@ static bool
 	// Hence, the buffer used for reading from the inotify file descriptor
 	// should have the same alignment as struct inotify_event.
 	char                        buf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
-	const struct inotify_event *event;
+	const struct inotify_event* event;
 	ssize_t                     len;
-	char *                      ptr;
+	char*                       ptr;
 	bool                        destroyed_wd       = false;
 	bool                        was_unmounted      = false;
 	static bool                 pending_processing = false;
@@ -1114,7 +1113,7 @@ static bool
 		// Loop over all events in the buffer
 		for (ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
 			// NOTE: This trips -Wcast-align on ARM, but should be safe nonetheless ;).
-			event = (const struct inotify_event *) ptr;
+			event = (const struct inotify_event*) ptr;
 			// NOTE: This *may* be a viable alternative, but don't hold me to that.
 			// memcpy(&event, &ptr, sizeof(struct inotify_event *));
 
@@ -1187,7 +1186,7 @@ static bool
 							    watch_config[watch_idx].action);
 						}
 						// We're using execvp()...
-						char *const cmd[] = { watch_config[watch_idx].action, NULL };
+						char* const cmd[] = { watch_config[watch_idx].action, NULL };
 						spawn(cmd, watch_idx);
 					} else {
 						LOG(LOG_NOTICE,
@@ -1297,7 +1296,7 @@ static bool
 }
 
 int
-    main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
+    main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
 	int           fd, poll_num;
 	struct pollfd pfd;
