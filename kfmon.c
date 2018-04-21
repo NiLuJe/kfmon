@@ -30,7 +30,7 @@ static int
 		case 0:
 			break;
 		default:
-			_exit(0);
+			_exit(EXIT_SUCCESS);
 	}
 
 	if (setsid() == -1) {
@@ -38,6 +38,8 @@ static int
 	}
 
 	// Double fork, for... reasons!
+	// In practical terms, this ensures we get re-parented to init *now*.
+	// Ignore SIGHUP while we're there, since we don't want to be killed by it.
 	signal(SIGHUP, SIG_IGN);
 	switch (fork()) {
 		case -1:
@@ -45,7 +47,7 @@ static int
 		case 0:
 			break;
 		default:
-			_exit(0);
+			_exit(EXIT_SUCCESS);
 	}
 
 	if (chdir("/") == -1) {
