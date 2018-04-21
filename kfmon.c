@@ -752,9 +752,9 @@ static bool
 			LOG(LOG_INFO,
 			    "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %u) . . .",
 			    count++);
-			nanosleep((const struct timespec[]){ { 0, 250000000L } }, NULL);
+			nanosleep((const struct timespec[]){ { 0, 500000000L } }, NULL);
 			// NOTE: Don't wait more than 10s
-			if (count > 40) {
+			if (count >= 20) {
 				LOG(LOG_WARNING,
 				    "Waited for the SQLite rollback journal to go away for far too long, going on anyway.");
 				break;
