@@ -48,6 +48,10 @@ EXTRA_CFLAGS+=-Wmissing-prototypes
 EXTRA_CFLAGS+=-Wcast-qual
 EXTRA_CFLAGS+=-Wcast-align
 EXTRA_CFLAGS+=-Wconversion
+# Output padding info when debugging (Clang is slightly more verbose)
+ifeq "$(DEBUG)" "true"
+	EXTRA_CFLAGS+=-Wpadded
+endif
 
 # A version tag...
 KFMON_VERSION=$(shell git describe)
