@@ -1438,6 +1438,7 @@ int
 		close(fd);
 	}
 
+	// Why, yes, this is unreachable! Good thing it's also optional ;).
 	if (daemon_config.use_syslog) {
 		closelog();
 	}
