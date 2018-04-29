@@ -6,7 +6,7 @@ Housed [here on GitHub](https://github.com/NiLuJe/kfmon).
 
 # What's it for?
 
-This is intended as an improvement over [Sergey](https://github.com/sergeyvl/vlasovsoft/tree/master/fmon)'s [Kobo File Monitor](http://www.mobileread.com/forums/showthread.php?t=218283). If you're unfamiliar with fmon, it basically launches a specific action when you open a specific book on your Kobo, thanks to Linux's ```inotify``` API. Usually, a single PNG file is used as the "trigger" book.
+This is intended as an improvement over [Sergey](https://bitbucket.org/vlasovsoft/free/src/tip/fmon/)'s [Kobo File Monitor](http://www.mobileread.com/forums/showthread.php?t=218283). If you're unfamiliar with fmon, it basically launches a specific action when you open a specific book on your Kobo, thanks to Linux's ```inotify``` API. Usually, a single PNG file is used as the "trigger" book.
 
 The original fmon does zero sanity checking, and, given the intricacies of how Nickel actually processes books, it might trigger an action *before* the trigger file has successfully been processed by Nickel. Depending on the action in question, this might lead to fun boot loops or other weirdness ;).
 
