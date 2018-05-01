@@ -51,7 +51,7 @@ endif
 KFMON_VERSION=$(shell git describe)
 EXTRA_CFLAGS+=-DKFMON_VERSION='"$(KFMON_VERSION)"'
 
-# NOTE: Always use as-needed to avoid unecessary DT_NEEDED entries with our funky SQLite linking :)
+# NOTE: Always use as-needed to avoid unecessary DT_NEEDED entries :)
 LDFLAGS?=-Wl,--as-needed
 
 # Pick up our vendored build of SQLite when asked to
