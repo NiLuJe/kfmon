@@ -17,17 +17,11 @@ OPT_CFLAGS=-O2 -fomit-frame-pointer -pipe
 ifdef NILUJE
 	# Use the system's sqlite on my sandbox
 	LIBS=-lsqlite3
-	LIBS+=-lpthread
 	# And the sandbox's custom paths
 	EXTRA_CFLAGS+=-DNILUJE
 else
 	# We want to link to sqlite3 explicitly statically
 	LIBS=-l:libsqlite3.a
-	# Depending on how SQLite was built, we might need...
-	LIBS+=-lpthread
-	# And in turn...
-	LIBS+=-ldl
-	LIBS+=-lm
 endif
 
 # NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
@@ -75,6 +69,7 @@ endif
 
 # We use pthreads, let GCC do its thing to do it right.
 EXTRA_CPPFLAGS+=-pthread
+LIBS+=-lpthread
 
 
 ##
