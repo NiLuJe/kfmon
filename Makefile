@@ -18,6 +18,8 @@ OPT_CFLAGS=-O2 -fomit-frame-pointer -pipe
 
 ifdef NILUJE
 	# Use the system's sqlite on my sandbox
+	# NOTE: We can't easily check the exit code of a command, so, instead,
+	#       force verbosity to stdout to check the command's output, since it's blank on success.
 	ifeq "$(shell pkg-config --exists --print-errors --errors-to-stdout sqlite3)" ""
 		LIBS=$(shell pkg-config --libs sqlite3)
 	else
