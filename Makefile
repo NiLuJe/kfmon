@@ -49,9 +49,10 @@ EXTRA_CFLAGS+=-Wextra -Wunused
 EXTRA_CFLAGS+=-Wshadow
 EXTRA_CFLAGS+=-Wmissing-prototypes
 EXTRA_CFLAGS+=-Wcast-qual
+# NOTE: GCC 8 introduces -Wcast-align=strict to warn regardless of the target architecture (i.e., like clang)
 EXTRA_CFLAGS+=-Wcast-align
 EXTRA_CFLAGS+=-Wconversion
-# Output padding info when debugging (Clang is slightly more verbose)
+# Output padding info when debugging (NOTE: Clang is slightly more verbose)
 ifeq "$(DEBUG)" "true"
 	EXTRA_CFLAGS+=-Wpadded
 endif
