@@ -106,7 +106,7 @@ kobo: release
 	ln -sf $(CURDIR)/Kobo/KoboRoot.tgz Kobo/mnt/onboard/.kobo/KoboRoot.tgz
 	ln -sf $(CURDIR)/config/kfmon.ini Kobo/mnt/onboard/.adds/kfmon/config/kfmon.ini
 	ln -sf $(CURDIR)/config/koreader.ini Kobo/mnt/onboard/.adds/kfmon/config/koreader.ini
-	cd Kobo/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && cd ../../..
+	pushd Kobo/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && popd
 
 debug:
 	$(MAKE) all DEBUG=true
