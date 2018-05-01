@@ -69,6 +69,7 @@ ifeq "$(SQLITE)" "true"
 	# since it's only pulling a few conversion/division instrinsics from it...
 	# Anyway, enforce using the static version so we pull our actual GCC builtins,
 	# since we're using a significantly newer version than the Kobo's system...
+	# NOTE: This feels like a terribly stupid idea. :D.
 	EXTRA_LDFLAGS+=-static-libgcc
 endif
 
