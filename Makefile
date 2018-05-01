@@ -2,6 +2,8 @@
 # c.f., http://trac.ak-team.com/trac/browser/niluje/Configs/trunk/Kindle/Misc/x-compile.sh
 #       https://github.com/NiLuJe/crosstool-ng
 #       https://github.com/koreader/koxtoolchain
+# NOTE: We want the "bare" variant of the TC env, to make sure we vendor the right stuff...
+#       i.e., source ~SVN/Configs/trunk/Kindle/Misc/x-compile.sh kobo env bare
 ifdef CROSS_TC
 	CC=$(CROSS_TC)-gcc
 	STRIP=$(CROSS_TC)-strip
