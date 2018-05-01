@@ -18,7 +18,7 @@
 
 #include "kfmon.h"
 
-// Because daemon() only appeared in glibc 2.21
+// Because daemon() only appeared in glibc 2.21 (and doesn't double-fork anyway)
 static int
     daemonize(void)
 {
