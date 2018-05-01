@@ -137,6 +137,7 @@ clean:
 	rm -rf Release/inih/*.o
 	rm -rf Release/*.o
 	rm -rf Release/kfmon
+	rm -rf Release/KoboRoot.tgz
 	rm -rf Debug/inih/*.o
 	rm -rf Debug/*.o
 	rm -rf Debug/kfmon
