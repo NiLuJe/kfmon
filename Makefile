@@ -77,9 +77,9 @@ ifeq "$(SQLITE)" "true"
 	EXTRA_LDFLAGS+=-static-libgcc
 endif
 
-# We use pthreads, let GCC do its thing to do it right (c.f., gcc -dumpspecs | grep pthread)
+# We use pthreads, let GCC do its thing to do it right (c.f., gcc -dumpspecs | grep pthread).
 # NOTE: It mostly consists of passing -D_REENTRANT to the preprocessor, -lpthread to the linker,
-#       and setting -fprofile-update to prefer-atomic instead of single
+#       and setting -fprofile-update to prefer-atomic instead of single.
 #       Since we're not doing pgo builds, that last one is irrelevant here, which explains why we can safely and simply
 #       emulate the autoconf SQLite builds by simply passing -D_REENTRANT to the preprocessor in the sqlite.built recipe.
 EXTRA_CPPFLAGS+=-pthread
