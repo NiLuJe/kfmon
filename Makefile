@@ -143,7 +143,7 @@ sqlite.built:
 	cd sqlite && \
 	../sqlite-export/create-fossil-manifest && \
 	cd ../SQLiteBuild && \
-	env CPPFLAGS="$(CPPFLAGS) $(EXTRA_CPPFLAGS)" ../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && \
+	env CPPFLAGS="$(CPPFLAGS) -D_REENTRANT=1" ../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && \
 	$(MAKE) SHELL_OPT=""
 	touch sqlite.built
 
