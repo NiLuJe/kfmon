@@ -24,7 +24,7 @@ In the same vein, KFMon's startup script will also refuse to run concurrent inst
 
 And it also properly persists across unmounts & remounts (like during an USBMS export).
 
-**IMPORTANT NOTE**: Some of these checks requires a decently recent enough Nickel version. Make sure you're running a firmware version equal to or newer than 2.9.0!
+**IMPORTANT NOTE**: Some of these checks requires a decently recent enough Nickel version. Make sure you're running a firmware version equal to or newer than 2.9.0! That's the only actual requirement: KFMon is completely device-agnostic, and should work on the full range of Kobo devices (even new and unreleased ones), provided they run a supported Nickel version.
 
 **NOTE**: If you're just looking for a drop-in replacement of Sergey's fmon, check out [Baskerville](https://github.com/baskerville/fmon)'s implementation of fmon. It's safer & saner than the original, while keeping parts of the design instact (namely, and of particular interest to end-users, it's using a similar config scheme).
 
