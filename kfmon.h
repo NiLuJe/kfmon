@@ -108,6 +108,19 @@
 		}                                                                                                      \
 	})
 
+// Max length of a text metadata entry in the database (title, author, comment)
+#define DB_SZ_MAX 128
+// Max filepath length we bother to handle
+// NOTE: PATH_MAX is usually set to 4096, which is fairly overkill here...
+//       On the other hand, _POSIX_PATH_MAX is always set to 256,
+//       and that happens to (roughly) match Windows's MAX_PATH, which, in turn,
+//       matches the FAT32 *filename* length limit.
+//       Since we operate on a FAT32 partition, and we mostly work one or two folder deep into our target mountpoint,
+//       a target mountpoint which itself has a relatively short path,
+//       we can relatively safely assume that (_POSIX_PATH_MAX * 2) will do the job just fine for our purpose.
+//       This is all in order to cadge a (very) tiny amount of stack space...
+#define KFMON_PATH_MAX (_POSIX_PATH_MAX * 2)
+
 // What the daemon config should look like
 typedef struct
 {
@@ -116,11 +129,10 @@ typedef struct
 } DaemonConfig;
 
 // What a watch config should look like
-#define DB_SZ_MAX 128
 typedef struct
 {
-	char         filename[PATH_MAX];
-	char         action[PATH_MAX];
+	char         filename[KFMON_PATH_MAX];
+	char         action[KFMON_PATH_MAX];
 	unsigned int skip_db_checks;
 	unsigned int do_db_update;
 	char         db_title[DB_SZ_MAX];

@@ -310,9 +310,9 @@ static int
 	// NOTE: Crappy strncpy() usage, but those char arrays are zeroed first
 	//       (hence the MAX-1 len to ensure that we're NULL terminated)...
 	if (MATCH("watch", "filename")) {
-		strncpy(pconfig->filename, value, PATH_MAX - 1);
+		strncpy(pconfig->filename, value, KFMON_PATH_MAX - 1);
 	} else if (MATCH("watch", "action")) {
-		strncpy(pconfig->action, value, PATH_MAX - 1);
+		strncpy(pconfig->action, value, KFMON_PATH_MAX - 1);
 	} else if (MATCH("watch", "skip_db_checks")) {
 		if (strtoul_ui(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
@@ -593,8 +593,8 @@ static bool
 	    db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
 
 	// Append the proper URI scheme to our icon path...
-	char book_path[PATH_MAX + 7];
-	snprintf(book_path, PATH_MAX + 7, "file://%s", watch_config[watch_idx].filename);
+	char book_path[KFMON_PATH_MAX + 7];
+	snprintf(book_path, KFMON_PATH_MAX + 7, "file://%s", watch_config[watch_idx].filename);
 
 	idx = sqlite3_bind_parameter_index(stmt, "@id");
 	CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
@@ -636,16 +636,17 @@ static bool
 			unsigned int dir1 = hash & (0xff * 1);
 			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
 
-			char images_path[PATH_MAX];
-			snprintf(images_path, PATH_MAX, "%s/.kobo-images/%u/%u", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
+			char images_path[KFMON_PATH_MAX];
+			snprintf(
+			    images_path, KFMON_PATH_MAX, "%s/.kobo-images/%u/%u", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
 			unsigned int thumbnails_num = 0;
 
 			// Start with the full-size screensaver...
-			char ss_path[PATH_MAX];
-			snprintf(ss_path, PATH_MAX, "%s/%s - N3_FULL.parsed", images_path, image_id);
+			char ss_path[KFMON_PATH_MAX];
+			snprintf(ss_path, KFMON_PATH_MAX, "%s/%s - N3_FULL.parsed", images_path, image_id);
 			if (access(ss_path, F_OK) == 0) {
 				thumbnails_num++;
 			} else {
@@ -660,8 +661,8 @@ static bool
 			//       And *that* processing triggers a set of OPEN & CLOSE,
 			//       meaning we can quite possibly run on book *exit* that first time,
 			//       (and only that first time), if database locking permits...
-			char tile_path[PATH_MAX];
-			snprintf(tile_path, PATH_MAX, "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
+			char tile_path[KFMON_PATH_MAX];
+			snprintf(tile_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
 			if (access(tile_path, F_OK) == 0) {
 				thumbnails_num++;
 			} else {
@@ -669,8 +670,8 @@ static bool
 			}
 
 			// And finally the Library thumbnail...
-			char thumb_path[PATH_MAX];
-			snprintf(thumb_path, PATH_MAX, "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
+			char thumb_path[KFMON_PATH_MAX];
+			snprintf(thumb_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
 			if (access(thumb_path, F_OK) == 0) {
 				thumbnails_num++;
 			} else {
