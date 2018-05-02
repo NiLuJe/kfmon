@@ -1006,9 +1006,9 @@ static pid_t
 				exit(EXIT_FAILURE);
 			}
 			// NOTE: Use a smaller stack (ulimit -s is 8MB on the Kobos).
-			//       Base it on pointer size, aiming for 2MB on x64. Floor it at 1MB to be safe, though.
+			//       Base it on pointer size, aiming for 1MB on x64. Floor it at 512KB to be safe, though.
 			//       In the grand scheme of things, this won't really change much ;).
-			if (pthread_attr_setstacksize(&attr, MIN(1 * 1024 * 1024, sizeof(void*) * 1024 * 1024 / 4)) !=
+			if (pthread_attr_setstacksize(&attr, MIN(1 * 1024 * 1024 / 2, sizeof(void*) * 1024 * 1024 / 8)) !=
 			    0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
 				exit(EXIT_FAILURE);
