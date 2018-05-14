@@ -1005,6 +1005,7 @@ static pid_t
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setdetachstate");
 				exit(EXIT_FAILURE);
 			}
+
 			// NOTE: Use a smaller stack (ulimit -s is 8MB on the Kobos).
 			//       Base it on pointer size, aiming for 1MB on x64 (meaning 512KB on x86/arm).
 			//       Floor it at 512KB to be safe, though.
@@ -1018,6 +1019,15 @@ static pid_t
 				perror("[KFMon] [ERR!] Aborting: pthread_create");
 				exit(EXIT_FAILURE);
 			}
+
+			// Prettify the thread's name. Must be <= 15 characters long (i.e., 16 bytes, NULL included).
+			char thname[16];
+			snprintf(thname, sizeof(thname), "Reaper:%ld", (long) pid);
+			if (pthread_setname_np(rthread, thname) != 0) {
+				perror("[KFMon] [ERR!] Aborting: pthread_setname_np");
+				exit(EXIT_FAILURE);
+			}
+
 			if (pthread_attr_destroy(&attr) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_destroy");
 				exit(EXIT_FAILURE);
