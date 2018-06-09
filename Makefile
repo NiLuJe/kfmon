@@ -81,7 +81,11 @@ endif
 
 # And pick up FBInk, too.
 ifndef NILUJE
-	EXTRA_LDFLAGS+=-LFBInk/Release
+	ifeq "$(DEBUG)" "true"
+		EXTRA_LDFLAGS+=-LFBInk/Debug
+	else
+		EXTRA_LDFLAGS+=-LFBInk/Release
+	endif
 endif
 
 # We use pthreads, let GCC do its thing to do it right (c.f., gcc -dumpspecs | grep pthread).
@@ -131,8 +135,6 @@ kobo: release
 	ln -sf $(CURDIR)/config/koreader.ini Kobo/mnt/onboard/.adds/kfmon/config/koreader.ini
 	pushd Kobo/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && popd
 
-debug:
-	$(MAKE) all DEBUG=true
 
 niluje:
 	$(MAKE) all NILUJE=true
@@ -166,6 +168,11 @@ fbink.built:
 
 release: sqlite.built fbink.built
 	$(MAKE) strip SQLITE=true
+
+debug: sqlite.built fbink.built
+	cd FBInk && \
+	$(MAKE) debug
+	$(MAKE) all DEBUG=true SQLITE=true
 
 fbinkclean:
 	cd FBInk && \
