@@ -20,19 +20,27 @@
 
 // Fake FBInk in my sandbox...
 #ifdef NILUJE
-const char* fbink_version(void) {
+const char*
+    fbink_version(void)
+{
 	return "N/A";
 }
 
-int fbink_open(void) {
+int
+    fbink_open(void)
+{
 	return EXIT_SUCCESS;
 }
 
-int fbink_init(int) {
+int
+    fbink_init(int)
+{
 	return EXIT_SUCCESS;
 }
 
-int fbink_print(int, char*, FBInkConfig*) {
+int
+    fbink_print(int, char*, FBInkConfig*)
+{
 	return EXIT_SUCCESS;
 }
 #endif
@@ -1371,8 +1379,7 @@ int
 	    __TIME__,
 	    sqlite3_libversion(),
 	    SQLITE_VERSION,
-	    fbink_version()
-	);
+	    fbink_version());
 
 	// Load our configs
 	if (load_config() == -1) {
@@ -1402,13 +1409,13 @@ int
 	init_process_table();
 
 	// Initialize FBInk
-	fbink_config.row = 1;
-	fbink_config.col = -5;
+	fbink_config.row         = -5;
+	fbink_config.col         = 1;
 	fbink_config.is_inverted = false;
 	fbink_config.is_flashing = false;
-	fbink_config.is_cleared = false;
+	fbink_config.is_cleared  = false;
 	fbink_config.is_centered = true;
-	fbink_config.is_padded = true;
+	fbink_config.is_padded   = true;
 	// Consider not being able to print on screen a hard pass...
 	// (Mostly, it's to avoid blowing up later in fbink_print).
 	if (fbink_init(-1) == EXIT_FAILURE) {

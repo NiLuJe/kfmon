@@ -26,7 +26,7 @@
 
 #include "inih/ini.h"
 #ifndef NILUJE
-#include "FBInk/fbink.h"
+#	include "FBInk/fbink.h"
 #endif
 #include <errno.h>
 #include <fcntl.h>
@@ -88,9 +88,9 @@ typedef struct
 } FBInkConfig;
 
 const char* fbink_version(void);
-int fbink_open(void);
-int fbink_init(int);
-int fbink_print(int, const char*, FBInkConfig*);
+int         fbink_open(void);
+int         fbink_init(int);
+int         fbink_print(int, const char*, FBInkConfig*);
 #endif
 
 // Log everything to stderr (which actually points to our logfile)
@@ -218,7 +218,7 @@ unsigned int watch_count = 0;
 // Make our config global, because I'm terrible at C.
 DaemonConfig daemon_config           = { 0 };
 WatchConfig  watch_config[WATCH_MAX] = { 0 };
-FBInkConfig fbink_config             = { 0 };
+FBInkConfig  fbink_config            = { 0 };
 
 static unsigned int qhash(const unsigned char*, size_t);
 static bool         is_target_processed(unsigned int, bool);
