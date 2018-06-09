@@ -18,6 +18,25 @@
 
 #include "kfmon.h"
 
+// Fake FBInk in my sandbox...
+#ifdef NILUJE
+const char* fbink_version(void) {
+	return "N/A";
+}
+
+int fbink_open(void) {
+	return EXIT_SUCCESS;
+}
+
+int fbink_init(int) {
+	return EXIT_SUCCESS;
+}
+
+int fbink_print(int, char*, FBInkConfig*) {
+	return EXIT_SUCCESS;
+}
+#endif
+
 // Because daemon() only appeared in glibc 2.21 (and doesn't double-fork anyway)
 static int
     daemonize(void)
@@ -923,6 +942,7 @@ static pid_t
 	if (pid < 0) {
 		// Fork failed?
 		perror("[KFMon] [ERR!] Aborting: fork");
+		fbink_print(-1, "fork failed ?!", &fbink_config);
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
@@ -964,6 +984,7 @@ static pid_t
 			LOG(LOG_ERR,
 			    "Failed to find an available entry in our process table for pid %ld, aborting!",
 			    (long) pid);
+			fbink_print(-1, "Can't spawn any more processes", &fbink_config);
 			exit(EXIT_FAILURE);
 		} else {
 			pthread_mutex_lock(&ptlock);
@@ -989,6 +1010,7 @@ static pid_t
 			int*      arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
 				LOG(LOG_ERR, "Couldn't allocate memory for thread arg, aborting!");
+				fbink_print(-1, "OOM ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
 			*arg = i;
@@ -999,10 +1021,12 @@ static pid_t
 			pthread_attr_t attr;
 			if (pthread_attr_init(&attr) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_init");
+				fbink_print(-1, "pthread_attr_init failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setdetachstate");
+				fbink_print(-1, "pthread_attr_setdetachstate failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
 
@@ -1013,10 +1037,12 @@ static pid_t
 			if (pthread_attr_setstacksize(&attr,
 						      MAX(1 * 1024 * 1024 / 2, sizeof(void*) * 1024 * 1024 / 8)) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
+				fbink_print(-1, "pthread_attr_setstacksize failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_create(&rthread, &attr, reaper_thread, arg) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_create");
+				fbink_print(-1, "pthread_create failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
 
@@ -1025,11 +1051,13 @@ static pid_t
 			snprintf(thname, sizeof(thname), "Reaper:%ld", (long) pid);
 			if (pthread_setname_np(rthread, thname) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_setname_np");
+				fbink_print(-1, "pthread_setname_np failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
 
 			if (pthread_attr_destroy(&attr) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_destroy");
+				fbink_print(-1, "pthread_attr_destroy failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -1115,6 +1143,7 @@ static bool
 		len = read(fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
 			perror("[KFMon] [ERR!] Aborting: read");
+			fbink_print(-1, "read failed ?!", &fbink_config);
 			exit(EXIT_FAILURE);
 		}
 
@@ -1200,6 +1229,7 @@ static bool
 							    "%s is flagged as a spawn blocker, it will prevent *any* event from triggering a spawn while it is still running!",
 							    watch_config[watch_idx].action);
 						}
+						fbink_print(-1, "Spawning something . . .", &fbink_config);
 						// We're using execvp()...
 						char* const cmd[] = { watch_config[watch_idx].action, NULL };
 						spawn(cmd, watch_idx);
@@ -1207,6 +1237,7 @@ static bool
 						LOG(LOG_NOTICE,
 						    "Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.",
 						    watch_config[watch_idx].filename);
+						fbink_print(-1, "Not spawning: still processing!", &fbink_config);
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN,
 						//       which tripped our 'pending processing' check.
 					}
@@ -1223,9 +1254,11 @@ static bool
 						    watch_config[watch_idx].filename,
 						    (long) spid,
 						    watch_config[watch_idx].action);
+						fbink_print(-1, "Not spawning: still running!", &fbink_config);
 					} else if (is_reader_spawned) {
 						LOG(LOG_INFO,
 						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
+						fbink_print(-1, "Not spawning: blocked!", &fbink_config);
 					}
 				}
 			}
@@ -1331,13 +1364,15 @@ int
 
 	// Say hello :)
 	LOG(LOG_INFO,
-	    "[PID: %ld] Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s)",
+	    "[PID: %ld] Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s) | With FBInk %s",
 	    (long) getpid(),
 	    KFMON_VERSION,
 	    __DATE__,
 	    __TIME__,
 	    sqlite3_libversion(),
-	    SQLITE_VERSION);
+	    SQLITE_VERSION,
+	    fbink_version()
+	);
 
 	// Load our configs
 	if (load_config() == -1) {
@@ -1366,6 +1401,22 @@ int
 	// Initialize the process table, to track our spawns
 	init_process_table();
 
+	// Initialize FBInk
+	fbink_config.row = 1;
+	fbink_config.col = -5;
+	fbink_config.is_inverted = false;
+	fbink_config.is_flashing = false;
+	fbink_config.is_cleared = false;
+	fbink_config.is_centered = true;
+	fbink_config.is_padded = true;
+	// Consider not being able to print on screen a hard pass...
+	// (Mostly, it's to avoid blowing up later in fbink_print).
+	if (fbink_init(-1) == EXIT_FAILURE) {
+		LOG(LOG_ERR, "Failed to initialize FBInk, aborting!");
+		exit(EXIT_FAILURE);
+	}
+	fbink_print(-1, "KFMon is starting up", &fbink_config);
+
 	// We pretty much want to loop forever...
 	while (1) {
 		LOG(LOG_INFO, "Beginning the main loop.");
@@ -1375,6 +1426,7 @@ int
 		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
 			perror("[KFMon] [ERR!] Aborting: inotify_init1");
+			fbink_print(-1, "Failed to initialize inotify", &fbink_config);
 			exit(EXIT_FAILURE);
 		}
 
@@ -1407,6 +1459,7 @@ int
 			if (watch_config[watch_idx].inotify_wd == -1) {
 				perror("[KFMon] [CRIT] inotify_add_watch");
 				LOG(LOG_ERR, "Cannot watch '%s', aborting!", watch_config[watch_idx].filename);
+				fbink_print(-1, "Failed to setup a watch", &fbink_config);
 				exit(EXIT_FAILURE);
 				// NOTE: This effectively means we exit when any one of our target file cannot be found,
 				//       which is not a bad thing, per se...
@@ -1432,6 +1485,7 @@ int
 					continue;
 				}
 				perror("[KFMon] [ERR!] Aborting: poll");
+				fbink_print(-1, "poll failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
 

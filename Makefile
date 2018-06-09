@@ -31,6 +31,8 @@ ifdef NILUJE
 else
 	# We want to link to sqlite3 explicitly statically
 	LIBS=-l:libsqlite3.a
+	# We also want FBInk when targeting real devices ;).
+	LIBS+=-l:libfbink.a
 endif
 
 # NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
@@ -75,6 +77,11 @@ ifeq "$(SQLITE)" "true"
 	# since we're using a significantly newer version than the Kobo's system...
 	# NOTE: This feels like a terribly stupid idea, GCC probably has a very good reason for pulling the shared version. :D.
 	EXTRA_LDFLAGS+=-static-libgcc
+endif
+
+# And pick up FBInk, too.
+ifndef NILUJE
+	EXTRA_LDFLAGS+=-LFBInk/Release
 endif
 
 # We use pthreads, let GCC do its thing to do it right (c.f., gcc -dumpspecs | grep pthread).
@@ -152,12 +159,22 @@ sqlite.built:
 	$(MAKE) SHELL_OPT=""
 	touch sqlite.built
 
-release: sqlite.built
+fbink.built:
+	cd FBInk && \
+	$(MAKE) strip
+	touch fbink.built
+
+release: sqlite.built fbink.built
 	$(MAKE) strip SQLITE=true
 
-distclean: clean
+fbinkclean:
+	cd FBInk && \
+	$(MAKE) clean
+
+distclean: clean fbinkclean
 	rm -rf SQLiteBuild
 	rm -rf sqlite/manifest sqlite/manifest.uuid
 	rm -rf sqlite.built
+	rm -rf fbink.built
 
-.PHONY: default outdir all kfmon strip kobo debug niluje nilujed clean release distclean
+.PHONY: default outdir all kfmon strip kobo debug niluje nilujed clean release fbinkclean distclean

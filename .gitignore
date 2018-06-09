@@ -5,6 +5,8 @@ Kobo/
 # Same, for our vendored SQLite
 SQLiteBuild/
 sqlite.built
+# As well as FBInk
+fbink.built
 # KDevelop
 kfmon.kdev4
 .kdev4/
