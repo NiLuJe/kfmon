@@ -917,6 +917,7 @@ void*
 			    (long) cpid,
 			    watch_idx,
 			    sigcode);
+			fbink_print(-1, "KFMon: Something was killed!", &fbink_config);
 			if (daemon_config.use_syslog) {
 				// NOTE: No strsignal means no human-readable interpretation of the signal w/ syslog
 				//       (the %m token only works for errno)...
