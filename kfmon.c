@@ -917,7 +917,7 @@ void*
 				    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 				    (long) tid,
 				    sz_error);
-				fbink_printf(-1, &fbink_config, "[KFMon] Process %ld exited unexpectedly (%d)!", (long) cpid, exitcode);
+				fbink_printf(-1, &fbink_config, "[KFMon] PID %ld exited unexpectedly: %d!", (long) cpid, exitcode);
 			}
 		} else if (WIFSIGNALED(wstatus)) {
 			// NOTE: strsignal is not thread safe... Use psignal instead.
@@ -932,7 +932,7 @@ void*
 			    (long) cpid,
 			    watch_idx,
 			    sigcode);
-			fbink_printf(-1, &fbink_config, "[KFMon] Process %ld was killed by signal %d!", (long) cpid, sigcode);
+			fbink_printf(-1, &fbink_config, "[KFMon] PID %ld was killed by signal %d!", (long) cpid, sigcode);
 			if (daemon_config.use_syslog) {
 				// NOTE: No strsignal means no human-readable interpretation of the signal w/ syslog
 				//       (the %m token only works for errno)...
@@ -1459,7 +1459,7 @@ int
 	//       but more annoyingly: we need to fbink_init later to get the proper fb info...
 	//       Thankfully, in most cases, stale info will only cause the MXCFB ioctl to fail, we won't segfault.
 	// NOTE: We'll do *one* more init on the first inotify event we catch and hope for the best...
-	fbink_print(-1, "KFMon is starting up", &fbink_config);
+	fbink_print(-1, "[KFMon] Successfully initialized. :)", &fbink_config);
 
 	// We pretty much want to loop forever...
 	while (1) {
