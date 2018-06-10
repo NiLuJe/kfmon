@@ -19,7 +19,7 @@
 #ifndef __KFMON_H
 #define __KFMON_H
 
-// For syscall, and the expected version of strerror_r
+// For syscall, and the expected versions of strerror_r & basename
 #ifndef _GNU_SOURCE
 #	define _GNU_SOURCE
 #endif
@@ -27,6 +27,8 @@
 #include "inih/ini.h"
 #ifndef NILUJE
 #	include "FBInk/fbink.h"
+#else
+#	include <stdarg.h>
 #endif
 #include <errno.h>
 #include <fcntl.h>
@@ -91,6 +93,7 @@ const char* fbink_version(void);
 int         fbink_open(void);
 int         fbink_init(int);
 int         fbink_print(int, const char*, FBInkConfig*);
+int         fbink_printf(int, FBInkConfig*, const char*, ...) __attribute__ ((format (printf, 3, 4)));
 #endif
 
 // Log everything to stderr (which actually points to our logfile)
