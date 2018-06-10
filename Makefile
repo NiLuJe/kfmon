@@ -123,6 +123,7 @@ kobo: release
 	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard/.kobo Kobo/etc/udev/rules.d Kobo/etc/init.d Kobo/mnt/onboard/.adds/kfmon/config
 	ln -sf $(CURDIR)/resources/koreader.png Kobo/mnt/onboard/koreader.png
 	ln -sf $(CURDIR)/Release/kfmon Kobo/usr/local/kfmon/bin/kfmon
+	ln -sf $(CURDIR)/FBInk/Release/fbink Kobo/usr/local/kfmon/bin/fbink
 	ln -sf $(CURDIR)/README.md Kobo/usr/local/kfmon/README.md
 	ln -sf $(CURDIR)/LICENSE Kobo/usr/local/kfmon/LICENSE
 	ln -sf $(CURDIR)/CREDITS Kobo/usr/local/kfmon/CREDITS
