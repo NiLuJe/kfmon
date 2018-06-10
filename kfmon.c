@@ -1448,7 +1448,7 @@ int
 	fbink_config.is_padded   = true;
 	// Consider not being able to print on screen a hard pass...
 	// (Mostly, it's to avoid blowing up later in fbink_print).
-	if (fbink_init(-1) == EXIT_FAILURE) {
+	if (fbink_init(-1) != EXIT_SUCCESS) {
 		LOG(LOG_ERR, "Failed to initialize FBInk, aborting!");
 		exit(EXIT_FAILURE);
 	}
