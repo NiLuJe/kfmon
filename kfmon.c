@@ -902,6 +902,7 @@ void*
 				    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 				    (long) tid,
 				    sz_error);
+				fbink_print(-1, "KFMon: Something exited badly!", &fbink_config);
 			}
 		} else if (WIFSIGNALED(wstatus)) {
 			// NOTE: strsignal is not thread safe... Use psignal instead.
@@ -1011,6 +1012,7 @@ static pid_t
 			    watch_config[watch_idx].filename,
 			    watch_config[watch_idx].action,
 			    watch_idx);
+			fbink_print(-1, "KFMon launched something!", &fbink_config);
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread
 			//       for every spawn...
 			//       See #2 for an history of the previous failed attempts...
@@ -1237,7 +1239,6 @@ static bool
 							    "%s is flagged as a spawn blocker, it will prevent *any* event from triggering a spawn while it is still running!",
 							    watch_config[watch_idx].action);
 						}
-						fbink_print(-1, "Spawning something . . .", &fbink_config);
 						// We're using execvp()...
 						char* const cmd[] = { watch_config[watch_idx].action, NULL };
 						spawn(cmd, watch_idx);
