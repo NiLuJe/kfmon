@@ -1187,6 +1187,19 @@ static bool
 				    "!! Failed to match the current inotify event to any of our watched file! !!");
 			}
 
+			// NOTE: Now that, hopefully, we're pretty sure Nickel is up and has finished setting up the fb,
+			//       we can reinit FBInk to have up to date information...
+			//       Put everything behind our mutex to be super-safe,
+			//       since we're playing with globals on both ends...
+			//       We only do this once because that should be enough, and to keep locking to a minimum.
+			pthread_mutex_lock(&ptlock);
+			if (!is_fbink_initalized) {
+				// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+				fbink_init(-1);
+				is_fbink_initalized = true;
+			}
+			pthread_mutex_unlock(&ptlock);
+
 			// Print event type
 			if (event->mask & IN_OPEN) {
 				LOG(LOG_NOTICE, "Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
@@ -1424,6 +1437,13 @@ int
 		LOG(LOG_ERR, "Failed to initialize FBInk, aborting!");
 		exit(EXIT_FAILURE);
 	}
+
+	// NOTE: Because of course we can't have nice things, at this point, Nickel hasn't finished setting up the fb
+	//       to its liking. On most devices, the fb is probably in a weird rotation at this point.
+	//       This has two downsides: this message will be broken (it's mostly overriden by on-animator anyway),
+	//       but more annoyingly: we need to fbink_init later to get the proper fb info...
+	//       Thankfully, in most cases, stale info will only cause the MXCFB ioctl to fail, we won't segfault.
+	// NOTE: We'll do *one* more init on the first inotify event we catch and hope for the best...
 	fbink_print(-1, "KFMon is starting up", &fbink_config);
 
 	// We pretty much want to loop forever...

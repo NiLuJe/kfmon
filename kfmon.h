@@ -219,6 +219,8 @@ unsigned int watch_count = 0;
 DaemonConfig daemon_config           = { 0 };
 WatchConfig  watch_config[WATCH_MAX] = { 0 };
 FBInkConfig  fbink_config            = { 0 };
+// To handle the fbink_init shenanigans...
+bool is_fbink_initalized = false;
 
 static unsigned int qhash(const unsigned char*, size_t);
 static bool         is_target_processed(unsigned int, bool);
