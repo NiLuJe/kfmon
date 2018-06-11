@@ -1454,11 +1454,16 @@ int
 	}
 
 	// NOTE: Because of course we can't have nice things, at this point, Nickel hasn't finished setting up the fb
-	//       to its liking. On most devices, the fb is probably in a weird rotation at this point.
-	//       This has two downsides: this message will be broken (it's mostly overriden by on-animator anyway),
+	//       to its liking. On most devices, the fb is probably in a weird rotation and/or bitdepth at this point.
+	//       This has two downsides:
+	//       this message (as well as a few others in error paths that might trigger before our first inotify event)
+	//       will probably be slightly broken (it's quickly overriden by on-animator anyway),
 	//       but more annoyingly: we need to fbink_init later to get the proper fb info...
-	//       Thankfully, in most cases, stale info will only cause the MXCFB ioctl to fail, we won't segfault.
-	// NOTE: We'll do *one* more init on the first inotify event we catch and hope for the best...
+	//       Thankfully, in most cases, stale info will mostly just mess with positioning,
+	//       while completely broken info would only cause the MXCFB ioctl to fail, we wouldn't segfault.
+	//       (Well, to be perfectly fair, it'd take an utterly broken finfo.smem_len to crash,
+	//       and that should never happen).
+	// NOTE: To get (hopefully) up to date info, we'll do *one* reinit on the first inotify event we catch.
 	fbink_print(-1, "[KFMon] Successfully initialized. :)", &fbink_config);
 
 	// We pretty much want to loop forever...
