@@ -24,6 +24,8 @@ In the same vein, KFMon's startup script will also refuse to run concurrent inst
 
 And it also properly persists across unmounts & remounts (like during an USBMS export).
 
+Since v1.1.0, it's also using my [FBInk](https://github.com/NiLuJe/FBInk) library to provide visual feedback :). We also ship the `fbink` commandline tool to be used in your own startup scripts ;).
+
 **IMPORTANT NOTE**: Some of these checks requires a decently recent enough Nickel version. Make sure you're running a firmware version equal to or newer than 2.9.0! That's the only actual requirement: KFMon is completely device-agnostic, and should work on the full range of Kobo devices (even new and unreleased ones), provided they run a supported Nickel version.
 
 **NOTE**: If you're just looking for a drop-in replacement of Sergey's fmon, check out [Baskerville](https://github.com/baskerville/fmon)'s implementation of fmon. It's safer & saner than the original, while keeping parts of the design instact (namely, and of particular interest to end-users, it's using a similar config scheme).
@@ -31,6 +33,7 @@ And it also properly persists across unmounts & remounts (like during an USBMS e
 # How do I install this?
 
 First, if you're currently using fmon, it might be a good idea to uninstall it first ;). Since both patch the same startup script, only the last one you installed will actually "take".
+In the same vein, if you're using KSM and it is starting up at boot, it will also inhibit our startup. This should ensure you'll never have multiple different launchers running concurrently.
 
 Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/forums/showthread.php?t=274231), and simply unpack the ZIP archive to the USB root of your Kobo when it's plugged to a computer.
 
@@ -117,4 +120,4 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
 
 * You will most likely have to reinstall KFMon after a firmware update (since most FW update packages ship the vanilla version of the startup script patched to launch KFMon).
 
-* Right now, KFMon supports a maximum of [16](/kfmon.h#L147) file watches. Ping me if that's not enough for you ;).
+* Right now, KFMon supports a maximum of [16](/kfmon.h#L172) file watches. Ping me if that's not enough for you ;).
