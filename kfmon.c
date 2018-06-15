@@ -1468,6 +1468,7 @@ int
 	fbink_config.is_cleared  = false;
 	fbink_config.is_centered = true;
 	fbink_config.is_padded   = true;
+	fbink_config.is_verbose  = false;
 	// Consider not being able to print on screen a hard pass...
 	// (Mostly, it's to avoid blowing up later in fbink_print).
 	if (fbink_init(-1, &fbink_config) != EXIT_SUCCESS) {
