@@ -1219,10 +1219,10 @@ static bool
 			//       since we're playing with globals on both ends...
 			//       We only do this once because that should be enough, and to keep locking to a minimum.
 			pthread_mutex_lock(&ptlock);
-			if (!is_fbink_initalized) {
+			if (!is_fbink_initialized) {
 				// NOTE: It went fine once, assume that'll still be the case and skip error checking...
 				fbink_init(-1, &fbink_config);
-				is_fbink_initalized = true;
+				is_fbink_initialized = true;
 			}
 			pthread_mutex_unlock(&ptlock);
 
