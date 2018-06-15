@@ -80,20 +80,22 @@
 #ifdef NILUJE
 typedef struct
 {
-	short int row;
-	short int col;
-	bool      is_inverted;
-	bool      is_flashing;
-	bool      is_cleared;
-	bool      is_centered;
-	bool      is_padded;
+	short int          row;
+	short int          col;
+	short unsigned int fontmult;
+	short unsigned int fontname;
+	bool               is_inverted;
+	bool               is_flashing;
+	bool               is_cleared;
+	bool               is_centered;
+	bool               is_padded;
 } FBInkConfig;
 
 const char* fbink_version(void);
 int         fbink_open(void);
-int         fbink_init(int);
-int         fbink_print(int, const char*, FBInkConfig*);
-int         fbink_printf(int, FBInkConfig*, const char*, ...) __attribute__ ((format (printf, 3, 4)));
+int         fbink_init(int, const FBInkConfig*);
+int         fbink_print(int, const char*, const FBInkConfig*);
+int         fbink_printf(int, const FBInkConfig*, const char*, ...) __attribute__ ((format (printf, 3, 4)));
 #endif
 
 // Log everything to stderr (which actually points to our logfile)

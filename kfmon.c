@@ -33,20 +33,20 @@ int
 }
 
 int
-    fbink_init(int fbfd __attribute__((unused)))
+    fbink_init(int fbfd __attribute__((unused)), const FBInkConfig* fbink_config __attribute__((unused)))
 {
 	return EXIT_SUCCESS;
 }
 
 int
-    fbink_print(int fbfd __attribute__((unused)), char* string, FBInkConfig* fbink_config __attribute__((unused)))
+    fbink_print(int fbfd __attribute__((unused)), const char* string, const FBInkConfig* fbink_config __attribute__((unused)))
 {
 	LOG(LOG_INFO, "FBInk: %s", string);
 	return EXIT_SUCCESS;
 }
 
 int
-    fbink_printf(int fbfd __attribute__((unused)), FBInkConfig* fbink_config __attribute__((unused)), const char *fmt, ...)
+    fbink_printf(int fbfd __attribute__((unused)), const FBInkConfig* fbink_config __attribute__((unused)), const char *fmt, ...)
 {
 	char buffer[256];
 
@@ -1210,7 +1210,7 @@ static bool
 			pthread_mutex_lock(&ptlock);
 			if (!is_fbink_initalized) {
 				// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-				fbink_init(-1);
+				fbink_init(-1, &fbink_config);
 				is_fbink_initalized = true;
 			}
 			pthread_mutex_unlock(&ptlock);
@@ -1441,6 +1441,8 @@ int
 	// Initialize FBInk
 	fbink_config.row         = -5;
 	fbink_config.col         = 1;
+	fbink_config.fontmult    = 0U;
+	fbink_config.fontname    = IBM;
 	fbink_config.is_inverted = false;
 	fbink_config.is_flashing = false;
 	fbink_config.is_cleared  = false;
@@ -1448,7 +1450,7 @@ int
 	fbink_config.is_padded   = true;
 	// Consider not being able to print on screen a hard pass...
 	// (Mostly, it's to avoid blowing up later in fbink_print).
-	if (fbink_init(-1) != EXIT_SUCCESS) {
+	if (fbink_init(-1, &fbink_config) != EXIT_SUCCESS) {
 		LOG(LOG_ERR, "Failed to initialize FBInk, aborting!");
 		exit(EXIT_FAILURE);
 	}
