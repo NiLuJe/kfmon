@@ -164,7 +164,7 @@ sqlite.built:
 
 fbink.built:
 	cd FBInk && \
-	$(MAKE) strip
+	$(MAKE) strip MINIMAL=true
 	touch fbink.built
 
 release: sqlite.built fbink.built
