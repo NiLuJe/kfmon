@@ -36,7 +36,7 @@ else
 endif
 
 # NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
-ifeq "$(DEBUG)" "true"
+ifdef DEBUG
 	OUT_DIR=Debug
 	CFLAGS:=$(DEBUG_CFLAGS)
 	EXTRA_CFLAGS+=-DDEBUG
@@ -67,7 +67,7 @@ EXTRA_CFLAGS+=-Wcast-align
 EXTRA_CFLAGS+=-Wconversion
 # Output padding info when debugging (NOTE: Clang is slightly more verbose)
 # As well as function attribute hints
-ifeq "$(DEBUG)" "true"
+ifdef DEBUG
 	EXTRA_CFLAGS+=-Wpadded
 	EXTRA_CFLAGS+=-Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn -Wsuggest-attribute=format -Wmissing-format-attribute
 endif
@@ -84,7 +84,7 @@ EXTRA_CFLAGS+=-DKFMON_VERSION='"$(KFMON_VERSION)"'
 LDFLAGS?=-Wl,--as-needed
 
 # Pick up our vendored build of SQLite when asked to
-ifeq "$(SQLITE)" "true"
+ifdef SQLITE
 	EXTRA_CPPFLAGS=-ISQLiteBuild
 	EXTRA_LDFLAGS=-LSQLiteBuild/.libs
 	# Explicitly ask to link libgcc statically, because it *should* be safe (no C++, so no exceptions).
@@ -98,7 +98,7 @@ endif
 
 # And pick up FBInk, too.
 ifndef NILUJE
-	ifeq "$(DEBUG)" "true"
+	ifdef DEBUG
 		EXTRA_LDFLAGS+=-LFBInk/Debug
 	else
 		EXTRA_LDFLAGS+=-LFBInk/Release
