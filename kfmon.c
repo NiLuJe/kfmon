@@ -457,7 +457,10 @@ static int
 	FTSENT* p;
 	FTSENT* chp;
 	// We only need to walk a single directory...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
+#pragma GCC diagnostic pop
 	int         ret;
 	int         rval = 0;
 

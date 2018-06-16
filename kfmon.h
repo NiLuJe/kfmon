@@ -210,7 +210,7 @@ struct tm*  get_localtime(struct tm*);
 char*       format_localtime(struct tm*, char*, size_t);
 char*       get_current_time(void);
 char*       get_current_time_r(struct tm*, char*, size_t);
-const char* get_log_prefix(int);
+const char* get_log_prefix(int) __attribute__((const));
 
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
