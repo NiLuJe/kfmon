@@ -90,6 +90,7 @@ typedef struct
 	bool               is_centered;
 	bool               is_padded;
 	bool               is_verbose;
+	bool               is_quiet;
 } FBInkConfig;
 
 const char* fbink_version(void);
