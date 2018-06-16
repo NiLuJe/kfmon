@@ -13,6 +13,9 @@ KFMON_LOG="/usr/local/kfmon/kfmon.log"
 #       since it depends both on the device and the actual content of the log...
 LOG_LINES="15"
 
+# Sleep for a bit, so we don't race with Nickel opening the "book"...
+sleep 2
+
 # And feed it to FBInk... (avoiding the first row because it's behind the bezel on my H2O ;p)
 ${FBINK_BIN} -q -y 1 "$(tail -n ${LOG_LINES} "${KFMON_LOG}")" >/dev/null 2>&1
 
