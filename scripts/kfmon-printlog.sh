@@ -17,6 +17,6 @@ LOG_LINES="15"
 sleep 2
 
 # And feed it to FBInk... (avoiding the first row because it's behind the bezel on my H2O ;p)
-${FBINK_BIN} -q -y 1 "$(tail -n ${LOG_LINES} "${KFMON_LOG}")" >/dev/null 2>&1
+${FBINK_BIN} -q -y 1 "$(tail -n ${LOG_LINES} "${KFMON_LOG}")"
 
 return 0
