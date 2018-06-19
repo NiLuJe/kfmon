@@ -35,7 +35,7 @@ Since v1.1.0, it's also using my [FBInk](https://github.com/NiLuJe/FBInk) librar
 First, if you're currently using fmon, it might be a good idea to uninstall it first ;). Since both patch the same startup script, only the last one you installed will actually "take".
 In the same vein, if you're using KSM and it is starting up at boot, it will also inhibit our startup. This should ensure you'll never have multiple different launchers running concurrently.
 
-Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/forums/showthread.php?t=274231), and simply unpack the ZIP archive to the USB root of your Kobo when it's plugged to a computer.
+Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/forums/showthread.php?t=274231), and simply unpack the ZIP archive (the main one, not the uninstaller, obviously) to the USB root of your Kobo when it's plugged to a computer.
 
 The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276), if it is already installed, as well as a ```KoboRoot.tgz``` which will actually install KFMon itself.
 This ensures that the KOReader PNG file will first be processed by Nickel before the KoboRoot package triggers a reboot for installation.
@@ -90,13 +90,17 @@ Note that these three fields will be cropped at 128 characters.
 
 # How do I uninstall this?
 
-You'll have to delete a few things manually, ideally over SSH:
+There is a *KFMon-Uninstaller.zip* package available in the MobileRead thread. Inside, you'll find a *KoboRoot.tgz* that will automate much of this. (It will leave whatever's in ```/mnt/onboard/.adds/kfmon``` untouched).
+
+## I want to do it manually!
+
+You absolutely can, and here's how (ideally over SSH):
 
 The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, depending on which version of KFMon you were running).
 
 And the folders ```/usr/local/kfmon``` & ```/mnt/onboard/.adds/kfmon```.
 
-Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (f.g., [commit 8710a31](https://github.com/NiLuJe/kfmon/commit/8710a31d2e6d998ba315bafff37fd4ba8d1cc7a1) features one such version), although nothing untoward will happen if you don't.
+Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (f.g., [as found here](https://github.com/NiLuJe/kfmon/blob/master/scripts/uninstall/on-animator.sh)), although nothing untoward will happen if you don't.
 
 # Things to watch out for
 
