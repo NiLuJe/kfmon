@@ -137,6 +137,14 @@ strip: all
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon
 
 kobo: release
+	mkdir -p Kobo/usr/local/kfmon/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
+	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
+	ln -sf $(CURDIR)/scripts/uninstall/kfmon-uninstall.sh Kobo/usr/local/kfmon/bin/kfmon-update.sh
+	ln -sf $(CURDIR)/scripts/uninstall/on-animator.sh Kobo/etc/init.d/on-animator.sh
+	tar --exclude="./mnt" --exclude="KFMon-*.zip" --owner=root --group=root -cvzhf Release/KoboRoot.tgz -C Kobo .
+	pushd Release && zip ../Kobo/KFMon-Uninstaller.zip KoboRoot.tgz && popd
+	rm -f Release/KoboRoot.tgz
+	rm -rf Kobo/usr/local/kfmon/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
 	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard/.kobo Kobo/etc/udev/rules.d Kobo/etc/init.d Kobo/mnt/onboard/.adds/kfmon/config Kobo/mnt/onboard/.adds/kfmon/bin
 	ln -sf $(CURDIR)/resources/koreader.png Kobo/mnt/onboard/koreader.png
 	ln -sf $(CURDIR)/resources/kfmon.png Kobo/mnt/onboard/kfmon.png
