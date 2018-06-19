@@ -98,7 +98,7 @@ You absolutely can, and here's how (ideally over SSH):
 
 The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, depending on which version of KFMon you were running).
 
-And the folders ```/usr/local/kfmon``` & ```/mnt/onboard/.adds/kfmon```.
+And the folders ```/usr/local/kfmon```, as well as ```/mnt/onboard/.adds/kfmon``` too, if you don't want to keep whatever custom things you might have written in there.
 
 Optionally, you might also want to restore a vanilla version of ```/etc/init.d/on-animator.sh``` (f.g., [as found here](https://github.com/NiLuJe/kfmon/blob/master/scripts/uninstall/on-animator.sh)), although nothing untoward will happen if you don't.
 
