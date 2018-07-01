@@ -195,9 +195,12 @@ static int  load_config(void);
 // Ugly global. Remember how many watches we set up...
 unsigned int watch_count = 0;
 // Make our config global, because I'm terrible at C.
-DaemonConfig daemon_config           = { 0 };
-WatchConfig  watch_config[WATCH_MAX] = { 0 };
-FBInkConfig  fbink_config            = { 0 };
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-braces"
+DaemonConfig           daemon_config           = { 0 };
+WatchConfig            watch_config[WATCH_MAX] = { 0 };
+FBInkConfig            fbink_config            = { 0 };
+#pragma GCC diagnostic push
 // To handle the fbink_init shenanigans...
 bool is_fbink_initialized = false;
 
