@@ -24,12 +24,8 @@
 #	define _GNU_SOURCE
 #endif
 
+#include "FBInk/fbink.h"
 #include "inih/ini.h"
-#ifndef NILUJE
-#	include "FBInk/fbink.h"
-#else
-#	include <stdarg.h>
-#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>
@@ -74,30 +70,6 @@
 #	define KOBO_DB_PATH "/home/niluje/Kindle/Staging/KoboReader.sqlite"
 #	define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
 #	define KFMON_CONFIGPATH "/home/niluje/Kindle/Staging/kfmon"
-#endif
-
-// We also have to fake the FBInk API in my sandbox...
-#ifdef NILUJE
-typedef struct
-{
-	short int          row;
-	short int          col;
-	short unsigned int fontmult;
-	short unsigned int fontname;
-	bool               is_inverted;
-	bool               is_flashing;
-	bool               is_cleared;
-	bool               is_centered;
-	bool               is_padded;
-	bool               is_verbose;
-	bool               is_quiet;
-} FBInkConfig;
-
-const char* fbink_version(void);
-int         fbink_open(void);
-int         fbink_init(int, const FBInkConfig*);
-int         fbink_print(int, const char*, const FBInkConfig*);
-int         fbink_printf(int, const FBInkConfig*, const char*, ...) __attribute__((format(printf, 3, 4)));
 #endif
 
 // Log everything to stderr (which actually points to our logfile)

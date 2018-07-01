@@ -33,7 +33,7 @@ int
 }
 
 int
-    fbink_init(int fbfd __attribute__((unused)), const FBInkConfig* fbink_config __attribute__((unused)))
+    fbink_init(int fbfd __attribute__((unused)), const FBInkConfig* fbinkconfig __attribute__((unused)))
 {
 	return EXIT_SUCCESS;
 }
@@ -41,7 +41,7 @@ int
 int
     fbink_print(int                fbfd __attribute__((unused)),
 		const char*        string,
-		const FBInkConfig* fbink_config __attribute__((unused)))
+		const FBInkConfig* fbinkconfig __attribute__((unused)))
 {
 	LOG(LOG_INFO, "FBInk: %s", string);
 	return EXIT_SUCCESS;
@@ -49,7 +49,7 @@ int
 
 int
     fbink_printf(int                fbfd __attribute__((unused)),
-		 const FBInkConfig* fbink_config __attribute__((unused)),
+		 const FBInkConfig* fbinkconfig __attribute__((unused)),
 		 const char*        fmt,
 		 ...)
 {
@@ -458,7 +458,10 @@ static int
 	FTSENT* chp;
 	// We only need to walk a single directory...
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
 	int ret;
