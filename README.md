@@ -114,7 +114,7 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
 * KFMon only expects to watch for files in the internal storage of the device (i.e., *onboard*). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).
 
 * Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1735).
-  * A far as for successfully restarting nickel on exit is concerned, I'd also recommend a current FW version (last tested on FW 4.7.x - 4.8.x).
+  * A far as for successfully restarting nickel on exit is concerned, I'd also recommend a current FW version (last tested on FW 4.7.x - 4.9.x).
 * When either KOReader or Plato is launched *through KFMon*, __nothing__ will be allowed to spawn while that document reader is still running. This is to prevent spurious events that may be triggered by their file manager.
 
 * PSA about the proper syntax expected in an INI file: while the ```;``` character indeed marks the beginning of an inline comment, it must be preceded by some kind of whitespace to actually register as a comment. Otherwise, it's assumed to be part of the value.
