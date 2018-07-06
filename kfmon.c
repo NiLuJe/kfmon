@@ -1488,7 +1488,7 @@ int
 	//       to its liking. On most devices, the fb is probably in a weird rotation and/or bitdepth at this point.
 	//       This has two downsides:
 	//       this message (as well as a few others in error paths that might trigger before our first inotify event)
-	//       may be slightly broken, although FBInk >= 0.9.14 should mitigate this particular issue.
+	//       may be slightly broken, although FBInk should now mitigate at least part of this particular issue.
 	//       In any case, it's quickly overriden by on-animator anyway, so no real harm done.
 	//       But more annoyingly: we need to fbink_init later to get the proper fb info...
 	//       Thankfully, in most cases, stale info will mostly just mess with positioning,
