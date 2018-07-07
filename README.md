@@ -126,4 +126,4 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
 
 * You will most likely have to reinstall KFMon after a firmware update (since most FW update packages ship the vanilla version of the startup script patched to launch KFMon).
 
-* Right now, KFMon supports a maximum of [16](/kfmon.h#L172) file watches. Ping me if that's not enough for you ;).
+* Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/2e46feb4c27e9393771d7deefa9a790ba875a424/kfmon.h#L148) file watches. Ping me if that's not enough for you ;).
