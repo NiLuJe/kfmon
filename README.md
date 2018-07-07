@@ -94,7 +94,7 @@ There is a *KFMon-Uninstaller.zip* package available in the MobileRead thread. I
 
 ## I want to do it manually!
 
-You absolutely can, and here's how (ideally over SSH):
+You absolutely can, and here's how (ideally over SSH).
 
 You'll basically just have to delete a couple of things:
 
