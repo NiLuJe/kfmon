@@ -96,6 +96,8 @@ There is a *KFMon-Uninstaller.zip* package available in the MobileRead thread. I
 
 You absolutely can, and here's how (ideally over SSH):
 
+You'll basically just have to delete a couple of things:
+
 The file ```/etc/udev/rules.d/99-kfmon.rules``` (which may not exist anymore, depending on which version of KFMon you were running).
 
 And the folders ```/usr/local/kfmon```, as well as ```/mnt/onboard/.adds/kfmon``` too, if you don't want to keep whatever custom things you might have written in there.
