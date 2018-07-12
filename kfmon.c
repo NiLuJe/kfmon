@@ -1489,6 +1489,7 @@ int
 	//       This has two downsides:
 	//       this message (as well as a few others in error paths that might trigger before our first inotify event)
 	//       may be slightly broken, although FBInk should now mitigate at least part of this particular issue.
+	//       The exact state might be device and/or timing-specific, and I can't easily replicate it to investigate...
 	//       In any case, it's quickly overriden by on-animator anyway, so no real harm done.
 	//       But more annoyingly: we need to fbink_init later to get the proper fb info...
 	//       Thankfully, in most cases, stale info will mostly just mess with positioning,
@@ -1497,6 +1498,9 @@ int
 	//       and that should never happen).
 	// NOTE: To get (hopefully) up to date info, we'll do *one* reinit on the first inotify event we catch.
 	fbink_print(-1, "[KFMon] Successfully initialized. :)", &fbink_config);
+	// NOTE: A cheap trick on my device (H2O), where, when timing is unfortunate (which is often),
+	//       this appears upside down and RTL, is to counteract this via typography alone:
+	//       i.e., "(: ¡IH" will render as "HI! :)"...
 
 	// We pretty much want to loop forever...
 	while (1) {
