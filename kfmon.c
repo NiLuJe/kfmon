@@ -1497,6 +1497,8 @@ int
 	//       (Well, to be perfectly fair, it'd take an utterly broken finfo.smem_len to crash,
 	//       and that should never happen).
 	// NOTE: To get (hopefully) up to date info, we'll do *one* reinit on the first inotify event we catch.
+	// FIXME: Unfortunately, when Nickel has one of our newly watched icons to process, that may still be too early:
+	//        we inherit the pickel rotation state, which is still quirky...
 	fbink_print(-1, "[KFMon] Successfully initialized. :)", &fbink_config);
 	// NOTE: A cheap trick on my device (H2O), where, when timing is unfortunate (which is often),
 	//       this appears upside down and RTL, is to counteract this via typography alone:
