@@ -1219,24 +1219,26 @@ static bool
 				    "!! Failed to match the current inotify event to any of our watched file! !!");
 			}
 
-			// NOTE: Now that, hopefully, we're pretty sure Nickel is up and has finished setting up the fb,
+			// NOTE: Now that, hopefully, we're pretty sure Nickel is up or on its way up,
+			//       and has finished or will soon finish setting up the fb,
 			//       we can reinit FBInk to have up to date information...
 			//       Put everything behind our mutex to be super-safe,
-			//       since we're playing with globals on both ends...
+			//       since we're playing with library globals...
 			//       We do this the least amount of times possible,
 			//       (i.e., once, if every watch has already been processed),
 			//       to keep locking to a minimum.
+			// NOTE: But, we may do it more than once, in fact, we'll re-init on each new event
+			//       until we get a framebuffer state that is no longer quirky
+			//       (i.e., once we're sure we got it from Nickel, and not pickel).
+			//       This is needed because processing is done very early by Nickel for "new" icons when
+			//       they end up on the Home screen straight away,
+			//       (which is a given if you added at most 3 items, with the new Home screen).
+			//       It's problematic for us, because it's early enough that pickel is still running,
+			//       so we inherit its quirky fb setup and not Nickel's...
 			pthread_mutex_lock(&ptlock);
-			// NOTE: Processing is done very early by Nickel for "new" icons,
-			//       provided they end up on the Home screen straight away,
-			//       a given if you added at most 3 items with the new Home screen.
-			//       So early that pickel is still running, meaning we inherit its quirky fb setup.
-			//       So force a re-init until the pending_processing flag is down...
-			//       That'll definitely trigger a few too many reinits, but it's better than the alternative.
-			if (!is_fbink_initialized || pending_processing) {
+			if (fbink_is_quirky()) {
 				// NOTE: It went fine once, assume that'll still be the case and skip error checking...
 				fbink_init(-1, &fbink_config);
-				is_fbink_initialized = true;
 			}
 			pthread_mutex_unlock(&ptlock);
 
@@ -1497,7 +1499,7 @@ int
 	//       This has two downsides:
 	//       this message (as well as a few others in error paths that might trigger before our first inotify event)
 	//       may be slightly broken, although FBInk should now mitigate at least part of this particular issue.
-	//       The exact state might be device and/or timing-specific, and I can't easily replicate it to investigate...
+	//       The exact state might be device and/or timing-specific, and I can't easily replicate it to investigate.
 	//       In any case, it's quickly overriden by on-animator anyway, so no real harm done.
 	//       But more annoyingly: we need to fbink_init later to get the proper fb info...
 	//       Thankfully, in most cases, stale info will mostly just mess with positioning,
