@@ -1236,7 +1236,7 @@ static bool
 			//       It's problematic for us, because it's early enough that pickel is still running,
 			//       so we inherit its quirky fb setup and not Nickel's...
 			pthread_mutex_lock(&ptlock);
-			if (fbink_is_quirky()) {
+			if (fbink_is_fb_quirky()) {
 				// NOTE: It went fine once, assume that'll still be the case and skip error checking...
 				fbink_init(-1, &fbink_config);
 			}
