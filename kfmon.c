@@ -862,6 +862,24 @@ static void
 	PT.spawn_watchids[i] = -1;
 }
 
+// Initializes the FBInk config
+static void
+    init_fbink_config(void)
+{
+	fbink_config.row         = -5;
+	fbink_config.col         = 1;
+	fbink_config.fontmult    = 0U;
+	fbink_config.fontname    = IBM;
+	fbink_config.is_inverted = false;
+	fbink_config.is_flashing = false;
+	fbink_config.is_cleared  = false;
+	fbink_config.is_centered = true;
+	fbink_config.is_padded   = true;
+	fbink_config.is_verbose  = false;
+	// NOTE: For now, we *want* fbink_init's status report logged.
+	fbink_config.is_quiet = false;
+}
+
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
 void*
     reaper_thread(void* ptr)
@@ -1475,18 +1493,7 @@ int
 	init_process_table();
 
 	// Initialize FBInk
-	fbink_config.row         = -5;
-	fbink_config.col         = 1;
-	fbink_config.fontmult    = 0U;
-	fbink_config.fontname    = IBM;
-	fbink_config.is_inverted = false;
-	fbink_config.is_flashing = false;
-	fbink_config.is_cleared  = false;
-	fbink_config.is_centered = true;
-	fbink_config.is_padded   = true;
-	fbink_config.is_verbose  = false;
-	// NOTE: For now, we *want* fbink_init's status report logged.
-	fbink_config.is_quiet = false;
+	init_fbink_config();
 	// Consider not being able to print on screen a hard pass...
 	// (Mostly, it's to avoid blowing up later in fbink_print).
 	if (fbink_init(-1, &fbink_config) != EXIT_SUCCESS) {

@@ -161,6 +161,8 @@ static int      get_next_available_pt_entry(void);
 static void     add_process_to_table(int, pid_t, unsigned int);
 static void     remove_process_from_table(int);
 
+static void init_fbink_config(void);
+
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
 #define CALL_SQLITE(f)                                                                                                 \
 	({                                                                                                             \
