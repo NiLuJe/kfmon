@@ -1508,12 +1508,15 @@ int
 	//       may be slightly broken, although FBInk should now mitigate at least part of this particular issue.
 	//       The exact state might be device and/or timing-specific, and I can't easily replicate it to investigate.
 	//       In any case, it's quickly overriden by on-animator anyway, so no real harm done.
-	//       But more annoyingly: we need to fbink_init later to get the proper fb info...
+	//       But more annoyingly: we need to re-run fbink_init later to get the proper fb info...
 	//       Thankfully, in most cases, stale info will mostly just mess with positioning,
 	//       while completely broken info would only cause the MXCFB ioctl to fail, we wouldn't segfault.
 	//       (Well, to be perfectly fair, it'd take an utterly broken finfo.smem_len to crash,
 	//       and that should never happen).
-	// NOTE: To get (hopefully) up to date info, we'll do *one* reinit on the first inotify event we catch.
+	// NOTE: To get up to date info, we'll reinit on each new inotify event we catch,
+	//       until we get something we can keep (i.e., Nickel's fb setup),
+	//       at which point we'll stop doing those extra init calls,
+	//       because we assume no-one will mess with it again (and no-one should).
 	fbink_print(-1, "[KFMon] Successfully initialized. :)", &fbink_config);
 	// NOTE: A cheap trick on my device (H2O), where, when timing is unfortunate (which is often),
 	//       this appears upside down and RTL, is to counteract this via typography alone:
