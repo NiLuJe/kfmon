@@ -54,7 +54,7 @@
 
 // Fallback version tag...
 #ifndef KFMON_VERSION
-#	define KFMON_VERSION "v1.2.0"
+#	define KFMON_VERSION "v1.2.5"
 #endif
 
 // Do an ifdef check to allow overriding those at compile-time...
