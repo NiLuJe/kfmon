@@ -943,7 +943,7 @@ void*
 			//       within (roughly) a second of being launched,
 			//       assume the exit code is actually inherited from execvp's errno...
 			time_t now = time(NULL);
-			if (exitcode != 0 && difftime(now, then) <= 1) {
+			if (exitcode != 0 && (now - then) <= 1) {
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
 				// NOTE: Even if it's not entirely clear from the manpage, printf's %m *is* thread-safe,
