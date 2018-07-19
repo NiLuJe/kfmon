@@ -408,7 +408,7 @@ static int
 			break;
 	}
 
-	LOG(LOG_WARNING, "Assigned an invalid value (%s) to a key expecting a boolean.", str);
+	LOG(LOG_WARNING, "Assigned an invalid or malformed value (%s) to a key expecting a boolean.", str);
 	return -EINVAL;
 }
 
