@@ -269,11 +269,11 @@ static void
 // Sanitize user input for keys expecting an (unsigned) integer
 // NOTE: Inspired from git's strtoul_ui @ git-compat-util.h
 static int
-    strtoul_ui(const char* str, unsigned int* result)
+    strtoul_hu(const char* str, unsigned short int* result)
 {
 	// NOTE: We want to *reject* negative values (which strtoul does not)!
 	if (strchr(str, '-')) {
-		LOG(LOG_WARNING, "Assigned a negative value (%s) to a key expecting an unsigned int.", str);
+		LOG(LOG_WARNING, "Assigned a negative value (%s) to a key expecting an unsigned short int.", str);
 		return -1;
 	}
 
@@ -289,16 +289,16 @@ static int
 		return -1;
 	}
 
-	// NOTE: It fact, always clamp to INT_MAX, since some of these may end up cast to an int (f.g., db_timeout)
-	if (val > INT_MAX) {
+	// NOTE: It fact, always clamp to SHRT_MAX, since some of these may end up cast to an int (f.g., db_timeout)
+	if (val > SHRT_MAX) {
 		LOG(LOG_WARNING,
-		    "Encountered a value larger than INT_MAX assigned to a key, clamping it down to INT_MAX");
-		val = INT_MAX;
+		    "Encountered a value larger than SHRT_MAX assigned to a key, clamping it down to SHRT_MAX");
+		val = SHRT_MAX;
 	}
 
 	if (endptr == str) {
 		LOG(LOG_WARNING,
-		    "No digits were found in value '%s' assigned to a key expecting an unsigned int.",
+		    "No digits were found in value '%s' assigned to a key expecting an unsigned short int.",
 		    str);
 		return -1;
 	}
@@ -307,7 +307,7 @@ static int
 	// But we do want to enforce the fact that the input really was *only* an integer value.
 	if (*endptr != '\0') {
 		LOG(LOG_WARNING,
-		    "Found trailing characters (%s) behind value '%lu' assigned from string '%s' to a key expecting an unsigned int.",
+		    "Found trailing characters (%s) behind value '%lu' assigned from string '%s' to a key expecting an unsigned short int.",
 		    endptr,
 		    val,
 		    str);
@@ -315,12 +315,12 @@ static int
 	}
 
 	// Make sure there isn't a loss of precision on this arch when casting explictly
-	if ((unsigned int) val != val) {
-		LOG(LOG_WARNING, "Loss of precision when casting value '%lu' to an unsigned int.", val);
+	if ((unsigned short int) val != val) {
+		LOG(LOG_WARNING, "Loss of precision when casting value '%lu' to an unsigned short int.", val);
 		return -1;
 	}
 
-	*result = (unsigned int) val;
+	*result = (unsigned short int) val;
 	return 0;
 }
 
@@ -332,17 +332,17 @@ static int
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	if (MATCH("daemon", "db_timeout")) {
-		if (strtoul_ui(value, &pconfig->db_timeout) < 0) {
+		if (strtoul_hu(value, &pconfig->db_timeout) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for db_timeout!");
 			return 0;
 		}
 	} else if (MATCH("daemon", "use_syslog")) {
-		if (strtoul_ui(value, &pconfig->use_syslog) < 0) {
+		if (strtoul_hu(value, &pconfig->use_syslog) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for use_syslog!");
 			return 0;
 		}
 	} else if (MATCH("daemon", "with_notifications")) {
-		if (strtoul_ui(value, &pconfig->with_notifications) < 0) {
+		if (strtoul_hu(value, &pconfig->with_notifications) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for with_notifications!");
 			return 0;
 		}
@@ -366,12 +366,12 @@ static int
 	} else if (MATCH("watch", "action")) {
 		strncpy(pconfig->action, value, KFMON_PATH_MAX - 1);
 	} else if (MATCH("watch", "skip_db_checks")) {
-		if (strtoul_ui(value, &pconfig->skip_db_checks) < 0) {
+		if (strtoul_hu(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
 			return 0;
 		}
 	} else if (MATCH("watch", "do_db_update")) {
-		if (strtoul_ui(value, &pconfig->do_db_update) < 0) {
+		if (strtoul_hu(value, &pconfig->do_db_update) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for do_db_update!");
 			return 0;
 		}
@@ -382,7 +382,7 @@ static int
 	} else if (MATCH("watch", "db_comment")) {
 		strncpy(pconfig->db_comment, value, DB_SZ_MAX - 1);
 	} else if (MATCH("watch", "block_spawns")) {
-		if (strtoul_ui(value, &pconfig->block_spawns) < 0) {
+		if (strtoul_hu(value, &pconfig->block_spawns) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
 			return 0;
 		}
