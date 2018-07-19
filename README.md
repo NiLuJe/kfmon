@@ -46,7 +46,7 @@ You can also find a config to launch [Plato](https://www.mobileread.com/forums/s
 
 The config files are stored in the */mnt/onboard/*__.adds/kfmon/config__ folder.
 
-KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with two knobs:
+KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with three knobs:
 
 ```db_timeout = 500```, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
 This default value (500ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.
@@ -55,6 +55,8 @@ Note that on current FW versions (i.e., >= 4.6.x), the potential issue behind th
 In any case, you can confirm KFMon's behavior by checking its log, which we'll come to presently.
 
 ```use_syslog = 0```, which dictates whether KFMon logs to a dedicated log file (located in */usr/local/kfmon/kfmon.log*), or to the syslog (which you can access via the *logread* tool on the Kobo). Might be useful if you're paranoid about flash wear. Disabled by default. Be aware that the log file will be trimmed if it grows over 1MB.
+
+```with_notifications = 1```, which dictates whether KFMon will print on-screen feedback messages (via [FBInk](https://github.com/NiLuJe/FBInk)) when an action is launched successfully. Note that error messages will *always* be shown, regardless of this setting.
 
 # How can I add my own actions?
 

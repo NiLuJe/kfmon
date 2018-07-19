@@ -341,6 +341,11 @@ static int
 			LOG(LOG_CRIT, "Passed an invalid value for use_syslog!");
 			return 0;
 		}
+	} else if (MATCH("daemon", "with_notifications")) {
+		if (strtoul_ui(value, &pconfig->with_notifications) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for with_notifications!");
+			return 0;
+		}
 	} else {
 		return 0;    // unknown section/name, error
 	}
@@ -504,10 +509,11 @@ static int
 							rval = -1;
 						} else {
 							LOG(LOG_NOTICE,
-							    "Daemon config loaded from '%s': db_timeout=%u, use_syslog=%u",
+							    "Daemon config loaded from '%s': db_timeout=%u, use_syslog=%u, with_notifications=%u",
 							    p->fts_name,
 							    daemon_config.db_timeout,
-							    daemon_config.use_syslog);
+							    daemon_config.use_syslog,
+							    daemon_config.with_notifications);
 						}
 					} else {
 						// NOTE: Don't blow up when trying to store more watches than we have
@@ -567,7 +573,10 @@ static int
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
-	DBGLOG("Daemon config recap: db_timeout=%u, use_syslog=%u", daemon_config.db_timeout, daemon_config.use_syslog);
+	DBGLOG("Daemon config recap: db_timeout=%u, use_syslog=%u, with_notifications=%u",
+	       daemon_config.db_timeout,
+	       daemon_config.use_syslog,
+	       daemon_config.with_notifications);
 	for (unsigned int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 		DBGLOG(
 		    "Watch config @ index %u recap: filename=%s, action=%s, block_spawns=%u, skip_db_checks=%u, do_db_update=%u, db_title=%s, db_author=%s, db_comment=%s",
@@ -1062,8 +1071,12 @@ static pid_t
 			    watch_config[watch_idx].filename,
 			    watch_config[watch_idx].action,
 			    watch_idx);
-			fbink_printf(
-			    -1, &fbink_config, "[KFMon] Launched %s :)", basename(watch_config[watch_idx].action));
+			if (daemon_config.with_notifications) {
+				fbink_printf(-1,
+					     &fbink_config,
+					     "[KFMon] Launched %s :)",
+					     basename(watch_config[watch_idx].action));
+			}
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread
 			//       for every spawn...
 			//       See #2 for an history of the previous failed attempts...
@@ -1381,7 +1394,7 @@ static bool
 					LOG(LOG_WARNING, "Huh oh... Tripped IN_Q_OVERFLOW for... something?");
 				}
 				// Try to remove the inotify watch we matched
-				// (... hoping matching actually was succesful), and break the loop.
+				// (... hoping matching actually was successful), and break the loop.
 				LOG(LOG_INFO,
 				    "Trying to remove inotify watch for '%s' @ index %u.",
 				    watch_config[watch_idx].filename,
@@ -1517,7 +1530,9 @@ int
 	//       until we get something we can keep (i.e., Nickel's fb setup),
 	//       at which point we'll stop doing those extra init calls,
 	//       because we assume no-one will mess with it again (and no-one should).
-	fbink_print(-1, "[KFMon] Successfully initialized. :)", &fbink_config);
+	if (daemon_config.with_notifications) {
+		fbink_print(-1, "[KFMon] Successfully initialized. :)", &fbink_config);
+	}
 	// NOTE: A cheap trick on my device (H2O), where, when timing is unfortunate (which is often),
 	//       this appears upside down and RTL, is to counteract this via typography alone:
 	//       i.e., "(: ¡IH" will render as "HI! :)"...
