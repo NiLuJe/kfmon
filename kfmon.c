@@ -266,7 +266,7 @@ static void
 	close(mfd);
 }
 
-// Sanitize user input for keys expecting an (unsigned) integer
+// Sanitize user input for keys expecting an unsigned short integer
 // NOTE: Inspired from git's strtoul_ui @ git-compat-util.h
 static int
     strtoul_hu(const char* str, unsigned short int* result)
@@ -274,7 +274,7 @@ static int
 	// NOTE: We want to *reject* negative values (which strtoul does not)!
 	if (strchr(str, '-')) {
 		LOG(LOG_WARNING, "Assigned a negative value (%s) to a key expecting an unsigned short int.", str);
-		return -1;
+		return -EINVAL;
 	}
 
 	// Now that we know it's positive, we can go on with strtoul...
@@ -286,7 +286,7 @@ static int
 
 	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
 		perror("[KFMon] [WARN] strtoul");
-		return -1;
+		return -EINVAL;
 	}
 
 	// NOTE: It fact, always clamp to SHRT_MAX, since some of these may end up cast to an int (f.g., db_timeout)
@@ -300,7 +300,7 @@ static int
 		LOG(LOG_WARNING,
 		    "No digits were found in value '%s' assigned to a key expecting an unsigned short int.",
 		    str);
-		return -1;
+		return -EINVAL;
 	}
 
 	// If we got here, strtoul() successfully parsed at least part of a number.
@@ -311,17 +311,105 @@ static int
 		    endptr,
 		    val,
 		    str);
-		return -1;
+		return -EINVAL;
 	}
 
 	// Make sure there isn't a loss of precision on this arch when casting explictly
 	if ((unsigned short int) val != val) {
 		LOG(LOG_WARNING, "Loss of precision when casting value '%lu' to an unsigned short int.", val);
-		return -1;
+		return -EINVAL;
 	}
 
 	*result = (unsigned short int) val;
-	return 0;
+	return EXIT_SUCCESS;
+}
+
+// Sanitize user input for keys expecting a boolean
+// NOTE: Inspired from Linux's strtobool (tools/lib/string.c) as well as sudo's implementation of the same.
+static int
+    strtobool(const char* str, bool* result)
+{
+	if (!str) {
+		LOG(LOG_WARNING, "Passed an empty value to a key expecting a boolean.");
+		return -EINVAL;
+	}
+
+	switch (str[0]) {
+		case 't':
+		case 'T':
+			if (strcasecmp(str, "true") == 0) {
+				*result = true;
+				return EXIT_SUCCESS;
+			}
+			break;
+		case 'y':
+		case 'Y':
+			if (strcasecmp(str, "yes") == 0) {
+				*result = true;
+				return EXIT_SUCCESS;
+			}
+			break;
+		case '1':
+			if (str[1] == '\0') {
+				*result = true;
+				return EXIT_SUCCESS;
+			}
+			break;
+		case 'f':
+		case 'F':
+			if (strcasecmp(str, "false") == 0) {
+				*result = false;
+				return EXIT_SUCCESS;
+			}
+			break;
+		case 'n':
+		case 'N':
+			switch (str[1]) {
+				case 'o':
+				case 'O':
+					if (str[2] == '\0') {
+						*result = false;
+						return EXIT_SUCCESS;
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case '0':
+			if (str[1] == '\0') {
+				*result = false;
+				return EXIT_SUCCESS;
+			}
+			break;
+		case 'o':
+		case 'O':
+			switch (str[1]) {
+				case 'n':
+				case 'N':
+					if (str[2] == '\0') {
+						*result = true;
+						return EXIT_SUCCESS;
+					}
+					break;
+				case 'f':
+				case 'F':
+					if (str[2] == '\0') {
+						*result = false;
+						return EXIT_SUCCESS;
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		default:
+			// NOTE: *result is zero-initialized, no need to explicitly set it to false
+			break;
+	}
+
+	LOG(LOG_WARNING, "Assigned an invalid value (%s) to a key expecting a boolean.", str);
+	return -EINVAL;
 }
 
 // Handle parsing the main KFMon config
@@ -337,12 +425,12 @@ static int
 			return 0;
 		}
 	} else if (MATCH("daemon", "use_syslog")) {
-		if (strtoul_hu(value, &pconfig->use_syslog) < 0) {
+		if (strtobool(value, &pconfig->use_syslog) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for use_syslog!");
 			return 0;
 		}
 	} else if (MATCH("daemon", "with_notifications")) {
-		if (strtoul_hu(value, &pconfig->with_notifications) < 0) {
+		if (strtobool(value, &pconfig->with_notifications) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for with_notifications!");
 			return 0;
 		}
@@ -366,12 +454,12 @@ static int
 	} else if (MATCH("watch", "action")) {
 		strncpy(pconfig->action, value, KFMON_PATH_MAX - 1);
 	} else if (MATCH("watch", "skip_db_checks")) {
-		if (strtoul_hu(value, &pconfig->skip_db_checks) < 0) {
+		if (strtobool(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
 			return 0;
 		}
 	} else if (MATCH("watch", "do_db_update")) {
-		if (strtoul_hu(value, &pconfig->do_db_update) < 0) {
+		if (strtobool(value, &pconfig->do_db_update) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for do_db_update!");
 			return 0;
 		}
@@ -382,7 +470,7 @@ static int
 	} else if (MATCH("watch", "db_comment")) {
 		strncpy(pconfig->db_comment, value, DB_SZ_MAX - 1);
 	} else if (MATCH("watch", "block_spawns")) {
-		if (strtoul_hu(value, &pconfig->block_spawns) < 0) {
+		if (strtobool(value, &pconfig->block_spawns) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
 			return 0;
 		}
@@ -509,7 +597,7 @@ static int
 							rval = -1;
 						} else {
 							LOG(LOG_NOTICE,
-							    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%hu, with_notifications=%hu",
+							    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%d, with_notifications=%d",
 							    p->fts_name,
 							    daemon_config.db_timeout,
 							    daemon_config.use_syslog,
@@ -538,7 +626,7 @@ static int
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
 								LOG(LOG_NOTICE,
-								    "Watch config @ index %hu loaded from '%s': filename=%s, action=%s, block_spawns=%hu, do_db_update=%hu, db_title=%s, db_author=%s, db_comment=%s",
+								    "Watch config @ index %hu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 								    watch_count,
 								    p->fts_name,
 								    watch_config[watch_count].filename,
@@ -573,13 +661,13 @@ static int
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
-	DBGLOG("Daemon config recap: db_timeout=%hu, use_syslog=%hu, with_notifications=%hu",
+	DBGLOG("Daemon config recap: db_timeout=%hu, use_syslog=%d, with_notifications=%d",
 	       daemon_config.db_timeout,
 	       daemon_config.use_syslog,
 	       daemon_config.with_notifications);
 	for (unsigned short int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hu recap: filename=%s, action=%s, block_spawns=%hu, skip_db_checks=%hu, do_db_update=%hu, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hu recap: filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
 		    watch_config[watch_idx].filename,
 		    watch_config[watch_idx].action,

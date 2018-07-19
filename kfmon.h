@@ -126,23 +126,23 @@
 typedef struct
 {
 	unsigned short int db_timeout;
-	unsigned short int use_syslog;
-	unsigned short int with_notifications;
+	bool               use_syslog;
+	bool               with_notifications;
 } DaemonConfig;
 
 // What a watch config should look like
 typedef struct
 {
-	char               filename[KFMON_PATH_MAX];
-	char               action[KFMON_PATH_MAX];
-	unsigned short int skip_db_checks;
-	unsigned short int do_db_update;
-	char               db_title[DB_SZ_MAX];
-	char               db_author[DB_SZ_MAX];
-	char               db_comment[DB_SZ_MAX];
-	unsigned short int block_spawns;
-	int                inotify_wd;
-	bool               wd_was_destroyed;
+	char filename[KFMON_PATH_MAX];
+	char action[KFMON_PATH_MAX];
+	bool skip_db_checks;
+	bool do_db_update;
+	char db_title[DB_SZ_MAX];
+	char db_author[DB_SZ_MAX];
+	char db_comment[DB_SZ_MAX];
+	bool block_spawns;
+	int  inotify_wd;
+	bool wd_was_destroyed;
 } WatchConfig;
 
 // Hardcode the max amount of watches we handle
@@ -191,6 +191,7 @@ static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
 static int  strtoul_hu(const char*, unsigned short int*);
+static int  strtobool(const char*, bool*);
 static int  daemon_handler(void*, const char*, const char*, const char*);
 static int  watch_handler(void*, const char*, const char*, const char*);
 static bool validate_watch_config(void*);
