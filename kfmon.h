@@ -153,14 +153,14 @@ typedef struct
 // As well as issue #2 for details of past failures w/ a SIGCHLD handler
 struct process_table
 {
-	pid_t spawn_pids[WATCH_MAX];
-	int   spawn_watchids[WATCH_MAX];
+	pid_t     spawn_pids[WATCH_MAX];
+	short int spawn_watchids[WATCH_MAX];
 } PT;
-pthread_mutex_t ptlock = PTHREAD_MUTEX_INITIALIZER;
-static void     init_process_table(void);
-static int      get_next_available_pt_entry(void);
-static void     add_process_to_table(int, pid_t, unsigned int);
-static void     remove_process_from_table(int);
+pthread_mutex_t  ptlock = PTHREAD_MUTEX_INITIALIZER;
+static void      init_process_table(void);
+static short int get_next_available_pt_entry(void);
+static void      add_process_to_table(short int, pid_t, unsigned short int);
+static void      remove_process_from_table(short int);
 
 static void init_fbink_config(void);
 
@@ -196,7 +196,7 @@ static int  watch_handler(void*, const char*, const char*, const char*);
 static bool validate_watch_config(void*);
 static int  load_config(void);
 // Ugly global. Remember how many watches we set up...
-unsigned int watch_count = 0;
+unsigned short int watch_count = 0;
 // Make our config global, because I'm terrible at C.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-braces"
@@ -206,14 +206,14 @@ FBInkConfig            fbink_config            = { 0 };
 #pragma GCC diagnostic push
 
 static unsigned int qhash(const unsigned char*, size_t);
-static bool         is_target_processed(unsigned int, bool);
+static bool         is_target_processed(unsigned short int, bool);
 
 void*        reaper_thread(void*);
-static pid_t spawn(char* const*, unsigned int);
+static pid_t spawn(char* const*, unsigned short int);
 
-static bool  is_watch_already_spawned(unsigned int);
+static bool  is_watch_already_spawned(unsigned short int);
 static bool  is_blocker_running(void);
-static pid_t get_spawn_pid_for_watch(unsigned int);
+static pid_t get_spawn_pid_for_watch(unsigned short int);
 
 static bool handle_events(int);
 
