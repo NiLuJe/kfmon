@@ -943,6 +943,7 @@ void*
 			//       within (roughly) a second of being launched,
 			//       assume the exit code is actually inherited from execvp's errno...
 			time_t now = time(NULL);
+			// NOTE: We should be okay not using difftime on Linux (An Epoch is in UTC, time_t is int64_t).
 			if (exitcode != 0 && (now - then) <= 1) {
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
