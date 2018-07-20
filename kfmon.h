@@ -135,13 +135,13 @@ typedef struct
 {
 	char filename[KFMON_PATH_MAX];
 	char action[KFMON_PATH_MAX];
-	bool skip_db_checks;
-	bool do_db_update;
 	char db_title[DB_SZ_MAX];
 	char db_author[DB_SZ_MAX];
 	char db_comment[DB_SZ_MAX];
-	bool block_spawns;
 	int  inotify_wd;
+	bool skip_db_checks;
+	bool do_db_update;
+	bool block_spawns;
 	bool wd_was_destroyed;
 } WatchConfig;
 
