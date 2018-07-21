@@ -975,6 +975,8 @@ static void
 	fbink_config.is_verbose  = false;
 	// NOTE: For now, we *want* fbink_init's status report logged.
 	fbink_config.is_quiet = false;
+	// No image support in our build anyway, but if there were... ;).
+	fbink_config.ignore_alpha = true;
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
