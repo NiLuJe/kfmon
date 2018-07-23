@@ -186,7 +186,23 @@ sqlite.built:
 	cd sqlite && \
 	../sqlite-export/create-fossil-manifest && \
 	cd ../SQLiteBuild && \
-	env CPPFLAGS="$(CPPFLAGS) -D_REENTRANT=1" ../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) --enable-static --disable-shared --enable-threadsafe --disable-load-extension --disable-readline --disable-tcl --enable-releasemode && \
+	env CPPFLAGS="$(CPPFLAGS) -D_REENTRANT=1 \
+	-DSQLITE_DEFAULT_MEMSTATUS=0 \
+	-DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 \
+	-DSQLITE_MAX_EXPR_DEPTH=0 \
+	-DSQLITE_OMIT_DECLTYPE \
+	-DSQLITE_OMIT_DEPRECATED \
+	-DSQLITE_OMIT_PROGRESS_CALLBACK \
+	-DSQLITE_OMIT_SHARED_CACHE \
+	-DSQLITE_USE_ALLOCA" \
+	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
+	--enable-static \
+	--disable-shared \
+	--enable-threadsafe \
+	--disable-load-extension \
+	--disable-readline \
+	--disable-tcl \
+	--enable-releasemode && \
 	$(MAKE) SHELL_OPT=""
 	touch sqlite.built
 
