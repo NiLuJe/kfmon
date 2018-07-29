@@ -796,13 +796,13 @@ static bool
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
-			unsigned short int thumbnails_num = 0;
+			unsigned short int thumbnails_count = 0;
+			char               thumbnail_path[KFMON_PATH_MAX];
 
 			// Start with the full-size screensaver...
-			char ss_path[KFMON_PATH_MAX];
-			snprintf(ss_path, KFMON_PATH_MAX, "%s/%s - N3_FULL.parsed", images_path, image_id);
-			if (access(ss_path, F_OK) == 0) {
-				thumbnails_num++;
+			snprintf(thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_FULL.parsed", images_path, image_id);
+			if (access(thumbnail_path, F_OK) == 0) {
+				thumbnails_count++;
 			} else {
 				LOG(LOG_INFO, "Full-size screensaver hasn't been parsed yet!");
 			}
@@ -815,25 +815,25 @@ static bool
 			//       And *that* processing triggers a set of OPEN & CLOSE,
 			//       meaning we can quite possibly run on book *exit* that first time,
 			//       (and only that first time), if database locking permits...
-			char tile_path[KFMON_PATH_MAX];
-			snprintf(tile_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
-			if (access(tile_path, F_OK) == 0) {
-				thumbnails_num++;
+			snprintf(
+			    thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
+			if (access(thumbnail_path, F_OK) == 0) {
+				thumbnails_count++;
 			} else {
 				LOG(LOG_INFO, "Homescreen tile hasn't been parsed yet!");
 			}
 
 			// And finally the Library thumbnail...
-			char thumb_path[KFMON_PATH_MAX];
-			snprintf(thumb_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
-			if (access(thumb_path, F_OK) == 0) {
-				thumbnails_num++;
+			snprintf(
+			    thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
+			if (access(thumbnail_path, F_OK) == 0) {
+				thumbnails_count++;
 			} else {
 				LOG(LOG_INFO, "Library thumbnail hasn't been parsed yet!");
 			}
 
 			// Only give a greenlight if we got all three!
-			if (thumbnails_num == 3) {
+			if (thumbnails_count == 3) {
 				is_processed = true;
 			}
 		}
