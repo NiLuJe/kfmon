@@ -720,15 +720,15 @@ static bool
 	// Did the user want to try to update the DB for this icon?
 	bool update = watch_config[watch_idx].do_db_update;
 
-	// NOTE: Open the db in fully serialized threading mode to be extra-safe,
+	// NOTE: Open the db in multi-thread threading mode (we build w/ threadsafe and we don't use sqlite_config),
 	//       and without a shared cache because we have no use for it, we only do SQL from the main thread.
 	if (update) {
 		CALL_SQLITE(open_v2(
-		    KOBO_DB_PATH, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
+		    KOBO_DB_PATH, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
 	} else {
 		// Open the DB ro to be extra-safe...
 		CALL_SQLITE(open_v2(
-		    KOBO_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
+		    KOBO_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
 	}
 
 	// Wait at most for Nms on OPEN & N*2ms on CLOSE if we ever hit a locked database during any of our proceedings.
