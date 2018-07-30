@@ -104,6 +104,7 @@ static int
 	umask(0);
 
 	// Store a copy of stdin, stdout & stderr so we can restore it to our children later on...
+	// NOTE: Hence the + 3 in the two (three w/ use_syslog) following fd tests.
 	orig_stdin  = dup(fileno(stdin));
 	orig_stdout = dup(fileno(stdout));
 	orig_stderr = dup(fileno(stderr));
@@ -239,13 +240,13 @@ static void
 	int           mfd = open("/proc/mounts", O_RDONLY, 0);
 	struct pollfd pfd;
 
-	unsigned short int changes = 0;
-	pfd.fd                     = mfd;
-	pfd.events                 = POLLERR | POLLPRI;
-	pfd.revents                = 0;
+	uint8_t changes = 0;
+	pfd.fd          = mfd;
+	pfd.events      = POLLERR | POLLPRI;
+	pfd.revents     = 0;
 	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
-			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %hu)", changes++);
+			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %hhu)", changes++);
 
 			// Stop polling once we know our mountpoint is available...
 			if (is_target_mounted()) {
@@ -496,8 +497,8 @@ static bool
 	} else {
 		// Make sure we're not trying to set multiple watches on the same file...
 		// (because that would only actually register the first one parsed).
-		unsigned short int watch_idx = 0;
-		unsigned short int matches   = 0;
+		uint8_t watch_idx = 0;
+		uint8_t matches   = 0;
 		for (watch_idx = 0; watch_idx < WATCH_MAX; watch_idx++) {
 			if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
 				matches++;
@@ -626,7 +627,7 @@ static int
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
 								LOG(LOG_NOTICE,
-								    "Watch config @ index %hu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 								    watch_count,
 								    p->fts_name,
 								    watch_config[watch_count].filename,
@@ -665,9 +666,9 @@ static int
 	       daemon_config.db_timeout,
 	       daemon_config.use_syslog,
 	       daemon_config.with_notifications);
-	for (unsigned short int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+	for (uint8_t watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hu recap: filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
 		    watch_config[watch_idx].filename,
 		    watch_config[watch_idx].action,
@@ -702,7 +703,7 @@ static unsigned int
 
 // Check if our target file has been processed by Nickel...
 static bool
-    is_target_processed(unsigned short int watch_idx, bool wait_for_db)
+    is_target_processed(uint8_t watch_idx, bool wait_for_db)
 {
 	sqlite3*      db;
 	sqlite3_stmt* stmt;
@@ -763,8 +764,8 @@ static bool
 
 	sqlite3_finalize(stmt);
 
-	// Now that we know the book exists, we also want to check if the thumbnails do...
-	// to avoid getting triggered from the thumbnail creation.
+	// Now that we know the book exists, we also want to check if the thumbnails do,
+	// to avoid getting triggered from the thumbnail creation...
 	// NOTE: Again, this assumes FW >= 2.9.0
 	if (is_processed) {
 		// Assume they haven't been processed until we can confirm it...
@@ -783,6 +784,9 @@ static bool
 			const unsigned char* image_id = sqlite3_column_text(stmt, 0);
 			size_t               len      = (size_t) sqlite3_column_bytes(stmt, 0);
 
+			// Destroy the SQL statement ASAP
+			sqlite3_finalize(stmt);
+
 			// Then we need the proper hashes Nickel devises...
 			// cf. images_path @
 			// https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L2489
@@ -796,8 +800,8 @@ static bool
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
-			unsigned short int thumbnails_count = 0;
-			char               thumbnail_path[KFMON_PATH_MAX];
+			uint8_t thumbnails_count = 0;
+			char    thumbnail_path[KFMON_PATH_MAX];
 
 			// Start with the full-size screensaver...
 			snprintf(thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_FULL.parsed", images_path, image_id);
@@ -836,9 +840,10 @@ static bool
 			if (thumbnails_count == 3) {
 				is_processed = true;
 			}
+		} else {
+			// Destroy the statement on error, too (we destroyed it early on success).
+			sqlite3_finalize(stmt);
 		}
-
-		sqlite3_finalize(stmt);
 	}
 
 	// NOTE: Here be dragons!
@@ -904,10 +909,10 @@ static bool
 		// NOTE: This assumes the DB was opened with the default journal_mode, DELETE
 		//       This doesn't appear to be the case anymore, on FW >= 4.6.x (and possibly earlier),
 		//       it's now using WAL (which makes sense).
-		unsigned short int count = 0;
+		uint8_t count = 0;
 		while (access(KOBO_DB_PATH "-journal", F_OK) == 0) {
 			LOG(LOG_INFO,
-			    "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %hu) . . .",
+			    "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %hhu) . . .",
 			    count++);
 			nanosleep((const struct timespec[]){ { 0, 500000000L } }, NULL);
 			// NOTE: Don't wait more than 10s
@@ -929,17 +934,17 @@ static bool
 static void
     init_process_table(void)
 {
-	for (unsigned short int i = 0; i < WATCH_MAX; i++) {
+	for (uint8_t i = 0; i < WATCH_MAX; i++) {
 		PT.spawn_pids[i]     = -1;
 		PT.spawn_watchids[i] = -1;
 	}
 }
 
 // Returns the index of the next available entry in the process table.
-static short int
+static int8_t
     get_next_available_pt_entry(void)
 {
-	for (short int i = 0; i < WATCH_MAX; i++) {
+	for (int8_t i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == -1) {
 			return i;
 		}
@@ -949,15 +954,15 @@ static short int
 
 // Adds information about a new spawn to the process table.
 static void
-    add_process_to_table(short int i, pid_t pid, unsigned short int watch_idx)
+    add_process_to_table(int8_t i, pid_t pid, uint8_t watch_idx)
 {
 	PT.spawn_pids[i]     = pid;
-	PT.spawn_watchids[i] = (short int) watch_idx;
+	PT.spawn_watchids[i] = (int8_t) watch_idx;
 }
 
 // Removes information about a spawn from the process table.
 static void
-    remove_process_from_table(short int i)
+    remove_process_from_table(int8_t i)
 {
 	PT.spawn_pids[i]     = -1;
 	PT.spawn_watchids[i] = -1;
@@ -987,13 +992,13 @@ static void
 void*
     reaper_thread(void* ptr)
 {
-	short int i = *((short int*) ptr);
+	int8_t i = *((int8_t*) ptr);
 
 	pid_t tid;
 	tid = (pid_t) syscall(SYS_gettid);
 
-	pid_t     cpid;
-	short int watch_idx;
+	pid_t  cpid;
+	int8_t watch_idx;
 	pthread_mutex_lock(&ptlock);
 	cpid      = PT.spawn_pids[i];
 	watch_idx = PT.spawn_watchids[i];
@@ -1006,7 +1011,7 @@ void*
 	// Remember the current time for the execvp errno/exitcode heuristic...
 	time_t then = time(NULL);
 
-	MTLOG("[%s] [INFO] [TID: %ld] Waiting to reap process %ld (from watch idx %hd) . . .",
+	MTLOG("[%s] [INFO] [TID: %ld] Waiting to reap process %ld (from watch idx %hhd) . . .",
 	      get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 	      (long) tid,
 	      (long) cpid,
@@ -1026,7 +1031,7 @@ void*
 		if (WIFEXITED(wstatus)) {
 			int exitcode = WEXITSTATUS(wstatus);
 			MTLOG(
-			    "[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %hd): It exited with status %d.",
+			    "[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %hhd): It exited with status %d.",
 			    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 			    (long) tid,
 			    (long) cpid,
@@ -1063,7 +1068,7 @@ void*
 			snprintf(
 			    buf,
 			    sizeof(buf),
-			    "[KFMon] [%s] [WARN] [TID: %ld] Reaped process %ld (from watch idx %hd): It was killed by signal %d",
+			    "[KFMon] [%s] [WARN] [TID: %ld] Reaped process %ld (from watch idx %hhd): It was killed by signal %d",
 			    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 			    (long) tid,
 			    (long) cpid,
@@ -1096,7 +1101,7 @@ void*
 // As well as the glibc's system() call,
 // With a bit of added tracking to handle reaping without a SIGCHLD handler.
 static pid_t
-    spawn(char* const* command, unsigned short int watch_idx)
+    spawn(char* const* command, uint8_t watch_idx)
 {
 	pid_t pid;
 
@@ -1133,7 +1138,7 @@ static pid_t
 	} else {
 		// Parent
 		// Keep track of the process
-		short int i;
+		int8_t i;
 		pthread_mutex_lock(&ptlock);
 		i = get_next_available_pt_entry();
 		pthread_mutex_unlock(&ptlock);
@@ -1154,14 +1159,14 @@ static pid_t
 			add_process_to_table(i, pid, watch_idx);
 			pthread_mutex_unlock(&ptlock);
 
-			DBGLOG("Assigned pid %ld (from watch idx %hu) to process table entry idx %hd",
+			DBGLOG("Assigned pid %ld (from watch idx %hhu) to process table entry idx %hhd",
 			       (long) pid,
 			       watch_idx,
 			       i);
 			// NOTE: We can't do that from the child proper, because it's not async-safe,
 			//       so do it from here.
 			LOG(LOG_NOTICE,
-			    "Spawned process %ld (%s -> %s @ watch idx %hu) . . .",
+			    "Spawned process %ld (%s -> %s @ watch idx %hhu) . . .",
 			    (long) pid,
 			    watch_config[watch_idx].filename,
 			    watch_config[watch_idx].action,
@@ -1175,8 +1180,8 @@ static pid_t
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread
 			//       for every spawn...
 			//       See #2 for an history of the previous failed attempts...
-			pthread_t  rthread;
-			short int* arg = malloc(sizeof(*arg));
+			pthread_t rthread;
+			int8_t*   arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
 				LOG(LOG_ERR, "Couldn't allocate memory for thread arg, aborting!");
 				fbink_print(-1, "[KFMon] OOM ?!", &fbink_config);
@@ -1237,11 +1242,11 @@ static pid_t
 
 // Check if a given inotify watch already has a spawn running
 static bool
-    is_watch_already_spawned(unsigned short int watch_idx)
+    is_watch_already_spawned(uint8_t watch_idx)
 {
 	// Walk our process table to see if the given watch currently has a registered running process
-	for (unsigned short int i = 0; i < WATCH_MAX; i++) {
-		if (PT.spawn_watchids[i] == (short int) watch_idx) {
+	for (uint8_t i = 0; i < WATCH_MAX; i++) {
+		if (PT.spawn_watchids[i] == (int8_t) watch_idx) {
 			return true;
 			// NOTE: Assume everything's peachy,
 			//       and we'll never end up with the same watch_idx assigned to multiple indices in the
@@ -1260,11 +1265,11 @@ static bool
     is_blocker_running(void)
 {
 	// Walk our process table to identify watches with a currently running process
-	for (unsigned short int i = 0; i < WATCH_MAX; i++) {
+	for (uint8_t i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] != -1) {
 			// Walk the registered watch list to match that currently running watch to its block_spawns flag
-			for (unsigned short int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
-				if (PT.spawn_watchids[i] == (short int) watch_idx) {
+			for (uint8_t watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+				if (PT.spawn_watchids[i] == (int8_t) watch_idx) {
 					if (watch_config[watch_idx].block_spawns) {
 						return true;
 					}
@@ -1279,10 +1284,10 @@ static bool
 
 // Return the pid of the spawn of a given inotify watch
 static pid_t
-    get_spawn_pid_for_watch(unsigned short int watch_idx)
+    get_spawn_pid_for_watch(uint8_t watch_idx)
 {
-	for (unsigned short int i = 0; i < WATCH_MAX; i++) {
-		if (PT.spawn_watchids[i] == (short int) watch_idx) {
+	for (uint8_t i = 0; i < WATCH_MAX; i++) {
+		if (PT.spawn_watchids[i] == (int8_t) watch_idx) {
 			return PT.spawn_pids[i];
 		}
 	}
@@ -1331,8 +1336,8 @@ static bool
 			// memcpy(&event, &ptr, sizeof(struct inotify_event *));
 
 			// Identify which of our target file we've caught an event for...
-			unsigned short int watch_idx       = 0;
-			bool               found_watch_idx = false;
+			uint8_t watch_idx       = 0;
+			bool    found_watch_idx = false;
 			for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 				if (watch_config[watch_idx].inotify_wd == event->wd) {
 					found_watch_idx = true;
@@ -1413,7 +1418,7 @@ static bool
 					// before launching anything...
 					if (!pending_processing && is_target_processed(watch_idx, true)) {
 						LOG(LOG_INFO,
-						    "Preparing to spawn %s for watch idx %hu . . .",
+						    "Preparing to spawn %s for watch idx %hhu . . .",
 						    watch_config[watch_idx].action,
 						    watch_idx);
 						if (watch_config[watch_idx].block_spawns) {
@@ -1443,7 +1448,7 @@ static bool
 						pthread_mutex_unlock(&ptlock);
 
 						LOG(LOG_INFO,
-						    "As watch idx %hu (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!",
+						    "As watch idx %hhu (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!",
 						    watch_idx,
 						    watch_config[watch_idx].filename,
 						    (long) spid,
@@ -1491,7 +1496,7 @@ static bool
 				// Try to remove the inotify watch we matched
 				// (... hoping matching actually was successful), and break the loop.
 				LOG(LOG_INFO,
-				    "Trying to remove inotify watch for '%s' @ index %hu.",
+				    "Trying to remove inotify watch for '%s' @ index %hhu.",
 				    watch_config[watch_idx].filename,
 				    watch_idx);
 				if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
@@ -1511,7 +1516,7 @@ static bool
 		if (destroyed_wd) {
 			// But before we do that, make sure we've removed *all* our *other* watches first
 			// (again, hoping matching was successful), since we'll be setting them up all again later...
-			for (unsigned short int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+			for (uint8_t watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 				if (!watch_config[watch_idx].wd_was_destroyed) {
 					// Don't do anything if that was because of an unmount...
 					// Because that assures us that everything is/will soon be gone
@@ -1521,7 +1526,7 @@ static bool
 					if (!was_unmounted) {
 						// Log what we're doing...
 						LOG(LOG_INFO,
-						    "Trying to remove inotify watch for '%s' @ index %hu.",
+						    "Trying to remove inotify watch for '%s' @ index %hhu.",
 						    watch_config[watch_idx].filename,
 						    watch_idx);
 						if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
@@ -1546,7 +1551,8 @@ static bool
 int
     main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
-	int           fd, poll_num;
+	int           fd;
+	int           poll_num;
 	struct pollfd pfd;
 
 	// Make sure we're running at a neutral niceness
@@ -1668,7 +1674,7 @@ int
 		//       Relative to the earlier IN_MOVE_SELF mention, that means it'll keep tracking the file with its
 		//           new name (provided it was moved to the *same* fs,
 		//           as crossing a fs boundary will delete the original).
-		for (unsigned short int watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+		for (uint8_t watch_idx = 0; watch_idx < watch_count; watch_idx++) {
 			watch_config[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
@@ -1685,7 +1691,7 @@ int
 				//       during Nickel's processing of said target file ;).
 			}
 			LOG(LOG_NOTICE,
-			    "Setup an inotify watch for '%s' @ index %hu.",
+			    "Setup an inotify watch for '%s' @ index %hhu.",
 			    watch_config[watch_idx].filename,
 			    watch_idx);
 		}
