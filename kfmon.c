@@ -805,6 +805,7 @@ static bool
 
 			// Start with the full-size screensaver...
 			snprintf(thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_FULL.parsed", images_path, image_id);
+			DBGLOG("Checking for full-size screensaver '%s' . . .", thumbnail_path);
 			if (access(thumbnail_path, F_OK) == 0) {
 				thumbnails_count++;
 			} else {
@@ -821,6 +822,7 @@ static bool
 			//       (and only that first time), if database locking permits...
 			snprintf(
 			    thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
+			DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
 			if (access(thumbnail_path, F_OK) == 0) {
 				thumbnails_count++;
 			} else {
@@ -830,6 +832,7 @@ static bool
 			// And finally the Library thumbnail...
 			snprintf(
 			    thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
+			DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
 			if (access(thumbnail_path, F_OK) == 0) {
 				thumbnails_count++;
 			} else {
