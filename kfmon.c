@@ -944,9 +944,9 @@ static void
 static int8_t
     get_next_available_pt_entry(void)
 {
-	for (int8_t i = 0; i < WATCH_MAX; i++) {
+	for (uint8_t i = 0; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == -1) {
-			return i;
+			return (int8_t) i;
 		}
 	}
 	return -1;
@@ -954,7 +954,7 @@ static int8_t
 
 // Adds information about a new spawn to the process table.
 static void
-    add_process_to_table(int8_t i, pid_t pid, uint8_t watch_idx)
+    add_process_to_table(uint8_t i, pid_t pid, uint8_t watch_idx)
 {
 	PT.spawn_pids[i]     = pid;
 	PT.spawn_watchids[i] = (int8_t) watch_idx;
@@ -962,7 +962,7 @@ static void
 
 // Removes information about a spawn from the process table.
 static void
-    remove_process_from_table(int8_t i)
+    remove_process_from_table(uint8_t i)
 {
 	PT.spawn_pids[i]     = -1;
 	PT.spawn_watchids[i] = -1;
@@ -992,16 +992,16 @@ static void
 void*
     reaper_thread(void* ptr)
 {
-	int8_t i = *((int8_t*) ptr);
+	uint8_t i = *((uint8_t*) ptr);
 
 	pid_t tid;
 	tid = (pid_t) syscall(SYS_gettid);
 
-	pid_t  cpid;
-	int8_t watch_idx;
+	pid_t   cpid;
+	uint8_t watch_idx;
 	pthread_mutex_lock(&ptlock);
 	cpid      = PT.spawn_pids[i];
-	watch_idx = PT.spawn_watchids[i];
+	watch_idx = (uint8_t) PT.spawn_watchids[i];
 	pthread_mutex_unlock(&ptlock);
 
 	// Storage needed for get_current_time_r
@@ -1156,7 +1156,7 @@ static pid_t
 			exit(EXIT_FAILURE);
 		} else {
 			pthread_mutex_lock(&ptlock);
-			add_process_to_table(i, pid, watch_idx);
+			add_process_to_table((uint8_t) i, pid, watch_idx);
 			pthread_mutex_unlock(&ptlock);
 
 			DBGLOG("Assigned pid %ld (from watch idx %hhu) to process table entry idx %hhd",
@@ -1181,13 +1181,13 @@ static pid_t
 			//       for every spawn...
 			//       See #2 for an history of the previous failed attempts...
 			pthread_t rthread;
-			int8_t*   arg = malloc(sizeof(*arg));
+			uint8_t*  arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
 				LOG(LOG_ERR, "Couldn't allocate memory for thread arg, aborting!");
 				fbink_print(-1, "[KFMon] OOM ?!", &fbink_config);
 				exit(EXIT_FAILURE);
 			}
-			*arg = i;
+			*arg = (uint8_t) i;
 
 			// NOTE: We will *never* wait for one of these threads to die from the main thread, so,
 			//       start them in detached state

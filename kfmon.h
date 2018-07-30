@@ -155,14 +155,15 @@ typedef struct
 // As well as issue #2 for details of past failures w/ a SIGCHLD handler
 struct process_table
 {
-	pid_t  spawn_pids[WATCH_MAX];
+	pid_t spawn_pids[WATCH_MAX];
+	// NOTE: Needs to be signed because we use -1 as a special value meaning 'available'.
 	int8_t spawn_watchids[WATCH_MAX];
 } PT;
 pthread_mutex_t ptlock = PTHREAD_MUTEX_INITIALIZER;
 static void     init_process_table(void);
 static int8_t   get_next_available_pt_entry(void);
-static void     add_process_to_table(int8_t, pid_t, uint8_t);
-static void     remove_process_from_table(int8_t);
+static void     add_process_to_table(uint8_t, pid_t, uint8_t);
+static void     remove_process_from_table(uint8_t);
 
 static void init_fbink_config(void);
 
