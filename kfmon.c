@@ -780,12 +780,9 @@ static bool
 
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-			DBGLOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
 			const unsigned char* image_id = sqlite3_column_text(stmt, 0);
 			size_t               len      = (size_t) sqlite3_column_bytes(stmt, 0);
-
-			// Destroy the SQL statement ASAP
-			sqlite3_finalize(stmt);
+			DBGLOG("SELECT SQL query returned: %s", image_id);
 
 			// Then we need the proper hashes Nickel devises...
 			// cf. images_path @
@@ -832,7 +829,7 @@ static bool
 			// And finally the Library thumbnail...
 			snprintf(
 			    thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
-			DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
+			DBGLOG("Checking for library thumbnail '%s' . . .", thumbnail_path);
 			if (access(thumbnail_path, F_OK) == 0) {
 				thumbnails_count++;
 			} else {
@@ -843,10 +840,12 @@ static bool
 			if (thumbnails_count == 3) {
 				is_processed = true;
 			}
-		} else {
-			// Destroy the statement on error, too (we destroyed it early on success).
-			sqlite3_finalize(stmt);
 		}
+
+		// NOTE: It's now safe to destroy the statement.
+		//       (We can't do that early in the success branch,
+		//       because we still hold a pointer to a result depending on the statement (image_id))
+		sqlite3_finalize(stmt);
 	}
 
 	// NOTE: Here be dragons!
