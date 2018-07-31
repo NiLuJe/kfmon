@@ -39,14 +39,19 @@ int
 }
 
 int
-    fbink_print(int fbfd __attribute__((unused)), const char* string, const FBInkConfig* fbinkconfig __attribute__((unused)))
+    fbink_print(int                fbfd __attribute__((unused)),
+		const char*        string,
+		const FBInkConfig* fbinkconfig __attribute__((unused)))
 {
 	LOG(LOG_INFO, "FBInk: %s", string);
 	return EXIT_SUCCESS;
 }
 
 int
-    fbink_printf(int fbfd __attribute__((unused)), const FBInkConfig* fbinkconfig __attribute__((unused)), const char* fmt, ...)
+    fbink_printf(int                fbfd __attribute__((unused)),
+		 const FBInkConfig* fbinkconfig __attribute__((unused)),
+		 const char*        fmt,
+		 ...)
 {
 	char buffer[256];
 
@@ -287,12 +292,15 @@ static int
 
 	// NOTE: It fact, always clamp to SHRT_MAX, since some of these may end up cast to an int (f.g., db_timeout)
 	if (val > SHRT_MAX) {
-		LOG(LOG_WARNING, "Encountered a value larger than SHRT_MAX assigned to a key, clamping it down to SHRT_MAX");
+		LOG(LOG_WARNING,
+		    "Encountered a value larger than SHRT_MAX assigned to a key, clamping it down to SHRT_MAX");
 		val = SHRT_MAX;
 	}
 
 	if (endptr == str) {
-		LOG(LOG_WARNING, "No digits were found in value '%s' assigned to a key expecting an unsigned short int.", str);
+		LOG(LOG_WARNING,
+		    "No digits were found in value '%s' assigned to a key expecting an unsigned short int.",
+		    str);
 		return -EINVAL;
 	}
 
@@ -714,12 +722,12 @@ static bool
 	// NOTE: Open the db in multi-thread threading mode (we build w/ threadsafe and we don't use sqlite_config),
 	//       and without a shared cache because we have no use for it, we only do SQL from the main thread.
 	if (update) {
-		CALL_SQLITE(
-		    open_v2(KOBO_DB_PATH, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
+		CALL_SQLITE(open_v2(
+		    KOBO_DB_PATH, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
 	} else {
 		// Open the DB ro to be extra-safe...
-		CALL_SQLITE(
-		    open_v2(KOBO_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
+		CALL_SQLITE(open_v2(
+		    KOBO_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
 	}
 
 	// Wait at most for Nms on OPEN & N*2ms on CLOSE if we ever hit a locked database during any of our proceedings.
@@ -734,8 +742,8 @@ static bool
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book?
 	//       Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
-	CALL_SQLITE(
-	    prepare_v2(db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
+	CALL_SQLITE(prepare_v2(
+	    db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
 
 	// Append the proper URI scheme to our icon path...
 	char book_path[KFMON_PATH_MAX + 7];
@@ -762,8 +770,8 @@ static bool
 		is_processed = false;
 
 		// We'll need the ImageID first...
-		CALL_SQLITE(
-		    prepare_v2(db, "SELECT ImageID FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
+		CALL_SQLITE(prepare_v2(
+		    db, "SELECT ImageID FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
 
 		idx = sqlite3_bind_parameter_index(stmt, "@id");
 		CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
@@ -846,8 +854,8 @@ static bool
 	//       The idea is to, optionally, update the Title, Author & Comment fields to make them more useful...
 	if (is_processed && update) {
 		// Check if the DB has already been updated by checking the title...
-		CALL_SQLITE(
-		    prepare_v2(db, "SELECT Title FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
+		CALL_SQLITE(prepare_v2(
+		    db, "SELECT Title FROM content WHERE ContentID = @id AND ContentType = '6';", -1, &stmt, NULL));
 
 		idx = sqlite3_bind_parameter_index(stmt, "@id");
 		CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
@@ -1133,7 +1141,9 @@ static pid_t
 			//       One of the benefits of the double-fork we do to daemonize is that, on our death,
 			//       our children will get reparented to init, which, by design,
 			//       will handle the reaping automatically.
-			LOG(LOG_ERR, "Failed to find an available entry in our process table for pid %ld, aborting!", (long) pid);
+			LOG(LOG_ERR,
+			    "Failed to find an available entry in our process table for pid %ld, aborting!",
+			    (long) pid);
 			fbink_print(-1, "[KFMon] Can't spawn any more processes!", &fbink_config);
 			exit(EXIT_FAILURE);
 		} else {
@@ -1141,8 +1151,10 @@ static pid_t
 			add_process_to_table((uint8_t) i, pid, watch_idx);
 			pthread_mutex_unlock(&ptlock);
 
-			DBGLOG(
-			    "Assigned pid %ld (from watch idx %hhu) to process table entry idx %hhd", (long) pid, watch_idx, i);
+			DBGLOG("Assigned pid %ld (from watch idx %hhu) to process table entry idx %hhd",
+			       (long) pid,
+			       watch_idx,
+			       i);
 			// NOTE: We can't do that from the child proper, because it's not async-safe,
 			//       so do it from here.
 			LOG(LOG_NOTICE,
@@ -1186,7 +1198,8 @@ static pid_t
 			//       Base it on pointer size, aiming for 1MB on x64 (meaning 512KB on x86/arm).
 			//       Floor it at 512KB to be safe, though.
 			//       In the grand scheme of things, this won't really change much ;).
-			if (pthread_attr_setstacksize(&attr, MAX(1 * 1024 * 1024 / 2, sizeof(void*) * 1024 * 1024 / 8)) != 0) {
+			if (pthread_attr_setstacksize(&attr, MAX(1 * 1024 * 1024 / 2, sizeof(void*) * 1024 * 1024 / 8)) !=
+			    0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
 				fbink_print(-1, "[KFMon] pthread_attr_setstacksize failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
@@ -1323,7 +1336,8 @@ static bool
 			}
 			if (!found_watch_idx) {
 				// NOTE: Err, that should (hopefully) never happen!
-				LOG(LOG_CRIT, "!! Failed to match the current inotify event to any of our watched file! !!");
+				LOG(LOG_CRIT,
+				    "!! Failed to match the current inotify event to any of our watched file! !!");
 			}
 
 			// NOTE: Now that, hopefully, we're pretty sure Nickel is up or on its way up,
@@ -1656,8 +1670,10 @@ int
 			if (watch_config[watch_idx].inotify_wd == -1) {
 				perror("[KFMon] [CRIT] inotify_add_watch");
 				LOG(LOG_ERR, "Cannot watch '%s', aborting!", watch_config[watch_idx].filename);
-				fbink_printf(
-				    -1, &fbink_config, "[KFMon] Failed to watch %s!", basename(watch_config[watch_idx].filename));
+				fbink_printf(-1,
+					     &fbink_config,
+					     "[KFMon] Failed to watch %s!",
+					     basename(watch_config[watch_idx].filename));
 				exit(EXIT_FAILURE);
 				// NOTE: This effectively means we exit when any one of our target file cannot be found,
 				//       which is not a bad thing, per se...
