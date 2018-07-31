@@ -562,7 +562,8 @@ static int
 	int rval = 0;
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
-	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) == NULL) {
+	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
+	    NULL) {
 		perror("[KFMon] [CRIT] fts_open");
 		return -1;
 	}
@@ -578,7 +579,8 @@ static int
 		switch (p->fts_info) {
 			case FTS_F:
 				// Check if it's a .ini and not either an unix hidden file or a Mac resource fork...
-				if (p->fts_namelen > 4 && strncasecmp(p->fts_name + (p->fts_namelen - 4), ".ini", 4) == 0 &&
+				if (p->fts_namelen > 4 &&
+				    strncasecmp(p->fts_name + (p->fts_namelen - 4), ".ini", 4) == 0 &&
 				    strncasecmp(p->fts_name, ".", 1) != 0) {
 					LOG(LOG_INFO, "Trying to load config file '%s' . . .", p->fts_path);
 					// The main config has to be parsed slightly differently...
@@ -790,7 +792,8 @@ static bool
 			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
 
 			char images_path[KFMON_PATH_MAX];
-			snprintf(images_path, KFMON_PATH_MAX, "%s/.kobo-images/%u/%u", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
+			snprintf(
+			    images_path, KFMON_PATH_MAX, "%s/.kobo-images/%u/%u", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
@@ -1027,12 +1030,13 @@ void*
 	} else {
 		if (WIFEXITED(wstatus)) {
 			int exitcode = WEXITSTATUS(wstatus);
-			MTLOG("[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %hhd): It exited with status %d.",
-			      get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
-			      (long) tid,
-			      (long) cpid,
-			      watch_idx,
-			      exitcode);
+			MTLOG(
+			    "[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %hhd): It exited with status %d.",
+			    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
+			    (long) tid,
+			    (long) cpid,
+			    watch_idx,
+			    exitcode);
 			// NOTE: Ugly hack to try to salvage execvp's potential error...
 			//       If the process exited with a non-zero status code,
 			//       within (roughly) a second of being launched,
@@ -1164,8 +1168,10 @@ static pid_t
 			    watch_config[watch_idx].action,
 			    watch_idx);
 			if (daemon_config.with_notifications) {
-				fbink_printf(
-				    -1, &fbink_config, "[KFMon] Launched %s :)", basename(watch_config[watch_idx].action));
+				fbink_printf(-1,
+					     &fbink_config,
+					     "[KFMon] Launched %s :)",
+					     basename(watch_config[watch_idx].action));
 			}
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread
 			//       for every spawn...

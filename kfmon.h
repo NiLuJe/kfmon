@@ -74,27 +74,27 @@
 
 // NOTE: See https://kernelnewbies.org/FAQ/DoWhile0 for the reasoning behind the use of GCC's ({ … }) notation
 // Log everything to stderr (which actually points to our logfile)
-#define LOG(prio, fmt, ...)                                                                                                \
-	({                                                                                                                 \
-		if (daemon_config.use_syslog) {                                                                            \
-			syslog(prio, fmt "\n", ##__VA_ARGS__);                                                             \
-		} else {                                                                                                   \
-			fprintf(stderr,                                                                                    \
-				"[KFMon] [%s] [%s] " fmt "\n",                                                             \
-				get_current_time(),                                                                        \
-				get_log_prefix(prio),                                                                      \
-				##__VA_ARGS__);                                                                            \
-		}                                                                                                          \
+#define LOG(prio, fmt, ...)                                                                                              \
+	({                                                                                                               \
+		if (daemon_config.use_syslog) {                                                                          \
+			syslog(prio, fmt "\n", ##__VA_ARGS__);                                                           \
+		} else {                                                                                                 \
+			fprintf(stderr,                                                                                  \
+				"[KFMon] [%s] [%s] " fmt "\n",                                                           \
+				get_current_time(),                                                                      \
+				get_log_prefix(prio),                                                                    \
+				##__VA_ARGS__);                                                                          \
+		}                                                                                                        \
 	})
 
 // Slight variation without date/time handling to ensure thread safety
-#define MTLOG(fmt, ...)                                                                                                    \
-	({                                                                                                                 \
-		if (daemon_config.use_syslog) {                                                                            \
-			syslog(LOG_NOTICE, fmt "\n", ##__VA_ARGS__);                                                       \
-		} else {                                                                                                   \
-			fprintf(stderr, "[KFMon] " fmt "\n", ##__VA_ARGS__);                                               \
-		}                                                                                                          \
+#define MTLOG(fmt, ...)                                                                                                  \
+	({                                                                                                               \
+		if (daemon_config.use_syslog) {                                                                          \
+			syslog(LOG_NOTICE, fmt "\n", ##__VA_ARGS__);                                                     \
+		} else {                                                                                                 \
+			fprintf(stderr, "[KFMon] " fmt "\n", ##__VA_ARGS__);                                             \
+		}                                                                                                        \
 	})
 
 // Some extra verbose stuff is relegated to DEBUG builds... (c.f., https://stackoverflow.com/questions/1644868)
@@ -103,11 +103,11 @@
 #else
 #	define DEBUG_LOG 0
 #endif
-#define DBGLOG(fmt, ...)                                                                                                   \
-	({                                                                                                                 \
-		if (DEBUG_LOG) {                                                                                           \
-			LOG(LOG_DEBUG, fmt, ##__VA_ARGS__);                                                                \
-		}                                                                                                          \
+#define DBGLOG(fmt, ...)                                                                                                 \
+	({                                                                                                               \
+		if (DEBUG_LOG) {                                                                                         \
+			LOG(LOG_DEBUG, fmt, ##__VA_ARGS__);                                                              \
+		}                                                                                                        \
 	})
 
 // Max length of a text metadata entry in the database (title, author, comment)
@@ -168,14 +168,14 @@ static void     remove_process_from_table(uint8_t);
 static void init_fbink_config(void);
 
 // SQLite macros inspired from http://www.lemoda.net/c/sqlite-insert/ :)
-#define CALL_SQLITE(f)                                                                                                     \
-	({                                                                                                                 \
-		int i;                                                                                                     \
-		i = sqlite3_##f;                                                                                           \
-		if (i != SQLITE_OK) {                                                                                      \
-			LOG(LOG_CRIT, "%s failed with status %d: %s", #f, i, sqlite3_errmsg(db));                          \
-			return is_processed;                                                                               \
-		}                                                                                                          \
+#define CALL_SQLITE(f)                                                                                                   \
+	({                                                                                                               \
+		int i;                                                                                                   \
+		i = sqlite3_##f;                                                                                         \
+		if (i != SQLITE_OK) {                                                                                    \
+			LOG(LOG_CRIT, "%s failed with status %d: %s", #f, i, sqlite3_errmsg(db));                        \
+			return is_processed;                                                                             \
+		}                                                                                                        \
 	})
 
 // Remember stdin/stdout/stderr to restore them in our children
