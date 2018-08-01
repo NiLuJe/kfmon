@@ -497,9 +497,8 @@ static bool
 	} else {
 		// Make sure we're not trying to set multiple watches on the same file...
 		// (because that would only actually register the first one parsed).
-		uint8_t watch_idx = 0;
-		uint8_t matches   = 0;
-		for (watch_idx = 0; watch_idx < WATCH_MAX; watch_idx++) {
+		uint8_t matches = 0;
+		for (uint8_t watch_idx = 0; watch_idx < WATCH_MAX; watch_idx++) {
 			if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
 				matches++;
 			}
@@ -690,9 +689,8 @@ static unsigned int
     qhash(const unsigned char* bytes, size_t length)
 {
 	unsigned int h = 0;
-	unsigned int i;
 
-	for (i = 0; i < length; i++) {
+	for (unsigned int i = 0; i < length; i++) {
 		h = (h << 4) + bytes[i];
 		h ^= (h & 0xf0000000) >> 23;
 		h &= 0x0fffffff;
@@ -1302,7 +1300,6 @@ static bool
 	char                        buf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
 	const struct inotify_event* event;
 	ssize_t                     len;
-	char*                       ptr;
 	bool                        destroyed_wd       = false;
 	bool                        was_unmounted      = false;
 	static bool                 pending_processing = false;
@@ -1325,7 +1322,7 @@ static bool
 		}
 
 		// Loop over all events in the buffer
-		for (ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
+		for (char* ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
 			// NOTE: This trips -Wcast-align on ARM, but should be safe nonetheless ;).
 			event = (const struct inotify_event*) ptr;
 			// NOTE: This *may* be a viable alternative, but don't hold me to that.
