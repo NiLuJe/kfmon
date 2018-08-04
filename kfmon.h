@@ -41,7 +41,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/inotify.h>
-#include <sys/param.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
@@ -71,6 +70,23 @@
 #	define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
 #	define KFMON_CONFIGPATH "/home/niluje/Kindle/Staging/kfmon"
 #endif
+
+// MIN/MAX with no side-effects,
+// c.f., https://gcc.gnu.org/onlinedocs/cpp/Duplication-of-Side-Effects.html#Duplication-of-Side-Effects
+//     & https://dustri.org/b/min-and-max-macro-considered-harmful.html
+#define MIN(X, Y)                                                                                                        \
+	({                                                                                                               \
+		typeof(X) x_ = (X);                                                                                      \
+		typeof(Y) y_ = (Y);                                                                                      \
+		(x_ < y_) ? x_ : y_;                                                                                     \
+	})
+
+#define MAX(X, Y)                                                                                                        \
+	({                                                                                                               \
+		typeof(X) x__ = (X);                                                                                     \
+		typeof(Y) y__ = (Y);                                                                                     \
+		(x__ > y__) ? x__ : y__;                                                                                 \
+	})
 
 // NOTE: See https://kernelnewbies.org/FAQ/DoWhile0 for the reasoning behind the use of GCC's ({ … }) notation
 // Log everything to stderr (which actually points to our logfile)
