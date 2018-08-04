@@ -1206,8 +1206,8 @@ static pid_t
 			//       Base it on pointer size, aiming for 1MB on x64 (meaning 512KB on x86/arm).
 			//       Floor it at 512KB to be safe, though.
 			//       In the grand scheme of things, this won't really change much ;).
-			if (pthread_attr_setstacksize(&attr, MAX(1 * 1024 * 1024 / 2, sizeof(void*) * 1024 * 1024 / 8)) !=
-			    0) {
+			if (pthread_attr_setstacksize(
+				&attr, MAX(1U * 1024U * 1024U / 2U, sizeof(void*) * 1024U * 1024U / 8U)) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setstacksize failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
