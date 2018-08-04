@@ -1207,7 +1207,7 @@ static pid_t
 			//       Floor it at 512KB to be safe, though.
 			//       In the grand scheme of things, this won't really change much ;).
 			if (pthread_attr_setstacksize(
-				&attr, MAX(1U * 1024U * 1024U / 2U, sizeof(void*) * 1024U * 1024U / 8U)) != 0) {
+				&attr, MAX((1U * 1024U * 1024U) / 2U, (sizeof(void*) * 1024U * 1024U) / 8U)) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setstacksize failed ?!", &fbink_config);
 				exit(EXIT_FAILURE);
