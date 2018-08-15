@@ -978,12 +978,15 @@ static void
 	fbink_config.is_flashing = false;
 	fbink_config.is_cleared  = false;
 	fbink_config.is_centered = true;
+	fbink_config.is_halfway  = false;
 	fbink_config.is_padded   = true;
 	fbink_config.is_verbose  = false;
 	// NOTE: For now, we *want* fbink_init's status report logged.
 	fbink_config.is_quiet = false;
-	// No image support in our build anyway, but if there were... ;).
-	fbink_config.ignore_alpha = true;
+	// No image support in our build anyway...
+	fbink_config.ignore_alpha = false;
+	fbink_config.halign       = NONE;
+	fbink_config.valign       = NONE;
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
