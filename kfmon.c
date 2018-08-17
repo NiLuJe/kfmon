@@ -978,6 +978,8 @@ static void
 	fbink_config.is_flashing = false;
 	fbink_config.is_cleared  = false;
 	fbink_config.is_centered = true;
+	fbink_config.hoffset     = 0;
+	fbink_config.voffset     = 0;
 	fbink_config.is_halfway  = false;
 	fbink_config.is_padded   = true;
 	fbink_config.is_verbose  = false;
