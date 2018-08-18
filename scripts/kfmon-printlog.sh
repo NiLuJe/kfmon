@@ -54,11 +54,11 @@ else
 fi
 
 # Everything's okay, feed it to FBInk... (avoiding the first row because it's behind the bezel on my H2O ;p)
-FBINK_ROW="1"
+FBINK_YOFFSET="11"
 if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
-	logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | ${FBINK_BIN} -q -y${FBINK_ROW}
+	logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | ${FBINK_BIN} -q -Y${FBINK_YOFFSET}
 else
-	tail -n ${LOG_LINES} "${KFMON_LOG}" | ${FBINK_BIN} -q -y${FBINK_ROW}
+	tail -n ${LOG_LINES} "${KFMON_LOG}" | ${FBINK_BIN} -q -Y${FBINK_YOFFSET}
 fi
 
 return 0
