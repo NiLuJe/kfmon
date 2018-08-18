@@ -40,7 +40,20 @@ fi
 # Sleep for a bit, so we don't race with Nickel opening the "book"...
 sleep 2
 
-# And feed it to FBInk... (avoiding the first row because it's behind the bezel on my H2O ;p)
+# Check if something wonky happened with our LOG_LINES trickery...
+if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
+	if [ "${LOG_LINES}" -eq "0" ] || [ "$(logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | wc -c)" -eq "0" ] ; then
+		${FBINK_BIN} -q -Mmph "Nothing to print?!"
+		exit 1
+	fi
+else
+	if [ "${LOG_LINES}" -eq "0" ] || [ "$(tail -n ${LOG_LINES} "${KFMON_LOG}" | wc -c)" -gt "0" ] ; then
+		${FBINK_BIN} -q -Mmph "Nothing to print?!"
+		exit 1
+	fi
+fi
+
+# Everything's okay, feed it to FBInk... (avoiding the first row because it's behind the bezel on my H2O ;p)
 FBINK_ROW="1"
 if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
 	logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | ${FBINK_BIN} -q -y${FBINK_ROW}
