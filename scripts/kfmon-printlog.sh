@@ -47,7 +47,7 @@ if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
 		exit 1
 	fi
 else
-	if [ "${LOG_LINES}" -eq "0" ] || [ "$(tail -n ${LOG_LINES} "${KFMON_LOG}" | wc -c)" -gt "0" ] ; then
+	if [ "${LOG_LINES}" -eq "0" ] || [ "$(tail -n ${LOG_LINES} "${KFMON_LOG}" | wc -c)" -eq "0" ] ; then
 		${FBINK_BIN} -q -Mmph "Nothing to print?!"
 		exit 1
 	fi
