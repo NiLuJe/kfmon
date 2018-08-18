@@ -43,9 +43,9 @@ sleep 2
 # And feed it to FBInk... (avoiding the first row because it's behind the bezel on my H2O ;p)
 FBINK_ROW="1"
 if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
-	${FBINK_BIN} -q -y ${FBINK_ROW} "$(logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES})"
+	logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | ${FBINK_BIN} -q -y${FBINK_ROW}
 else
-	${FBINK_BIN} -q -y ${FBINK_ROW} "$(tail -n ${LOG_LINES} "${KFMON_LOG}")"
+	tail -n ${LOG_LINES} "${KFMON_LOG}" | ${FBINK_BIN} -q -y${FBINK_ROW}
 fi
 
 return 0
