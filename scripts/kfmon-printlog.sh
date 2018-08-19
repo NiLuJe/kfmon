@@ -4,6 +4,12 @@
 #
 ##
 
+# As D.Va would say, NERF THIS!
+# NOTE: There's a very good chance chrt won't actually be bundled in the Kobo's busybox, but, meh.
+chrt -b -p 0 $$
+renice -n 5 -p $$
+ionice -c 3 -p $$
+
 # Pickup the FBInk binary we're shipping
 FBINK_BIN="/usr/local/kfmon/bin/fbink"
 # Where's our log?
