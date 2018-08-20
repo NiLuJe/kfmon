@@ -63,6 +63,12 @@ int
 	LOG(LOG_INFO, "FBInk: %s", buffer);
 	return EXIT_SUCCESS;
 }
+
+bool
+    fbink_is_fb_quirky(void)
+{
+	return false;
+}
 #endif
 
 // Because daemon() only appeared in glibc 2.21 (and doesn't double-fork anyway)
