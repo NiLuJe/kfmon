@@ -991,6 +991,7 @@ static void
 	fbink_config.fg_color    = FG_BLACK;
 	fbink_config.bg_color    = BG_WHITE;
 	fbink_config.is_overlay  = false;
+	fbink_config.is_bgless   = false;
 	fbink_config.is_verbose  = false;
 	// NOTE: For now, we *want* fbink_init's status report logged.
 	fbink_config.is_quiet = false;
