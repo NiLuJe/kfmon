@@ -194,7 +194,9 @@ sqlite.built:
 	cd sqlite && \
 	../sqlite-export/create-fossil-manifest && \
 	cd ../SQLiteBuild && \
-	env CPPFLAGS="$(CPPFLAGS) -D_REENTRANT=1 \
+	env CPPFLAGS="$(CPPFLAGS) \
+	-DNDEBUG \
+	-D_REENTRANT=1 \
 	-DSQLITE_DEFAULT_MEMSTATUS=0 \
 	-DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 \
 	-DSQLITE_MAX_EXPR_DEPTH=0 \
@@ -208,6 +210,7 @@ sqlite.built:
 	--disable-shared \
 	--enable-threadsafe \
 	--disable-load-extension \
+	--disable-editline \
 	--disable-readline \
 	--disable-tcl \
 	--enable-releasemode && \
