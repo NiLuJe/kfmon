@@ -95,13 +95,6 @@ LDFLAGS?=-Wl,--as-needed
 ifdef SQLITE
 	EXTRA_CPPFLAGS=-ISQLiteBuild
 	EXTRA_LDFLAGS=-LSQLiteBuild/.libs
-	# Explicitly ask to link libgcc statically, because it *should* be safe (no C++, so no exceptions).
-	# I'm not quite sure why, on Kobo builds, GCC actually wants to pull the shared version in the first place,
-	# since it's only pulling a few conversion/division instrinsics from it...
-	# Anyway, enforce using the static version so we pull our actual GCC builtins,
-	# since we're using a significantly newer version than the Kobo's system...
-	# NOTE: This feels like a terribly stupid idea, GCC probably has a very good reason for pulling the shared version. :D.
-	EXTRA_LDFLAGS+=-static-libgcc
 endif
 
 # And pick up FBInk, too.
