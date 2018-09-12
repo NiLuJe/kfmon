@@ -164,7 +164,7 @@ struct tm*
 char*
     format_localtime(struct tm* lt, char* sz_time, size_t len)
 {
-	// cf. strftime(3) & https://stackoverflow.com/questions/7411301
+	// c.f., strftime(3) & https://stackoverflow.com/questions/7411301
 	strftime(sz_time, len, "%Y-%m-%d @ %H:%M:%S", lt);
 
 	return sz_time;
@@ -219,7 +219,7 @@ const char*
 static bool
     is_target_mounted(void)
 {
-	// cf. http://program-nix.blogspot.fr/2008/08/c-language-check-filesystem-is-mounted.html
+	// c.f., http://program-nix.blogspot.com/2008/08/c-language-check-filesystem-is-mounted.html
 	FILE*          mtab       = NULL;
 	struct mntent* part       = NULL;
 	bool           is_mounted = false;
@@ -242,7 +242,7 @@ static bool
 static void
     wait_for_target_mountpoint(void)
 {
-	// cf. https://stackoverflow.com/questions/5070801
+	// c.f., https://stackoverflow.com/questions/5070801
 	int           mfd = open("/proc/mounts", O_RDONLY, 0);
 	struct pollfd pfd;
 
@@ -689,7 +689,7 @@ static int
 	return rval;
 }
 
-// Implementation of Qt4's QtHash (cf. qhash @
+// Implementation of Qt4's QtHash (c.f., qhash @
 // https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L37)
 static unsigned int
     qhash(const unsigned char* bytes, size_t length)
@@ -789,7 +789,7 @@ static bool
 			DBGLOG("SELECT SQL query returned: %s", image_id);
 
 			// Then we need the proper hashes Nickel devises...
-			// cf. images_path @
+			// c.f., images_path @
 			// https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L2489
 			unsigned int hash = qhash(image_id, len);
 			unsigned int dir1 = hash & (0xff * 1);
