@@ -912,7 +912,7 @@ static bool
 		// If there's a rollback journal for the DB, wait for it to go away...
 		// NOTE: This assumes the DB was opened with the default journal_mode, DELETE
 		//       This doesn't appear to be the case anymore, on FW >= 4.6.x (and possibly earlier),
-		//       it's now using WAL (which makes sense).
+		//       it's now using WAL (which makes sense, and our whole job safer ;)).
 		const struct timespec zzz   = { 0L, 500000000L };
 		uint8_t               count = 0;
 		while (access(KOBO_DB_PATH "-journal", F_OK) == 0) {
