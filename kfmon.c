@@ -913,12 +913,13 @@ static bool
 		// NOTE: This assumes the DB was opened with the default journal_mode, DELETE
 		//       This doesn't appear to be the case anymore, on FW >= 4.6.x (and possibly earlier),
 		//       it's now using WAL (which makes sense).
-		uint8_t count = 0;
+		const struct timespec zzz   = { 0L, 500000000L };
+		uint8_t               count = 0;
 		while (access(KOBO_DB_PATH "-journal", F_OK) == 0) {
 			LOG(LOG_INFO,
 			    "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %hhu) . . .",
 			    count++);
-			nanosleep((const struct timespec[]){ { 0, 500000000L } }, NULL);
+			nanosleep(&zzz, NULL);
 			// NOTE: Don't wait more than 10s
 			if (count >= 20) {
 				LOG(LOG_WARNING,
