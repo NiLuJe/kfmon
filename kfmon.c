@@ -977,30 +977,13 @@ static void
 static void
     init_fbink_config(void)
 {
+	// NOTE: The struct is zero-initialized, so we only tweak what's non-default
+	//       (the defaults are explictly designed to always be 0 for this very purpose).
 	fbink_config.row         = -5;
-	fbink_config.col         = 1;
-	fbink_config.fontmult    = 0U;
-	fbink_config.fontname    = IBM;
-	fbink_config.is_inverted = false;
-	fbink_config.is_flashing = false;
-	fbink_config.is_cleared  = false;
 	fbink_config.is_centered = true;
-	fbink_config.hoffset     = 0;
-	fbink_config.voffset     = 0;
-	fbink_config.is_halfway  = false;
 	fbink_config.is_padded   = true;
-	fbink_config.fg_color    = FG_BLACK;
-	fbink_config.bg_color    = BG_WHITE;
-	fbink_config.is_overlay  = false;
-	fbink_config.is_bgless   = false;
-	fbink_config.no_viewport = false;
-	fbink_config.is_verbose  = false;
-	// NOTE: For now, we *want* fbink_init's status report logged.
-	fbink_config.is_quiet = false;
-	// No image support in our build anyway...
-	fbink_config.ignore_alpha = false;
-	fbink_config.halign       = NONE;
-	fbink_config.valign       = NONE;
+	// NOTE: For now, we *want* fbink_init's status report logged, so we leave this disabled.
+	// fbink_config.is_quiet = false;
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
