@@ -108,7 +108,7 @@ Optionally, you might also want to restore a vanilla version of ```/etc/init.d/o
 
 # Things to watch out for
 
-* KFMon will abort if any of the watched files cannot be found when it starts up. It will also abort at runtime if any of the watched files is deleted.
+* KFMon will abort if any of the watched files cannot be found when it starts up. It will also abort at runtime if any of the watched files are deleted.
 * KFMon will only parse config files at boot.
   * Meaning you will need to reboot your device after adding new config files or modifying or removing existing ones ;).
   * If it's a new config file, try to make sure it points to a file that has already been processed by Nickel (after an USBMS plug/eject session, for instance) to save you some puzzlement ;).
