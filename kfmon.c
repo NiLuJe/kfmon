@@ -64,10 +64,10 @@ int
 	return EXIT_SUCCESS;
 }
 
-bool
-    fbink_is_fb_quirky(void)
+int
+    fbink_reinit(int fbfd __attribute__((unused)), const FBInkConfig* fbinkconfig __attribute__((unused)))
 {
-	return false;
+	return EXIT_SUCCESS;
 }
 #endif
 
@@ -1364,10 +1364,8 @@ static bool
 			//       It's problematic for us, because it's early enough that pickel is still running,
 			//       so we inherit its quirky fb setup and not Nickel's...
 			pthread_mutex_lock(&ptlock);
-			if (fbink_is_fb_quirky()) {
-				// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-				fbink_init(FBFD_AUTO, &fbink_config);
-			}
+			// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+			fbink_reinit(FBFD_AUTO, &fbink_config);
 			pthread_mutex_unlock(&ptlock);
 
 			// Print event type
