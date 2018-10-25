@@ -1610,14 +1610,17 @@ int
 		exit(EXIT_FAILURE);
 	}
 
-	// NOTE: Because of course we can't have nice things, at this point, Nickel hasn't finished setting up the fb
-	//       to its liking. On most devices, the fb is probably in a weird rotation and/or bitdepth at this point.
+	// NOTE: Because of course we can't have nice things, at this point,
+	//       Nickel hasn't finished setting up the fb to its liking.
+	//       On most devices, the fb is probably in a weird rotation and/or bitdepth at this point.
 	//       This has two downsides:
 	//       this message (as well as a few others in error paths that might trigger before our first inotify event)
-	//       may be slightly broken, although FBInk should now mitigate most, if not all, aspects of this particular
-	//       issue. But more annoyingly: this means we need to later make sure we have up to date fb info, an issue we
-	//       handle via fbink_reinit's heuristics ;). Thankfully, in most cases, stale info will mostly just mess with
-	//       positioning, while completely broken info would only cause the MXCFB ioctl to fail, we wouldn't segfault.
+	//       may be slightly broken (meaning badly rotated or positioned),
+	//       although FBInk should now mitigate most, if not all, aspects of this particular issue.
+	//       But more annoyingly: this means we need to later make sure we have up to date fb info,
+	//       an issue we handle via fbink_reinit's heuristics ;).
+	//       Thankfully, in most cases, stale info will mostly just mess with positioning,
+	//       while completely broken info would only cause the MXCFB ioctl to fail, we wouldn't segfault.
 	//       (Well, to be perfectly fair, it'd take an utterly broken finfo.smem_len to crash,
 	//       and that should never happen).
 	// NOTE: To get up to date info, we'll reinit on each new inotify event we catch,
