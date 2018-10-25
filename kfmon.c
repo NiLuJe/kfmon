@@ -984,6 +984,7 @@ static void
 	fbink_config.is_padded   = true;
 	// NOTE: For now, we *want* fbink_init's status report logged, so we leave this disabled.
 	// fbink_config.is_quiet = false;
+	fbink_config.is_cleared = true;
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
