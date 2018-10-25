@@ -1611,7 +1611,7 @@ int
 	}
 
 	// NOTE: Because of course we can't have nice things, at this point,
-	//       Nickel hasn't finished setting up the fb to its liking.
+	//       Nickel hasn't finished setting up the fb to its liking. To be fair, it hasn't even started yet ;).
 	//       On most devices, the fb is probably in a weird rotation and/or bitdepth at this point.
 	//       This has two downsides:
 	//       this message (as well as a few others in error paths that might trigger before our first inotify event)
