@@ -1614,12 +1614,10 @@ int
 	//       to its liking. On most devices, the fb is probably in a weird rotation and/or bitdepth at this point.
 	//       This has two downsides:
 	//       this message (as well as a few others in error paths that might trigger before our first inotify event)
-	//       may be slightly broken, although FBInk should now mitigate at least part of this particular issue.
-	//       The exact state might be device and/or timing-specific, and I can't easily replicate it to investigate.
-	//       In any case, it's quickly overriden by on-animator anyway, so no real harm done.
-	//       But more annoyingly: we need to re-run fbink_init later to get the proper fb info...
-	//       Thankfully, in most cases, stale info will mostly just mess with positioning,
-	//       while completely broken info would only cause the MXCFB ioctl to fail, we wouldn't segfault.
+	//       may be slightly broken, although FBInk should now mitigate most, if not all, aspects of this particular
+	//       issue. But more annoyingly: this means we need to later make sure we have up to date fb info, an issue we
+	//       handle via fbink_reinit's heuristics ;). Thankfully, in most cases, stale info will mostly just mess with
+	//       positioning, while completely broken info would only cause the MXCFB ioctl to fail, we wouldn't segfault.
 	//       (Well, to be perfectly fair, it'd take an utterly broken finfo.smem_len to crash,
 	//       and that should never happen).
 	// NOTE: To get up to date info, we'll reinit on each new inotify event we catch,
@@ -1629,9 +1627,6 @@ int
 	if (daemon_config.with_notifications) {
 		fbink_print(FBFD_AUTO, "[KFMon] Successfully initialized. :)", &fbink_config);
 	}
-	// NOTE: A cheap trick on my device (H2O), where, when timing is unfortunate (which is often),
-	//       this appears upside down and RTL, is to counteract this via typography alone:
-	//       i.e., "(: ¡IH" will render as "HI! :)"...
 
 	// We pretty much want to loop forever...
 	while (1) {
