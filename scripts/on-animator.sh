@@ -10,7 +10,8 @@ if ! pkill -0 kfmon ; then
 	KFMON_BIN="/usr/local/kfmon/bin/kfmon"
 	if [ -x "${KFMON_BIN}" ] ; then
 		LIBC_FATAL_STDERR_=1 "${KFMON_BIN}" &
-		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Launched KFMon! (PID: $!)" >> "${KFMON_LOG}"
+		# NOTE: The PID shown here is not terribly helpful, since the first thing KFMon will do will be to fork twice to daemonize...
+		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Launched KFMon! (Initial PID: $!)" >> "${KFMON_LOG}"
 	else
 		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [ERR!] [PID: $$] KFMon binary '${KFMON_BIN}' cannot be executed!" >> "${KFMON_LOG}"
 	fi
