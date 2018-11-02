@@ -4,9 +4,18 @@ PRODUCT=`/bin/sh /bin/kobo_config.sh`;
 [ $PRODUCT != trilogy ] && PREFIX=$PRODUCT-
 
 # Launch KFMon if it isn't already running...
+KFMON_LOG="/usr/local/kfmon/kfmon.log"
 if ! pkill -0 kfmon ; then
-        KFMON_BIN="/usr/local/kfmon/bin/kfmon"
-        [ -x "${KFMON_BIN}" ] && LIBC_FATAL_STDERR_=1 "${KFMON_BIN}" &
+	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Starting KFMon . . ." >> "${KFMON_LOG}"
+	KFMON_BIN="/usr/local/kfmon/bin/kfmon"
+	if [ -x "${KFMON_BIN}" ] ; then
+		LIBC_FATAL_STDERR_=1 "${KFMON_BIN}" &
+		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Launched KFMon! (PID: $!)" >> "${KFMON_LOG}"
+	else
+		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [ERR!] [PID: $$] KFMon binary '${KFMON_BIN}' cannot be executed!" >> "${KFMON_LOG}"
+	fi
+else
+	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] KFMon is already running!" >> "${KFMON_LOG}"
 fi
 
 i=0;
