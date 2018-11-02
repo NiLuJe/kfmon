@@ -117,22 +117,28 @@ LIBS+=-lpthread
 
 ##
 # Now that we're done fiddling with flags, let's build stuff!
-SRCS=kfmon.c inih/ini.c
+SRCS=kfmon.c
+# Jump through a few hoops to be able to silence warnings on third-party code only
+INIH_SRCS=inih/ini.c
 
 default: all
 
 OBJS:=$(SRCS:%.c=$(OUT_DIR)/%.o)
+INIH_OBJS:=$(INIH_SRCS:%.c=$(OUT_DIR)/%.o)
+
+# And now we can silence a few inih-specific warnings
+$(INIH_OBJS): QUIET_CFLAGS := -Wno-cast-qual
 
 $(OUT_DIR)/%.o: %.c
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(QUIET_CFLAGS) -o $@ -c $<
 
 outdir:
 	mkdir -p $(OUT_DIR)/inih
 
 all: outdir kfmon
 
-kfmon: $(OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(LIBS)
+kfmon: $(OBJS) $(INIH_OBJS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(LIBS)
 
 strip: all
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon
