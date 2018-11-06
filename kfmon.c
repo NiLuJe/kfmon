@@ -48,9 +48,10 @@ int
 }
 
 int
-    fbink_printf(int                fbfd __attribute__((unused)),
-		 const FBInkConfig* fbinkconfig __attribute__((unused)),
-		 const char*        fmt,
+    fbink_printf(int                  fbfd __attribute__((unused)),
+		 const FBInkOTConfig* fbinkotconfig __attribute__((unused)),
+		 const FBInkConfig*   fbinkconfig __attribute__((unused)),
+		 const char*          fmt,
 		 ...)
 {
 	char buffer[256];
@@ -1054,6 +1055,7 @@ void*
 				    (long) tid,
 				    sz_error);
 				fbink_printf(FBFD_AUTO,
+					     NULL,
 					     &fbink_config,
 					     "[KFMon] PID %ld exited unexpectedly: %d!",
 					     (long) cpid,
@@ -1072,8 +1074,12 @@ void*
 			    (long) cpid,
 			    watch_idx,
 			    sigcode);
-			fbink_printf(
-			    FBFD_AUTO, &fbink_config, "[KFMon] PID %ld was killed by signal %d!", (long) cpid, sigcode);
+			fbink_printf(FBFD_AUTO,
+				     NULL,
+				     &fbink_config,
+				     "[KFMon] PID %ld was killed by signal %d!",
+				     (long) cpid,
+				     sigcode);
 			if (daemon_config.use_syslog) {
 				// NOTE: No strsignal means no human-readable interpretation of the signal w/ syslog
 				//       (the %m token only works for errno)...
@@ -1171,6 +1177,7 @@ static pid_t
 			    watch_idx);
 			if (daemon_config.with_notifications) {
 				fbink_printf(FBFD_AUTO,
+					     NULL,
 					     &fbink_config,
 					     "[KFMon] Launched %s :)",
 					     basename(watch_config[watch_idx].action));
@@ -1432,6 +1439,7 @@ static bool
 						    "Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.",
 						    watch_config[watch_idx].filename);
 						fbink_printf(FBFD_AUTO,
+							     NULL,
 							     &fbink_config,
 							     "[KFMon] Not spawning %s: still processing!",
 							     basename(watch_config[watch_idx].action));
@@ -1452,6 +1460,7 @@ static bool
 						    (long) spid,
 						    watch_config[watch_idx].action);
 						fbink_printf(FBFD_AUTO,
+							     NULL,
 							     &fbink_config,
 							     "[KFMon] Not spawning %s: still running!",
 							     basename(watch_config[watch_idx].action));
@@ -1459,6 +1468,7 @@ static bool
 						LOG(LOG_INFO,
 						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
 						fbink_printf(FBFD_AUTO,
+							     NULL,
 							     &fbink_config,
 							     "[KFMon] Not spawning %s: blocked!",
 							     basename(watch_config[watch_idx].action));
@@ -1677,6 +1687,7 @@ int
 				perror("[KFMon] [CRIT] inotify_add_watch");
 				LOG(LOG_ERR, "Cannot watch '%s', aborting!", watch_config[watch_idx].filename);
 				fbink_printf(FBFD_AUTO,
+					     NULL,
 					     &fbink_config,
 					     "[KFMon] Failed to watch %s!",
 					     basename(watch_config[watch_idx].filename));
