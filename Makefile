@@ -137,7 +137,8 @@ outdir:
 
 all: outdir kfmon
 
-vendored: outdir sqlite.built fbink.built kfmon
+vendored: outdir sqlite.built fbink.built
+	$(MAKE) kfmon SQLITE=true
 
 kfmon: $(OBJS) $(INIH_OBJS)
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(LIBS)
