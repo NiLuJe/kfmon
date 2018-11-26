@@ -121,7 +121,7 @@ SRCS=kfmon.c
 # Jump through a few hoops to be able to silence warnings on third-party code only
 INIH_SRCS=inih/ini.c
 
-default: all
+default: vendored
 
 OBJS:=$(SRCS:%.c=$(OUT_DIR)/%.o)
 INIH_OBJS:=$(INIH_SRCS:%.c=$(OUT_DIR)/%.o)
@@ -135,7 +135,9 @@ $(OUT_DIR)/%.o: %.c
 outdir:
 	mkdir -p $(OUT_DIR)/inih
 
-all: outdir fbink.built kfmon
+all: outdir kfmon
+
+vendored: outdir sqlite.built fbink.built kfmon
 
 kfmon: $(OBJS) $(INIH_OBJS)
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(LIBS)
@@ -240,4 +242,4 @@ distclean: clean fbinkclean
 	rm -rf sqlite.built
 	rm -rf fbink.built
 
-.PHONY: default outdir all kfmon strip kobo debug niluje nilujed clean release fbinkclean distclean
+.PHONY: default outdir all vendored kfmon strip kobo debug niluje nilujed clean release fbinkclean distclean
