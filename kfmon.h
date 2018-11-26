@@ -174,7 +174,7 @@ struct process_table
 	pid_t spawn_pids[WATCH_MAX];
 	// NOTE: Needs to be signed because we use -1 as a special value meaning 'available'.
 	int8_t spawn_watchids[WATCH_MAX];
-} PT;
+} PT;    // lgtm [cpp/short-global-name]
 pthread_mutex_t ptlock = PTHREAD_MUTEX_INITIALIZER;
 static void     init_process_table(void);
 static int8_t   get_next_available_pt_entry(void);
