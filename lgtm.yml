@@ -1,0 +1,8 @@
+# Tag our third-party code as such
+path_classifiers:
+        library:
+                - "sqlite-export/"
+                - "sqlite/"
+                - "inih/"
+                - "FBInk/"
+
