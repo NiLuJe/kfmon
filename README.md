@@ -1,4 +1,6 @@
 # KFMon
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/NiLuJe/kfmon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NiLuJe/kfmon/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/NiLuJe/kfmon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NiLuJe/kfmon/context:cpp)
+
 Kute File Monitor
 
 Licensed under the [AGPLv3](/LICENSE).
