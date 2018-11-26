@@ -135,7 +135,7 @@ $(OUT_DIR)/%.o: %.c
 outdir:
 	mkdir -p $(OUT_DIR)/inih
 
-all: outdir kfmon
+all: outdir fbink.built kfmon
 
 kfmon: $(OBJS) $(INIH_OBJS)
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(LIBS)
