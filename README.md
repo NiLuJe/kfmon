@@ -1,5 +1,5 @@
 # KFMon
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/NiLuJe/kfmon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NiLuJe/kfmon/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/NiLuJe/kfmon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NiLuJe/kfmon/context:cpp)
+![License](https://img.shields.io/github/license/NiLuJe/kfmon.svg) [![Total alerts](https://img.shields.io/lgtm/alerts/g/NiLuJe/kfmon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NiLuJe/kfmon/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/NiLuJe/kfmon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NiLuJe/kfmon/context:cpp) ![Latest tag](https://img.shields.io/github/tag-date/NiLuJe/kfmon.svg)
 
 Kute File Monitor
 
