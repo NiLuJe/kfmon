@@ -108,7 +108,9 @@ static int
 		return -1;
 	}
 
-	umask(0);
+	// Make sure we keep honoring rcS's umask
+	// Flawfinder: ignore
+	umask(022);
 
 	// Store a copy of stdin, stdout & stderr so we can restore it to our children later on...
 	// NOTE: Hence the + 3 in the two (three w/ use_syslog) following fd tests.
@@ -253,7 +255,7 @@ static void
 	pfd.revents     = 0;
 	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
-			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %hhu)", changes++);
+			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %hhu)", (uint8_t) changes++);
 
 			// Stop polling once we know our mountpoint is available...
 			if (is_target_mounted()) {
