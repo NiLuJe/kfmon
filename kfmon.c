@@ -1319,7 +1319,7 @@ static bool
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
 		// Read some events.
-		ssize_t len = read(fd, buf, sizeof buf);
+		ssize_t len = read(fd, buf, sizeof(buf));
 		if (len == -1 && errno != EAGAIN) {
 			perror("[KFMon] [ERR!] Aborting: read");
 			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbink_config);
