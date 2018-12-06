@@ -921,7 +921,7 @@ static bool
 		while (access(KOBO_DB_PATH "-journal", F_OK) == 0) {
 			LOG(LOG_INFO,
 			    "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %hhu) . . .",
-			    count++);
+			    (uint8_t) count++);
 			nanosleep(&zzz, NULL);
 			// NOTE: Don't wait more than 10s
 			if (count >= 20) {
