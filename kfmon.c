@@ -1312,7 +1312,6 @@ static bool
 	// should have the same alignment as struct inotify_event.
 	char                        buf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
 	const struct inotify_event* event;
-	ssize_t                     len;
 	bool                        destroyed_wd       = false;
 	bool                        was_unmounted      = false;
 	static bool                 pending_processing = false;
@@ -1320,7 +1319,7 @@ static bool
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
 		// Read some events.
-		len = read(fd, buf, sizeof buf);
+		ssize_t len = read(fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
 			perror("[KFMon] [ERR!] Aborting: read");
 			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbink_config);
