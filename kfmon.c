@@ -460,9 +460,9 @@ static int
 	// NOTE: Crappy strncpy() usage, but those char arrays are zeroed first
 	//       (hence the MAX-1 len to ensure that we're NULL terminated)...
 	if (MATCH("watch", "filename")) {
-		strncpy(pconfig->filename, value, KFMON_PATH_MAX - 1);
+		strncpy(pconfig->filename, value, KFMON_PATH_MAX - 1);    // Flawfinder: ignore
 	} else if (MATCH("watch", "action")) {
-		strncpy(pconfig->action, value, KFMON_PATH_MAX - 1);
+		strncpy(pconfig->action, value, KFMON_PATH_MAX - 1);    // Flawfinder: ignore
 	} else if (MATCH("watch", "skip_db_checks")) {
 		if (strtobool(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
@@ -474,11 +474,11 @@ static int
 			return 0;
 		}
 	} else if (MATCH("watch", "db_title")) {
-		strncpy(pconfig->db_title, value, DB_SZ_MAX - 1);
+		strncpy(pconfig->db_title, value, DB_SZ_MAX - 1);    // Flawfinder: ignore
 	} else if (MATCH("watch", "db_author")) {
-		strncpy(pconfig->db_author, value, DB_SZ_MAX - 1);
+		strncpy(pconfig->db_author, value, DB_SZ_MAX - 1);    // Flawfinder: ignore
 	} else if (MATCH("watch", "db_comment")) {
-		strncpy(pconfig->db_comment, value, DB_SZ_MAX - 1);
+		strncpy(pconfig->db_comment, value, DB_SZ_MAX - 1);    // Flawfinder: ignore
 	} else if (MATCH("watch", "block_spawns")) {
 		if (strtobool(value, &pconfig->block_spawns) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
