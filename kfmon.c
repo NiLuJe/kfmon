@@ -109,8 +109,7 @@ static int
 	}
 
 	// Make sure we keep honoring rcS's umask
-	// Flawfinder: ignore
-	umask(022);
+	umask(022);    // Flawfinder: ignore
 
 	// Store a copy of stdin, stdout & stderr so we can restore it to our children later on...
 	// NOTE: Hence the + 3 in the two (three w/ use_syslog) following fd tests.
@@ -1319,7 +1318,7 @@ static bool
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
 		// Read some events.
-		ssize_t len = read(fd, buf, sizeof(buf));
+		ssize_t len = read(fd, buf, sizeof(buf));    // Flawfinder: ignore
 		if (len == -1 && errno != EAGAIN) {
 			perror("[KFMon] [ERR!] Aborting: read");
 			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbink_config);
