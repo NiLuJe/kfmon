@@ -1012,7 +1012,7 @@ void*
 	// Remember the current time for the execvp errno/exitcode heuristic...
 	time_t then = time(NULL);
 
-	MTLOG("[%s] [INFO] [TID: %ld] Waiting to reap process %ld (from watch idx %hhd) . . .",
+	MTLOG("[%s] [INFO] [TID: %ld] Waiting to reap process %ld (from watch idx %hhu) . . .",
 	      get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 	      (long) tid,
 	      (long) cpid,
@@ -1032,7 +1032,7 @@ void*
 		if (WIFEXITED(wstatus)) {
 			int exitcode = WEXITSTATUS(wstatus);
 			MTLOG(
-			    "[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %hhd): It exited with status %d.",
+			    "[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %hhu): It exited with status %d.",
 			    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 			    (long) tid,
 			    (long) cpid,
@@ -1070,7 +1070,7 @@ void*
 			snprintf(
 			    buf,
 			    sizeof(buf),
-			    "[KFMon] [%s] [WARN] [TID: %ld] Reaped process %ld (from watch idx %hhd): It was killed by signal %d",
+			    "[KFMon] [%s] [WARN] [TID: %ld] Reaped process %ld (from watch idx %hhu): It was killed by signal %d",
 			    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 			    (long) tid,
 			    (long) cpid,
