@@ -195,6 +195,7 @@ sqlite.built:
 	mkdir -p SQLiteBuild
 	cd sqlite && \
 	../sqlite-export/create-fossil-manifest && \
+	autoreconf -fi && \
 	cd ../SQLiteBuild && \
 	env CPPFLAGS="$(CPPFLAGS) \
 	-DNDEBUG \
