@@ -117,22 +117,18 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
     -   If you delete one of the files being watched, don't forget to delete the matching config file, and then to reboot your device!
 -   Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
     -   Good news: If your FW version is recent enough to feature the new Homescreen, there's a good chance things will work in a more logical fashion (because the last few files added now automatically pop up on the Home page) ;).
--   KFMon only expects to watch for files in the internal storage of the device (i.e., *onboard*). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).  
-  
+-   KFMon only expects to watch for files in the internal storage of the device (i.e., *onboard*). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).
   
 -   Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1735).
     -   A far as for successfully restarting nickel on exit is concerned, I'd also recommend running a current FW version (last tested on FW 4.7.x - 4.9.x).
--   When either KOReader or Plato is launched *through KFMon*, **nothing** will be allowed to spawn while that document reader is still running. This is to prevent spurious events that may be triggered by their file manager.  
-  
+-   When either KOReader or Plato is launched *through KFMon*, **nothing** will be allowed to spawn while that document reader is still running. This is to prevent spurious events that may be triggered by their file manager.
   
 -   PSA about the proper syntax expected in an INI file: while the `;` character indeed marks the beginning of an inline comment, it must be preceded by some kind of whitespace to actually register as a comment. Otherwise, it's assumed to be part of the value.
     -   Meaning `key=value;` will probably not work as you might expect (it'll parse as `key` set to `value;` and not `value`).
     -   On a related note, a line cannot exceed 200 bytes. If the log reports a parsing error on a seemingly benign line, but one which happens to feature a humonguous amount of inline comments, that may very well be the reason ;).
-    -   If the log reports a parsing error at (or near, depending on commented lines) the top of the config file, check that you haven't forgotten the `[watch]` section name ;).  
+    -   If the log reports a parsing error at (or near, depending on commented lines) the top of the config file, check that you haven't forgotten the `[watch]` section name ;).
   
-  
--   You will most likely have to reinstall KFMon after a firmware update (since most FW update packages ship the vanilla version of the startup script patched to launch KFMon).  
-  
+-   You will most likely have to reinstall KFMon after a firmware update (since most FW update packages ship the vanilla version of the startup script patched to launch KFMon).
   
 -   Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/2e46feb4c27e9393771d7deefa9a790ba875a424/kfmon.h#L148) file watches. Ping me if that's not enough for you ;).  
   
