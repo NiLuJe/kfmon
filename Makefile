@@ -146,10 +146,12 @@ kfmon: $(OBJS) $(INIH_OBJS)
 strip: all
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon
 
-kobo: release
+armcheck:
 ifeq (,$(findstring arm-,$(CC)))
 	$(error You forgot to setup a cross TC, you dummy!)
-else
+endif
+
+kobo: armcheck release
 	mkdir -p Kobo/usr/local/kfmon/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
 	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
 	ln -sf $(CURDIR)/scripts/uninstall/kfmon-uninstall.sh Kobo/usr/local/kfmon/bin/kfmon-update.sh
@@ -176,8 +178,6 @@ else
 	ln -sf $(CURDIR)/config/kfmon-log.ini Kobo/mnt/onboard/.adds/kfmon/config/kfmon-log.ini
 	ln -sf $(CURDIR)/scripts/kfmon-printlog.sh Kobo/mnt/onboard/.adds/kfmon/bin/kfmon-printlog.sh
 	pushd Kobo/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && popd
-endif
-
 
 niluje:
 	$(MAKE) all NILUJE=true
@@ -248,4 +248,4 @@ distclean: clean fbinkclean
 	rm -rf sqlite.built
 	rm -rf fbink.built
 
-.PHONY: default outdir all vendored kfmon strip kobo debug niluje nilujed clean release fbinkclean distclean
+.PHONY: default outdir all vendored kfmon strip armcheck kobo debug niluje nilujed clean release fbinkclean distclean
