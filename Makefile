@@ -148,8 +148,7 @@ strip: all
 
 kobo: release
 ifeq (,$(findstring arm-,$(CC)))
-	echo "You're not using a cross TC, you dummy!"
-	exit 1
+	$(error You forgot to setup a cross TC, you dummy!)
 else
 	mkdir -p Kobo/usr/local/kfmon/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
 	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
