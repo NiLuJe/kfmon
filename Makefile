@@ -147,6 +147,10 @@ strip: all
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon
 
 kobo: release
+ifeq (,$(findstring arm-,$(CC)))
+	echo "You're not using a cross TC, you dummy!"
+	exit 1
+else
 	mkdir -p Kobo/usr/local/kfmon/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
 	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
 	ln -sf $(CURDIR)/scripts/uninstall/kfmon-uninstall.sh Kobo/usr/local/kfmon/bin/kfmon-update.sh
@@ -173,6 +177,7 @@ kobo: release
 	ln -sf $(CURDIR)/config/kfmon-log.ini Kobo/mnt/onboard/.adds/kfmon/config/kfmon-log.ini
 	ln -sf $(CURDIR)/scripts/kfmon-printlog.sh Kobo/mnt/onboard/.adds/kfmon/bin/kfmon-printlog.sh
 	pushd Kobo/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && popd
+endif
 
 
 niluje:
