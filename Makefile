@@ -242,10 +242,14 @@ fbinkclean:
 	cd FBInk && \
 	$(MAKE) clean
 
-distclean: clean fbinkclean
+sqliteclean:
+	cd sqlite && \
+	git reset --hard
+
+distclean: clean sqliteclean fbinkclean
 	rm -rf SQLiteBuild
-	rm -rf sqlite/manifest sqlite/manifest.uuid
+	rm -rf sqlite/manifest sqlite/manifest.uuid sqlite/autom4te.cache sqlite/config.h.in~
 	rm -rf sqlite.built
 	rm -rf fbink.built
 
-.PHONY: default outdir all vendored kfmon strip armcheck kobo debug niluje nilujed clean release fbinkclean distclean
+.PHONY: default outdir all vendored kfmon strip armcheck kobo debug niluje nilujed clean release fbinkclean sqliteclean distclean
