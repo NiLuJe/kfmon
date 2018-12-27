@@ -1711,7 +1711,8 @@ int
 				//       but that was a bit harsh ;).
 				//       Since the inotify watch couldn't be setup,
 				//       there's no way for this to cause trouble down the road,
-				//       and this allows the user to fix it during an USBMS session instead of having to reboot...
+				//       and this allows the user to fix it during an USBMS session instead of having to reboot,
+				//       provided no config tweaks are needed (as we still only parse configs at boot)...
 			} else {
 				LOG(LOG_NOTICE,
 				    "Setup an inotify watch for '%s' @ index %hhu.",
