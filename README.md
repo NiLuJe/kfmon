@@ -121,6 +121,9 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 -   Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
     -   Good news: If your FW version is recent enough to feature the new Homescreen, there's a good chance things will work in a more logical fashion (because the last few files added now automatically pop up on the Home page) ;).  
 
+-   Due to the way Nickel may be caching some operations, if you try to restore an icon that you had previously deleted *in the current boot cycle*, it will keep being flagged as *processing* until the next boot, because Nickel may be using in-memory instances of the thumbnails, while we check for them on-disk!
+    -   This has nothing to do with KFMon in particular, f.g., if you were to update some book covers/thumbnails via Calibre, you'd see the same behavior. A simple reboot will put things back in order :).  
+
 -   KFMon only expects to watch for files in the internal storage of the device (i.e., *onboard*). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).  
 
 -   Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1735).
@@ -133,7 +136,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
     -   On a related note, a line cannot exceed 200 bytes. If the log reports a parsing error on a seemingly benign line, but one which happens to feature a humonguous amount of inline comments, that may very well be the reason ;).
     -   If the log reports a parsing error at (or near, depending on commented lines) the top of the config file, check that you haven't forgotten the `[watch]` section name ;).  
 
--   You will most likely have to reinstall KFMon after a firmware update (since most FW update packages ship the vanilla version of the startup script patched to launch KFMon).  
+-   You **will** have to reinstall KFMon after a firmware update (since most FW update packages ship the vanilla version of the startup script patched to launch KFMon).  
 
 -   Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/2e46feb4c27e9393771d7deefa9a790ba875a424/kfmon.h#L148) file watches. Ping me if that's not enough for you ;).  
 
