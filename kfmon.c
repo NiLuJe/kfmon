@@ -1510,6 +1510,9 @@ static bool
 				if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
 					// That's too bad, but may not be fatal, so warn only...
 					perror("[KFMon] [WARN] inotify_rm_watch");
+				} else {
+					// Flag it as gone if rm was successful
+					watch_config[watch_idx].inotify_wd = -1;
 				}
 				destroyed_wd                             = true;
 				watch_config[watch_idx].wd_was_destroyed = true;
@@ -1532,14 +1535,27 @@ static bool
 					// even if we didn't get to parse all the events in one go
 					// to flag them as destroyed one by one.
 					if (!was_unmounted) {
-						// Log what we're doing...
-						LOG(LOG_INFO,
-						    "Trying to remove inotify watch for '%s' @ index %hhu.",
-						    watch_config[watch_idx].filename,
-						    watch_idx);
-						if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
-							// That's too bad, but may not be fatal, so warn only...
-							perror("[KFMon] [WARN] inotify_rm_watch");
+						// Check if that watch index is active to begin with,
+						// as we might have just skipped it if its target file was missing...
+						if (watch_config[watch_idx].inotify_wd == -1) {
+							LOG(LOG_INFO,
+							    "Inotify watch for '%s' @ index %hhu is already inactive!",
+							    watch_config[watch_idx].filename,
+							    watch_idx);
+						} else {
+							// Log what we're doing...
+							LOG(LOG_INFO,
+							    "Trying to remove inotify watch for '%s' @ index %hhu.",
+							    watch_config[watch_idx].filename,
+							    watch_idx);
+							if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) ==
+							    -1) {
+								// That's too bad, but may not be fatal, so warn only...
+								perror("[KFMon] [WARN] inotify_rm_watch");
+							} else {
+								// It's gone!
+								watch_config[watch_idx].inotify_wd = -1;
+							}
 						}
 					}
 				} else {
@@ -1684,23 +1700,24 @@ int
 			watch_config[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
-				perror("[KFMon] [CRIT] inotify_add_watch");
-				LOG(LOG_ERR, "Cannot watch '%s', aborting!", watch_config[watch_idx].filename);
+				perror("[KFMon] [ERR] inotify_add_watch");
+				LOG(LOG_ERR, "Cannot watch '%s', discarding it!", watch_config[watch_idx].filename);
 				fbink_printf(FBFD_AUTO,
 					     NULL,
 					     &fbink_config,
 					     "[KFMon] Failed to watch %s!",
 					     basename(watch_config[watch_idx].filename));
-				exit(EXIT_FAILURE);
-				// NOTE: This effectively means we exit when any one of our target file cannot be found,
-				//       which is not a bad thing, per se...
-				//       This basically means that it takes some kind of effort to actually be running
-				//       during Nickel's processing of said target file ;).
+				// NOTE: We used to abort entirely in case even one target file couldn't be watched,
+				//       but that was a bit harsh ;).
+				//       Since the inotify watch couldn't be setup,
+				//       there's no way for this to cause trouble down the road,
+				//       and this allows the user to fix it during an USBMS session instead of having to reboot...
+			} else {
+				LOG(LOG_NOTICE,
+				    "Setup an inotify watch for '%s' @ index %hhu.",
+				    watch_config[watch_idx].filename,
+				    watch_idx);
 			}
-			LOG(LOG_NOTICE,
-			    "Setup an inotify watch for '%s' @ index %hhu.",
-			    watch_config[watch_idx].filename,
-			    watch_idx);
 		}
 
 		// Inotify input
