@@ -1489,6 +1489,7 @@ static bool
 			//       That may explain why the explicit inotify_rm_watch() calls we do later
 			//       on all our other watches don't seem to error out...
 			//       In the end, we behave properly, but it's still strange enough to document ;).
+			// NOTE: Hell, on some FW versions, we don't get *anything* at all, which is, *really* weird...
 			if (event->mask & IN_IGNORED) {
 				LOG(LOG_NOTICE, "Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
 				// Remember that the watch was automatically destroyed so we can break from the loop...
@@ -1711,9 +1712,7 @@ int
 				// NOTE: We used to abort entirely in case even one target file couldn't be watched,
 				//       but that was a bit harsh ;).
 				//       Since the inotify watch couldn't be setup,
-				//       there's no way for this to cause trouble down the road,
-				//       and this allows the user to fix it during an USBMS session instead of having to reboot,
-				//       provided no config tweaks are needed (as we still only parse configs at boot)...
+				//       there's no way for this to cause trouble down the road...
 			} else {
 				LOG(LOG_NOTICE,
 				    "Setup an inotify watch for '%s' @ index %hhu.",
