@@ -1684,7 +1684,8 @@ int
 		// NOTE: We don't check for:
 		//       IN_MODIFY: Highly unlikely (and sandwiched between an OPEN and a CLOSE anyway)
 		//       IN_CREATE: Only applies to directories
-		//       IN_DELETE: Will trigger an IN_IGNORED, which we already handle
+		//       IN_DELETE: Only applies to directories
+		//       IN_DELETE_SELF: Will trigger an IN_IGNORED, which we already handle
 		//       IN_MOVE_SELF: Highly unlikely on a Kobo, and somewhat annoying to handle with our design
 		//           (we'd have to forget about it entirely and not try to re-watch for it
 		//           on the next iteration of the loop).
