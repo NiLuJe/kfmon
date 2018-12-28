@@ -42,7 +42,7 @@ Then, head over to the [dedicated MobileRead thread](http://www.mobileread.com/f
 The package contains an example config to launch [KOReader](http://www.mobileread.com/forums/forumdisplay.php?f=276), if it is already installed, as well as a `KoboRoot.tgz` which will actually install KFMon itself.
 This ensures that the KOReader PNG file will first be processed by Nickel before the KoboRoot package triggers a reboot for installation.
 
-The same is also true for [Plato](https://www.mobileread.com/forums/showthread.php?t=292914), [see inside](/config/plato.ini) for details.
+The same is also true for [Plato](https://www.mobileread.com/forums/showthread.php?t=292914), [see inside](/config/plato.ini) for details (it basically boils down to: follow upstream's install instructions ;)).
 
 If any of these extra icons in your Library bother you, you *can* safely delete them however you wish, but you'll also have to delete the matching config files if you want to avoid the warning message a config without its icon will trigger ;).
 
@@ -53,7 +53,7 @@ The config files are stored in the */mnt/onboard/***.adds/kfmon/config** folder.
 KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with three knobs:
 
 `db_timeout = 500`, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
-This default value (500ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.
+This default value (500ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.  
 Note that on current FW versions (i.e., >= 4.6.x), the potential issue behind the design of this option is far less likely to ever happen, so you shouldn't have to worry about it ;).
 
 In any case, you can confirm KFMon's behavior by checking its log, which we'll come to presently.
