@@ -18,14 +18,23 @@ g = Github()
 plato = g.get_repo("baskerville/plato")
 latest_plato = plato.get_latest_release()
 plato_version = latest_plato.tag_name
-# Plato doesn't actually store releases in assets, so, parse the body of the Release Notes instead
-plato_notes = etree.fromstring(markdown.markdown(latest_plato.body))
-for link in plato_notes.xpath("//a"):
-	# We want both the main fmon package, as well as the launcher scripts
-	if link.text == "plato-{}.zip".format(plato_version):
-		plato_main_url = link.get("href")
-	if link.text == "plato-launcher-fmon-{}.zip".format(plato_version):
-		plato_scripts_url = link.get("href")
+# As an added quirk, a release isn't guaranteed to ship a script package, if it doesn't need to.
+# So walk backwards through releases until we find one...
+plato_main_url = None
+plato_scripts_url = None
+for release in plato.get_releases():
+	version = release.tag_name
+	print("Looking at Plato {}".format(version))
+	notes = etree.fromstring(markdown.markdown(release.body))
+	for link in notes.xpath("//a"):
+		# We want both the main fmon package, as well as the launcher scripts
+		if plato_main_url is None and link.text == "plato-{}.zip".format(version):
+			plato_main_url = link.get("href")
+		if plato_scripts_url is None and link.text == "plato-launcher-fmon-{}.zip".format(version):
+			plato_scripts_url = link.get("href")
+	# If we've got both packages, we're done!
+	if plato_main_url is not None and plato_scripts_url is not None:
+		break
 
 # Get the latest KOReader release
 koreader = g.get_repo("koreader/koreader")
