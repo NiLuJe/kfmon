@@ -87,18 +87,19 @@ if r.status_code != 200:
 	print("Couldn't crawl KOReader's nightlies!")
 	sys.exit(-1)
 # That's a simple directory listing, so we'll have to scrape it...
-soup = BeautifulSoup(r.text, 'lxml')
+soup = BeautifulSoup(r.text, "lxml")
 # We're of course concerned with the links
 ko_nightlies = []
-for link in soup.find_all('a'):
+for link in soup.find_all("a"):
 	# We want the link, minus the final /
-	ko_nightlies.append(link.get('href')[:-1])
+	ko_nightlies.append(link.get("href")[:-1])
 # Sort that to find the latest one...
 ko_nightlies.sort(key=LooseVersion, reverse=True)
 koreader_nightly_version = ko_nightlies[0]
 if koreader_nightly_version is None:
 	print("Couldn't find the latest KOReader nightly!")
 	sys.exit(-1)
+soup = None
 # We can build the proper URL!
 koreader_nightly_url = "{}{}/koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_nightly_url, koreader_nightly_version, koreader_nightly_version)
 # We'll want to tame down the version...
