@@ -79,7 +79,7 @@ koreader = None
 
 # Get the latest KOReader nightly
 print("* Looking for the latest KOReader nightly . . .")
-nightly_koreader = None
+koreader_nightly_version = None
 # NOTE: We're opting for a crawl of the nighlies, instead of parsing the koreader-kobo-latest-nightly.zsync file...
 koreader_nightly_url = "http://build.koreader.rocks/download/nightly/"
 r = requests.get(koreader_nightly_url)
@@ -95,14 +95,16 @@ for link in soup.find_all('a'):
 	ko_nightlies.append(link.get('href')[:-1])
 # Sort that to find the latest one...
 ko_nightlies.sort(key=LooseVersion, reverse=True)
-nightly_koreader = ko_nightlies[0]
-if nightly_koreader is None:
+koreader_nightly_version = ko_nightlies[0]
+if koreader_nightly_version is None:
 	print("Couldn't find the latest KOReader nightly!")
 	sys.exit(-1)
 # We can build the proper URL!
-koreader_nightly_url = "{}{}/koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_nightly_url, nightly_koreader, nightly_koreader)
+koreader_nightly_url = "{}{}/koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_nightly_url, koreader_nightly_version, koreader_nightly_version)
+# We'll want to tame down the version...
+koreader_nightly_version = koreader_nightly_version.split("-g")[0]
 
-print("\nKOReader {}:\nRelease: {}\nNightly ({}): {}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(koreader_version, koreader_url, nightly_koreader, koreader_nightly_url, plato_version, plato_main_url, plato_scripts_url))
+print("\nKOReader Release {}:\n{}\nKOReader Nightly {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(koreader_version, koreader_url, koreader_nightly_version, koreader_nightly_url, plato_version, plato_main_url, plato_scripts_url))
 gh = None
 
 # Let's start building our one-click packages...
