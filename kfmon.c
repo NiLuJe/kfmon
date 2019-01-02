@@ -1701,8 +1701,8 @@ int
 			watch_config[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
-				perror("[KFMon] [ERR] inotify_add_watch");
-				LOG(LOG_ERR, "Cannot watch '%s', discarding it!", watch_config[watch_idx].filename);
+				perror("[KFMon] [WARN] inotify_add_watch");
+				LOG(LOG_WARNING, "Cannot watch '%s', discarding it!", watch_config[watch_idx].filename);
 				fbink_printf(FBFD_AUTO,
 					     NULL,
 					     &fbink_config,
