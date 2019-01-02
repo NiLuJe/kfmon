@@ -20,6 +20,7 @@ from lxml import etree
 from pathlib import Path
 import requests
 import shutil
+import tempfile
 
 # We'll need the current KFMon install package first
 print("* Looking for the latest KFMon install package . . .")
@@ -118,7 +119,7 @@ if len(sys.argv) > 1:
 
 # Let's start building our one-click packages...
 # We'll work in a temporary directory, one that's hosted on a tmpfs (at least on my end ;p)...
-t = Path("/var/tmp/KFMon")
+t = Path(tempfile.gettempdir() / "KFMon")
 t.mkdir(parents=True, exist_ok=True)
 
 # Start with Plato
