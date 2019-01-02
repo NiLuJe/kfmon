@@ -20,7 +20,9 @@ import sys
 print("* Looking for the latest KFMon install package . . .")
 kfm = Path("Kobo")
 kfmon_package = None
+# There should only ever be one, but glob returns a list ;)
 for kfmon in kfm.glob("KFMon-v*-g*.zip"):
+	print("* Found {}".format(kfmon.name))
 	kfmon_package = kfmon.resolve(strict=True)
 
 if kfmon_package is None:
