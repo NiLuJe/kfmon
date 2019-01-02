@@ -108,7 +108,7 @@ shutil.unpack_archive(pl_main, pl / ".adds/plato")
 shutil.make_archive(t / "Plato-{}".format(plato_version), format="zip", root_dir=pl, base_dir=".")
 
 # Cleanup behind us
-#shutil.rmtree(pl)
+shutil.rmtree(pl)
 pl = None
 
 # Do KOReader next
@@ -138,7 +138,7 @@ Path(ko / ".adds" / "README_kobo.txt").unlink()
 shutil.make_archive(t / "KOReader-{}".format(koreader_version), format="zip", root_dir=ko, base_dir=".")
 
 # Cleanup behind us
-#shutil.rmtree(ko)
+shutil.rmtree(ko)
 ko = None
 
 # And while we're there, I guess we can do both at once ;)
@@ -159,7 +159,7 @@ Path(pk / ".adds" / "README_kobo.txt").unlink()
 shutil.make_archive(t / "Plato-{}_KOReader-{}".format(plato_version, koreader_version), format="zip", root_dir=pk, base_dir=".")
 
 # Cleanup behind us
-#shutil.rmtree(pk)
+shutil.rmtree(pk)
 pk = None
 
 # Final cleanup
