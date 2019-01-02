@@ -130,8 +130,8 @@ Path(ko + "/icons/plato.png").unlink()
 # Then stage KOReader
 shutil.unpack_archive(ko_main, ko + "/.adds")
 # Filter out some extraneous stuff
-path(ko + "/.adds" + "/koreader.png").unlink()
-path(ko + "/.adds" + "/README_kobo.txt").unlink()
+Path(ko + "/.adds" + "/koreader.png").unlink()
+Path(ko + "/.adds" + "/README_kobo.txt").unlink()
 
 # Finally, zip it up!
 shutil.make_archive(t + "/KOReader-{}.zip".format(koreader_version), root_dir=ko, base_dir=".")
@@ -151,8 +151,8 @@ shutil.unpack_archive(pl_main, pk + "/.adds/plato")
 # Then KOReader
 shutil.unpack_archive(ko_main, pk + "/.adds")
 # Filter out some extraneous stuff
-path(pk + "/.adds" + "/koreader.png").unlink()
-path(pk + "/.adds" + "/README_kobo.txt").unlink()
+Path(pk + "/.adds" + "/koreader.png").unlink()
+Path(pk + "/.adds" + "/README_kobo.txt").unlink()
 
 # Finally, zip it up!
 shutil.make_archive(t + "/Plato-{}_KOReader-{}.zip".format(plato_version, koreader_version), root_dir=pk, base_dir=".")
