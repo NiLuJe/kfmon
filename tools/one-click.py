@@ -107,6 +107,12 @@ koreader_nightly_version = koreader_nightly_version.split("-g")[0]
 print("\nKOReader Release {}:\n{}\nKOReader Nightly {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(koreader_version, koreader_url, koreader_nightly_version, koreader_nightly_url, plato_version, plato_main_url, plato_scripts_url))
 gh = None
 
+# Do we want to use KOReader stable or nightly?
+if len(sys.argv) > 1:
+	print("* Using the latest nightly instead of the latest release for KOReader!\n")
+	koreader_version = koreader_nightly_version
+	koreader_url = koreader_nightly_url
+
 # Let's start building our one-click packages...
 # We'll work in a temporary directory, one that's hosted on a tmpfs (at least on my end ;p)...
 t = Path("/var/tmp/KFMon")
