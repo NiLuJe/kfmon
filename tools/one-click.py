@@ -11,7 +11,7 @@ from lxml import etree
 import requests
 import shutil
 
-# We'll be doing as much as possibly rhough the GitHub API, unauthenticated
+# We'll be doing as much as possible through the GitHub API, unauthenticated
 g = Github()
 
 # Get the latest Plato release
@@ -25,6 +25,7 @@ plato_scripts_url = None
 for release in plato.get_releases():
 	version = release.tag_name
 	print("Looking at Plato {}".format(version))
+	# Plato doesn't actually store releases in assets, so, parse the MD body of the Release Notes instead
 	notes = etree.fromstring(markdown.markdown(release.body))
 	for link in notes.xpath("//a"):
 		# We want both the main fmon package, as well as the launcher scripts
