@@ -82,14 +82,14 @@ t.mkdir(parents=True, exist_ok=True)
 
 # Start with Plato
 # It'll be staged in its own directory
-pl = Path(t + "/Plato")
+pl = Path(t / "Plato")
 
 # Download both packages...
-pl_main = Path(t + "/Plato.zip")
+pl_main = Path(t / "Plato.zip")
 r = requests.get(plato_main_url)
 with pl_main.open(mode="wxb") as f:
 	f.write(r.content)
-pl_scripts = Path(t + "/Plato-Scripts.zip")
+pl_scripts = Path(t / "Plato-Scripts.zip")
 r = requests.get(plato_scripts_url)
 with pl_scripts.open(mode="wxb") as f:
 	f.write(r.content)
@@ -97,26 +97,26 @@ with pl_scripts.open(mode="wxb") as f:
 # Stage KFMon first
 shutil.unpack_archive(kfmon_package, pl)
 # Filter out KOReader config & icons
-Path(pl + "/.adds/kfmon/config/koreader.ini").unlink()
-Path(pl + "/koreader.png").unlink()
+Path(pl / ".adds/kfmon/config/koreader.ini").unlink()
+Path(pl / "koreader.png").unlink()
 
 # Then stage Plato (start with the scripts, since it'll create the required folders for us)
 shutil.unpack_archive(pl_scripts, pl)
-shutil.unpack_archive(pl_main, pl + "/.adds/plato")
+shutil.unpack_archive(pl_main, pl / ".adds/plato")
 
 # Finally, zip it up!
-shutil.make_archive(t + "/Plato-{}.zip".format(plato_version), root_dir=pl, base_dir=".")
+shutil.make_archive(t / "Plato-{}.zip".format(plato_version), root_dir=pl, base_dir=".")
 
 # Cleanup behind us
-shutil.rmtree(pl)
+#shutil.rmtree(pl)
 pl = None
 
 # Do KOReader next
 # It'll be staged in its own directory
-ko = Path(t + "/KOReader")
+ko = Path(t / "KOReader")
 
 # Download the package
-ko_main = Path(t + "/KOReader.zip")
+ko_main = Path(t / "KOReader.zip")
 r = requests.get(koreader_url)
 with ko_main.open(mode="wxb") as f:
 	f.write(r.content)
@@ -124,41 +124,41 @@ with ko_main.open(mode="wxb") as f:
 # Stage KFMon first
 shutil.unpack_archive(kfmon_package, ko)
 # Filter out Plato config & icons
-Path(ko + "/.adds/kfmon/config/plato.ini").unlink()
-Path(ko + "/icons/plato.png").unlink()
+Path(ko / ".adds/kfmon/config/plato.ini").unlink()
+Path(ko / "icons/plato.png").unlink()
 
 # Then stage KOReader
-shutil.unpack_archive(ko_main, ko + "/.adds")
+shutil.unpack_archive(ko_main, ko / ".adds")
 # Filter out some extraneous stuff
-Path(ko + "/.adds" + "/koreader.png").unlink()
-Path(ko + "/.adds" + "/README_kobo.txt").unlink()
+Path(ko / ".adds" / "koreader.png").unlink()
+Path(ko / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
-shutil.make_archive(t + "/KOReader-{}.zip".format(koreader_version), root_dir=ko, base_dir=".")
+shutil.make_archive(t / "KOReader-{}.zip".format(koreader_version), root_dir=ko, base_dir=".")
 
 # Cleanup behind us
-shutil.rmtree(ko)
+#shutil.rmtree(ko)
 ko = None
 
 # And while we're there, I guess we can do both at once ;)
-pk = Path(t + "/Both")
+pk = Path(t / "Both")
 
 # Stage KFMon first
 shutil.unpack_archive(kfmon_package, pk)
 # Then Plato
 shutil.unpack_archive(pl_scripts, pk)
-shutil.unpack_archive(pl_main, pk + "/.adds/plato")
+shutil.unpack_archive(pl_main, pk / ".adds/plato")
 # Then KOReader
-shutil.unpack_archive(ko_main, pk + "/.adds")
+shutil.unpack_archive(ko_main, pk / ".adds")
 # Filter out some extraneous stuff
-Path(pk + "/.adds" + "/koreader.png").unlink()
-Path(pk + "/.adds" + "/README_kobo.txt").unlink()
+Path(pk / ".adds" / "koreader.png").unlink()
+Path(pk / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
-shutil.make_archive(t + "/Plato-{}_KOReader-{}.zip".format(plato_version, koreader_version), root_dir=pk, base_dir=".")
+shutil.make_archive(t / "Plato-{}_KOReader-{}.zip".format(plato_version, koreader_version), root_dir=pk, base_dir=".")
 
 # Cleanup behind us
-shutil.rmtree(pk)
+#shutil.rmtree(pk)
 pk = None
 
 # Final cleanup
