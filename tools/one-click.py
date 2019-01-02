@@ -15,6 +15,7 @@ import shutil
 import sys
 
 # We'll need the current KFMon install package first
+print("* Looking for the latest KFMon install package . . .")
 kfm = Path("Kobo")
 kfmon_package = None
 for kfmon in kfm.glob("KFMon-v*-g*.zip"):
@@ -28,6 +29,7 @@ if kfmon_package is None:
 gh = Github()
 
 # Get the latest Plato release
+print("* Looking for the latest Plato release . . .")
 plato = gh.get_repo("baskerville/plato")
 latest_plato = plato.get_latest_release()
 plato_version = latest_plato.tag_name
@@ -37,7 +39,7 @@ plato_main_url = None
 plato_scripts_url = None
 for release in plato.get_releases():
 	version = release.tag_name
-	print("Looking at Plato {} . . .".format(version))
+	print("Looking at Plato {} ...".format(version))
 	# Plato doesn't actually store releases in assets, so, parse the MD body of the Release Notes instead
 	notes = etree.fromstring(markdown.markdown(release.body))
 	for link in notes.xpath("//a"):
@@ -57,6 +59,7 @@ latest_plato = None
 plato = None
 
 # Get the latest KOReader release
+print("* Looking for the latest KOReader release . . .")
 koreader = gh.get_repo("koreader/koreader")
 latest_koreader = koreader.get_latest_release()
 koreader_version = latest_koreader.tag_name
@@ -81,6 +84,7 @@ t = Path("/var/tmp/KFMon")
 t.mkdir(parents=True, exist_ok=True)
 
 # Start with Plato
+print("* Creating a one-click package for Plato . . .")
 # It'll be staged in its own directory
 pl = Path(t / "Plato")
 
@@ -112,6 +116,7 @@ shutil.rmtree(pl)
 pl = None
 
 # Do KOReader next
+print("* Creating a one-click package for KOReader . . .")
 # It'll be staged in its own directory
 ko = Path(t / "KOReader")
 
@@ -142,6 +147,7 @@ shutil.rmtree(ko)
 ko = None
 
 # And while we're there, I guess we can do both at once ;)
+print("* Creating a one-click package for Plato + KOReader . . .")
 pk = Path(t / "Both")
 
 # Stage KFMon first
@@ -168,6 +174,7 @@ pl_scripts.unlink()
 pl_main.unlink()
 
 # Print a recap
+print("* Here are the packages we created:")
 for ocp in t.glob("*.zip"):
 	oneclick_package = ocp.resolve(strict=True)
 	print(oneclick_package)
