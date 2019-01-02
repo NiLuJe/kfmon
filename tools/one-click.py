@@ -37,7 +37,7 @@ plato_main_url = None
 plato_scripts_url = None
 for release in plato.get_releases():
 	version = release.tag_name
-	print("Looking at Plato {}".format(version))
+	print("Looking at Plato {} . . .".format(version))
 	# Plato doesn't actually store releases in assets, so, parse the MD body of the Release Notes instead
 	notes = etree.fromstring(markdown.markdown(release.body))
 	for link in notes.xpath("//a"):
@@ -72,7 +72,7 @@ if koreader_url is None:
 latest_koreader = None
 koreader = None
 
-print("KO {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}".format(koreader_version, koreader_url, plato_version, plato_main_url, plato_scripts_url))
+print("\nKOReader {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(koreader_version, koreader_url, plato_version, plato_main_url, plato_scripts_url))
 gh = None
 
 # Let's start building our one-click packages...
