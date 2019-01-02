@@ -14,9 +14,8 @@ if sys.version_info < (3, 7):
 from bs4 import BeautifulSoup
 from distutils.version import LooseVersion
 from github import Github
-import glob
 import markdown
-from lxml import etree
+import defusedxml.lxml
 from pathlib import Path
 import requests
 import shutil
@@ -50,7 +49,7 @@ for release in plato.get_releases():
 	version = release.tag_name
 	print("Looking at Plato {} ...".format(version))
 	# Plato doesn't actually store releases in assets, so, parse the MD body of the Release Notes instead
-	notes = etree.fromstring(markdown.markdown(release.body))
+	notes = defusedxml.lxml.fromstring(markdown.markdown(release.body))
 	for link in notes.xpath("//a"):
 		# We want both the main fmon package, as well as the launcher scripts
 		if plato_main_url is None and link.text == "plato-{}.zip".format(version):
