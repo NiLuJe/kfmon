@@ -105,7 +105,7 @@ shutil.unpack_archive(pl_scripts, pl)
 shutil.unpack_archive(pl_main, pl / ".adds/plato")
 
 # Finally, zip it up!
-shutil.make_archive(t / "Plato-{}.zip".format(plato_version), format="zip", root_dir=pl, base_dir=".")
+shutil.make_archive(t / "Plato-{}".format(plato_version), format="zip", root_dir=pl, base_dir=".")
 
 # Cleanup behind us
 #shutil.rmtree(pl)
@@ -134,7 +134,7 @@ Path(ko / ".adds" / "koreader.png").unlink()
 Path(ko / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
-shutil.make_archive(t / "KOReader-{}.zip".format(koreader_version), format="zip", root_dir=ko, base_dir=".")
+shutil.make_archive(t / "KOReader-{}".format(koreader_version), format="zip", root_dir=ko, base_dir=".")
 
 # Cleanup behind us
 #shutil.rmtree(ko)
@@ -155,7 +155,7 @@ Path(pk / ".adds" / "koreader.png").unlink()
 Path(pk / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
-shutil.make_archive(t / "Plato-{}_KOReader-{}.zip".format(plato_version, koreader_version), format="zip", root_dir=pk, base_dir=".")
+shutil.make_archive(t / "Plato-{}_KOReader-{}".format(plato_version, koreader_version), format="zip", root_dir=pk, base_dir=".")
 
 # Cleanup behind us
 #shutil.rmtree(pk)
