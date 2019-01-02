@@ -87,11 +87,11 @@ pl = Path(t / "Plato")
 # Download both packages...
 pl_main = Path(t / "Plato.zip")
 r = requests.get(plato_main_url)
-with pl_main.open(mode="wxb") as f:
+with pl_main.open(mode="w+b") as f:
 	f.write(r.content)
 pl_scripts = Path(t / "Plato-Scripts.zip")
 r = requests.get(plato_scripts_url)
-with pl_scripts.open(mode="wxb") as f:
+with pl_scripts.open(mode="w+b") as f:
 	f.write(r.content)
 
 # Stage KFMon first
@@ -118,7 +118,7 @@ ko = Path(t / "KOReader")
 # Download the package
 ko_main = Path(t / "KOReader.zip")
 r = requests.get(koreader_url)
-with ko_main.open(mode="wxb") as f:
+with ko_main.open(mode="w+b") as f:
 	f.write(r.content)
 
 # Stage KFMon first
