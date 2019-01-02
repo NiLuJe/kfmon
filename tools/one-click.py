@@ -5,6 +5,8 @@
 #
 ##
 
+from bs4 import BeautifulSoup
+from distutils.version import LooseVersion
 from github import Github
 import glob
 import markdown
@@ -75,7 +77,32 @@ if koreader_url is None:
 latest_koreader = None
 koreader = None
 
-print("\nKOReader {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(koreader_version, koreader_url, plato_version, plato_main_url, plato_scripts_url))
+# Get the latest KOReader nightly
+print("* Looking for the latest KOReader nightly . . .")
+nightly_koreader = None
+# NOTE: We're opting for a crawl of the nighlies, instead of parsing the koreader-kobo-latest-nightly.zsync file...
+koreader_nightly_url = "http://build.koreader.rocks/download/nightly/"
+r = requests.get(koreader_nightly_url)
+if r.status_code != 200:
+	print("Couldn't crawl KOReader's nightlies!")
+	sys.exit(-1)
+# That's a simple directory listing, so we'll have to scrape it...
+soup = BeautifulSoup(r.text, 'lxml')
+# We're of course concerned with the links
+ko_nightlies = []
+for link in soup.find_all('a'):
+	# We want the link, minus the final /
+	ko_nightlies.append(link.get('href')[:-1])
+# Sort that to find the latest one...
+ko_nightlies.sort(key=LooseVersion, reverse=True)
+nightly_koreader = ko_nightlies[0]
+if nightly_koreader is None:
+	print("Couldn't find the latest KOReader nightly!")
+	sys.exit(-1)
+# We can build the proper URL!
+koreader_nightly_url = "{}{}/koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_nightly_url, nightly_koreader, nightly_koreader)
+
+print("\nKOReader {}:\nRelease: {}\nNightly ({}): {}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(koreader_version, koreader_url, nightly_koreader, koreader_nightly_url, plato_version, plato_main_url, plato_scripts_url))
 gh = None
 
 # Let's start building our one-click packages...
@@ -91,10 +118,16 @@ pl = Path(t / "Plato")
 # Download both packages...
 pl_main = Path(t / "Plato.zip")
 r = requests.get(plato_main_url)
+if r.status_code != 200:
+	print("Couldn't download the latest Plato release!")
+	sys.exit(-1)
 with pl_main.open(mode="w+b") as f:
 	f.write(r.content)
 pl_scripts = Path(t / "Plato-Scripts.zip")
 r = requests.get(plato_scripts_url)
+if r.status_code != 200:
+	print("Couldn't download the latest Plato scripts package!")
+	sys.exit(-1)
 with pl_scripts.open(mode="w+b") as f:
 	f.write(r.content)
 
@@ -123,6 +156,9 @@ ko = Path(t / "KOReader")
 # Download the package
 ko_main = Path(t / "KOReader.zip")
 r = requests.get(koreader_url)
+if r.status_code != 200:
+	print("Couldn't download the latest KOReader release!")
+	sys.exit(-1)
 with ko_main.open(mode="w+b") as f:
 	f.write(r.content)
 
