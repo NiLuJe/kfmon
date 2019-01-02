@@ -25,10 +25,10 @@ if kfmon_package is None:
 	sys.exit(-1)
 
 # We'll be doing as much as possible through the GitHub API, unauthenticated
-g = Github()
+gh = Github()
 
 # Get the latest Plato release
-plato = g.get_repo("baskerville/plato")
+plato = gh.get_repo("baskerville/plato")
 latest_plato = plato.get_latest_release()
 plato_version = latest_plato.tag_name
 # As an added quirk, a release isn't guaranteed to ship a script package, if it doesn't need to.
@@ -57,7 +57,7 @@ latest_plato = None
 plato = None
 
 # Get the latest KOReader release
-koreader = g.get_repo("koreader/koreader")
+koreader = gh.get_repo("koreader/koreader")
 latest_koreader = koreader.get_latest_release()
 koreader_version = latest_koreader.tag_name
 koreader_url = None
@@ -73,7 +73,7 @@ latest_koreader = None
 koreader = None
 
 print("KO {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}".format(koreader_version, koreader_url, plato_version, plato_main_url, plato_scripts_url))
-g = None
+gh = None
 
 # Let's start building our one-click packages...
 # We'll work in a temporary directory, one that's hosted on a tmpfs (at least on my end ;p)...
