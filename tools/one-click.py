@@ -16,6 +16,9 @@ import requests
 import shutil
 import sys
 
+# We need Python >= 3.7 (as we're passing a pathlib.Path to shutil.make_archive)
+assert sys.version_info >= (3, 7), "This script requires Python 3.7+"
+
 # We'll need the current KFMon install package first
 print("* Looking for the latest KFMon install package . . .")
 kfm = Path("Kobo")
