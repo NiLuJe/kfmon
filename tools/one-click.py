@@ -5,6 +5,12 @@
 #
 ##
 
+import sys
+
+# We need Python >= 3.7 (as we're passing a pathlib.Path to shutil.make_archive)
+if sys.version_info < (3, 7):
+	raise SystemExit("This script requires Python 3.7+")
+
 from bs4 import BeautifulSoup
 from distutils.version import LooseVersion
 from github import Github
@@ -14,10 +20,6 @@ from lxml import etree
 from pathlib import Path
 import requests
 import shutil
-import sys
-
-# We need Python >= 3.7 (as we're passing a pathlib.Path to shutil.make_archive)
-assert sys.version_info >= (3, 7), "This script requires Python 3.7+"
 
 # We'll need the current KFMon install package first
 print("* Looking for the latest KFMon install package . . .")
@@ -29,8 +31,7 @@ for kfmon in kfm.glob("KFMon-v*-g*.zip"):
 	kfmon_package = kfmon.resolve(strict=True)
 
 if kfmon_package is None:
-	print("Couldn't find a KFMon install package!")
-	sys.exit(-1)
+	raise SystemExit("Couldn't find a KFMon install package!")
 
 # We'll be doing as much as possible through the GitHub API, unauthenticated
 gh = Github()
@@ -60,8 +61,7 @@ for release in plato.get_releases():
 		break
 
 if plato_main_url is None and plato_scripts_url is None:
-	print("Couldn't find the latest Plato packages!")
-	sys.exit(-1)
+	raise SystemExit("Couldn't find the latest Plato packages!")
 latest_plato = None
 plato = None
 
@@ -77,8 +77,7 @@ for asset in latest_koreader.get_assets():
 		koreader_url = asset.browser_download_url
 
 if koreader_url is None:
-	print("Couldn't find the latest KOReader package!")
-	sys.exit(-1)
+	raise SystemExit("Couldn't find the latest KOReader package!")
 latest_koreader = None
 koreader = None
 
@@ -89,8 +88,7 @@ koreader_nightly_version = None
 koreader_nightly_url = "http://build.koreader.rocks/download/nightly/"
 r = requests.get(koreader_nightly_url)
 if r.status_code != 200:
-	print("Couldn't crawl KOReader's nightlies!")
-	sys.exit(-1)
+	raise SystemExit("Couldn't crawl KOReader's nightlies!")
 # That's a simple directory listing, so we'll have to scrape it...
 soup = BeautifulSoup(r.text, "lxml")
 # We're of course concerned with the links
@@ -102,8 +100,7 @@ for link in soup.find_all("a"):
 ko_nightlies.sort(key=LooseVersion, reverse=True)
 koreader_nightly_version = ko_nightlies[0]
 if koreader_nightly_version is None:
-	print("Couldn't find the latest KOReader nightly!")
-	sys.exit(-1)
+	raise SystemExit("Couldn't find the latest KOReader nightly!")
 soup = None
 # We can build the proper URL!
 koreader_nightly_url = "{}{}/koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_nightly_url, koreader_nightly_version, koreader_nightly_version)
@@ -133,15 +130,13 @@ pl = Path(t / "Plato")
 pl_main = Path(t / "Plato.zip")
 r = requests.get(plato_main_url)
 if r.status_code != 200:
-	print("Couldn't download the latest Plato release!")
-	sys.exit(-1)
+	raise SystemExit("Couldn't download the latest Plato release!")
 with pl_main.open(mode="w+b") as f:
 	f.write(r.content)
 pl_scripts = Path(t / "Plato-Scripts.zip")
 r = requests.get(plato_scripts_url)
 if r.status_code != 200:
-	print("Couldn't download the latest Plato scripts package!")
-	sys.exit(-1)
+	raise SystemExit("Couldn't download the latest Plato scripts package!")
 with pl_scripts.open(mode="w+b") as f:
 	f.write(r.content)
 
@@ -171,8 +166,7 @@ ko = Path(t / "KOReader")
 ko_main = Path(t / "KOReader.zip")
 r = requests.get(koreader_url)
 if r.status_code != 200:
-	print("Couldn't download the latest KOReader release!")
-	sys.exit(-1)
+	raise SystemExit("Couldn't download the latest KOReader release!")
 with ko_main.open(mode="w+b") as f:
 	f.write(r.content)
 
