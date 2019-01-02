@@ -174,7 +174,7 @@ pl_scripts.unlink()
 pl_main.unlink()
 
 # Print a recap
-print("* Here are the packages we created:")
+print("\n* Here are the packages we created:\n")
 for ocp in t.glob("*.zip"):
 	oneclick_package = ocp.resolve(strict=True)
 	print(oneclick_package)
