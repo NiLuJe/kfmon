@@ -126,6 +126,7 @@ shutil.unpack_archive(kfmon_package, ko)
 # Filter out Plato config & icons
 Path(ko / ".adds/kfmon/config/plato.ini").unlink()
 Path(ko / "icons/plato.png").unlink()
+Path(ko / "icons").rmdir()
 
 # Then stage KOReader
 shutil.unpack_archive(ko_main, ko / ".adds")
