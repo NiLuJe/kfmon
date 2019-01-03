@@ -13,13 +13,16 @@ if sys.version_info < (3, 7):
 
 from bs4 import BeautifulSoup
 from distutils.version import LooseVersion
+from email.utils import parsedate
 from github import Github
 import markdown
 import defusedxml.lxml
+import os
 from pathlib import Path
 import requests
 import shutil
-import tempfile
+from tempfile import gettempdir
+from time import mktime
 
 # We'll need the current KFMon install package first
 print("* Looking for the latest KFMon install package . . .")
@@ -29,6 +32,8 @@ kfmon_package = None
 for kfmon in kfm.glob("KFMon-v*-g*.zip"):
 	print("* Found {}".format(kfmon.name))
 	kfmon_package = kfmon.resolve(strict=True)
+	# Remember its mtime
+	kfmon_date = kfmon.stat().st_mtime
 
 if kfmon_package is None:
 	raise SystemExit("Couldn't find a KFMon install package!")
@@ -119,7 +124,7 @@ if len(sys.argv) > 1:
 
 # Let's start building our one-click packages...
 # We'll work in a temporary directory, one that's hosted on a tmpfs (at least on my end ;p)...
-tmpdir = Path(tempfile.gettempdir())
+tmpdir = Path(gettempdir())
 t = Path(tmpdir / "KFMon")
 t.mkdir(parents=True, exist_ok=True)
 
@@ -133,6 +138,8 @@ pl_main = Path(t / "Plato.zip")
 r = requests.get(plato_main_url)
 if r.status_code != 200:
 	raise SystemExit("Couldn't download the latest Plato release!")
+# We'll restore its mtime later...
+plato_date = mktime(parsedate(r.headers['Last-Modified']))
 with pl_main.open(mode="w+b") as f:
 	f.write(r.content)
 pl_scripts = Path(t / "Plato-Scripts.zip")
@@ -153,7 +160,11 @@ shutil.unpack_archive(pl_scripts, pl)
 shutil.unpack_archive(pl_main, pl / ".adds/plato")
 
 # Finally, zip it up!
-shutil.make_archive(t / "Plato-{}".format(plato_version), format="zip", root_dir=pl, base_dir=".")
+pl_zip = Path(t / "Plato-{}".format(plato_version))
+shutil.make_archive(pl_zip, format="zip", root_dir=pl, base_dir=".")
+# And restore Plato's original mtime...
+pl_zip = pl_zip.with_name("Plato-{}.zip".format(plato_version))
+os.utime(pl_zip, times=(plato_date, plato_date))
 
 # Cleanup behind us
 shutil.rmtree(pl)
@@ -169,6 +180,8 @@ ko_main = Path(t / "KOReader.zip")
 r = requests.get(koreader_url)
 if r.status_code != 200:
 	raise SystemExit("Couldn't download the latest KOReader release!")
+# We'll restore its mtime later...
+koreader_date = mktime(parsedate(r.headers['Last-Modified']))
 with ko_main.open(mode="w+b") as f:
 	f.write(r.content)
 
@@ -186,7 +199,11 @@ Path(ko / ".adds" / "koreader.png").unlink()
 Path(ko / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
-shutil.make_archive(t / "KOReader-{}".format(koreader_version), format="zip", root_dir=ko, base_dir=".")
+ko_zip = Path(t / "KOReader-{}".format(koreader_version))
+shutil.make_archive(ko_zip, format="zip", root_dir=ko, base_dir=".")
+# And restore KOReader's original mtime...
+ko_zip = ko_zip.with_suffix(".zip")
+os.utime(ko_zip, times=(koreader_date, koreader_date))
 
 # Cleanup behind us
 shutil.rmtree(ko)
@@ -208,7 +225,11 @@ Path(pk / ".adds" / "koreader.png").unlink()
 Path(pk / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
-shutil.make_archive(t / "Plato-{}_KOReader-{}".format(plato_version, koreader_version), format="zip", root_dir=pk, base_dir=".")
+pk_zip = Path(t / "Plato-{}_KOReader-{}".format(plato_version, koreader_version))
+shutil.make_archive(pk_zip, format="zip", root_dir=pk, base_dir=".")
+# And restore KFMon's original mtime...
+pk_zip = pk_zip.with_suffix(".zip")
+os.utime(pk_zip, times=(kfmon_date, kfmon_date))
 
 # Cleanup behind us
 shutil.rmtree(pk)
