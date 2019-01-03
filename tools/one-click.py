@@ -119,7 +119,8 @@ if len(sys.argv) > 1:
 
 # Let's start building our one-click packages...
 # We'll work in a temporary directory, one that's hosted on a tmpfs (at least on my end ;p)...
-t = Path(tempfile.gettempdir() / "KFMon")
+tmpdir = Path(tempfile.gettempdir())
+t = Path(tmpdir / "KFMon")
 t.mkdir(parents=True, exist_ok=True)
 
 # Start with Plato
