@@ -75,6 +75,7 @@ koreader_url = None
 for asset in latest_koreader.get_assets():
 	if asset.name == "koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_version):
 		koreader_url = asset.browser_download_url
+		break
 
 if koreader_url is None:
 	raise SystemExit("Couldn't find the latest KOReader package!")
