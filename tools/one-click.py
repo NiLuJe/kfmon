@@ -160,10 +160,11 @@ shutil.unpack_archive(pl_scripts, pl)
 shutil.unpack_archive(pl_main, pl / ".adds/plato")
 
 # Finally, zip it up!
-pl_zip = Path(t / "Plato-{}".format(plato_version))
+pl_basename = "Plato-{}".format(plato_version)
+pl_zip = Path(t / pl_basename)
 shutil.make_archive(pl_zip, format="zip", root_dir=pl, base_dir=".")
 # And restore Plato's original mtime...
-pl_zip = pl_zip.with_name("Plato-{}.zip".format(plato_version))
+pl_zip = pl_zip.with_name("{}.zip".format(pl_basename))
 os.utime(pl_zip, times=(plato_date, plato_date))
 
 # Cleanup behind us
@@ -199,10 +200,11 @@ Path(ko / ".adds" / "koreader.png").unlink()
 Path(ko / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
-ko_zip = Path(t / "KOReader-{}".format(koreader_version))
+ko_basename = "KOReader-{}".format(koreader_version)
+ko_zip = Path(t / ko_basename)
 shutil.make_archive(ko_zip, format="zip", root_dir=ko, base_dir=".")
 # And restore KOReader's original mtime...
-ko_zip = ko_zip.with_suffix(".zip")
+ko_zip = ko_zip.with_name("{}.zip".format(ko_basename))
 os.utime(ko_zip, times=(koreader_date, koreader_date))
 
 # Cleanup behind us
@@ -225,10 +227,11 @@ Path(pk / ".adds" / "koreader.png").unlink()
 Path(pk / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
-pk_zip = Path(t / "Plato-{}_KOReader-{}".format(plato_version, koreader_version))
+pk_basename = "Plato-{}_KOReader-{}".format(plato_version, koreader_version)
+pk_zip = Path(t / pk_basename)
 shutil.make_archive(pk_zip, format="zip", root_dir=pk, base_dir=".")
 # And restore KFMon's original mtime...
-pk_zip = pk_zip.with_suffix(".zip")
+pk_zip = pk_zip.with_name("{}.zip".format(pk_basename))
 os.utime(pk_zip, times=(kfmon_date, kfmon_date))
 
 # Cleanup behind us
