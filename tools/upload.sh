@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 #
 # Quick'n dirty script to upload packages to my PCS
 #
@@ -26,10 +26,11 @@ source ~/.mr_settings
 KFM_ST_CONTAINER="kfmon-pub"
 # Which means we need to refresh the base URL...
 KFM_ST_STORAGEURL="${ST_STORAGEURL/${ST_CONTAINER}/${KFM_ST_CONTAINER}}"
-BASE_URL="${KFM_ST_STORAGEURL}"
+KFM_BASE_URL="${BASE_URL/${ST_CONTAINER}/${KFM_ST_CONTAINER}}"
 # And now that's done, voerrides the usual variables...
 ST_CONTAINER="${KFM_ST_CONTAINER}"
 ST_STORAGEURL="${KFM_ST_STORAGEURL}"
+BASE_URL="${KFM_BASE_URL}"
 
 
 #
@@ -151,68 +152,63 @@ cat > kfmon.html << EOF
 EOF
 
 # Handle each of our files...
-for dir in . ; do
-	# Skip top-level files...
-	[ ! -d "${dir}" ] && continue
-
-	echo "* Parsing folder: ${dir} . . ."
-	# Directory
-	cat >> kfmon.html << EOF
-			<tr><td class="n">Kobo One-Click Install Packages</td><td class="m">- &nbsp;</td><td class="s">- &nbsp;</td><td class="t">Directory</td><td class="c">- &nbsp;</td></tr>
+echo "* Parsing current folder . . ."
+# Directory (we've only got one)
+cat >> kfmon.html << EOF
+		<tr><td class="n">Kobo One-Click Install Packages</td><td class="m">- &nbsp;</td><td class="s">- &nbsp;</td><td class="t">Directory</td><td class="c">- &nbsp;</td></tr>
 EOF
 
-	for file in ${dir}/*.zip ; do
-		# Check if the upload was successful...
-		until curl --output /dev/null --silent --head --fail "${BASE_URL}${file}" ; do
-			# Try to re-upload it...
-			echo "*!!* Hu ho, ${file} wasn't uploaded successfully, trying again... *!!*"
-			swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} ${file}
-			# Wait a bit...
-			sleep 5
-		done
-
-		echo "* Parsing file ${file} . . ."
-		# Get the mimetype
-		mimetype="$(mimetype -b "${file}")"
-		# Get the modification date
-		moddate="$(date -d "@$(stat -c "%Y" "${file}")" +"%Y-%b-%d %H:%M:%S")"
-		# Get the file size
-		rawsize="$(stat -c "%s" "${file}")"
-		if [[ ${rawsize} -ge 1048576 ]] ; then
-			size="$(echo "scale=1;${rawsize}/1048576" | bc)M"
-		elif [[ ${rawsize} -ge 1024 ]] ; then
-			size="$(echo "scale=1;${rawsize}/1024" | bc)K"
-		else
-			size="${rawsize}.0B"
-		fi
-		# Get the md5 checksum
-		checksum="$(md5sum "${file}" | awk '{print $1}')"
-
-		# File
-		cat >> kfmon.html << EOF
-			<tr><td class="n"><a href="${BASE_URL}/${file}" rel="nofollow">${file##*/}</a></td><td class="m">${moddate}</td><td class="s">${size}</td><td class="t">${mimetype}</td><td class="c">${checksum}</td></tr>
-EOF
-
-		# And then the MR thread...
-		case "${file##*/}" in
-			Plato-*_KOReader-v*.zip )
-				mr_file="BOTH"
-			;;
-			KOReader-v*.zip )
-				mr_file="KOREADER"
-			;;
-			Plato-*.zip )
-				mr_file="PLATO"
-			;;
-			* )
-				echo "Unknown file for ${file##*/} in ${dir} !!"
-				exit 1
-			;;
-		esac
-
-		# Do the actual substitution...
-		sed -e "s~%${mr_file}%~[url=${BASE_URL}/${file}]${file##*/}[/url]  [B]|[/B]  [I]${moddate}[/I]  [B]|[/B]  ${size}  [B]|[/B]  [COLOR=\"DimGray\"]${checksum}[/COLOR]~" -i KFMON_PUB_BB
+for file in *.zip ; do
+	# Check if the upload was successful...
+	until curl --output /dev/null --silent --head --fail "${BASE_URL}/${file}" ; do
+		# Try to re-upload it...
+		echo "*!!* Hu ho, ${file} wasn't uploaded successfully, trying again... *!!*"
+		swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} ${file}
+		# Wait a bit...
+		sleep 5
 	done
+
+	echo "* Parsing file ${file} . . ."
+	# Get the mimetype
+	mimetype="$(mimetype -b "${file}")"
+	# Get the modification date
+	moddate="$(date -d "@$(stat -c "%Y" "${file}")" +"%Y-%b-%d %H:%M:%S")"
+	# Get the file size
+	rawsize="$(stat -c "%s" "${file}")"
+	if [[ ${rawsize} -ge 1048576 ]] ; then
+		size="$(echo "scale=1;${rawsize}/1048576" | bc)M"
+	elif [[ ${rawsize} -ge 1024 ]] ; then
+		size="$(echo "scale=1;${rawsize}/1024" | bc)K"
+	else
+		size="${rawsize}.0B"
+	fi
+	# Get the md5 checksum
+	checksum="$(md5sum "${file}" | awk '{print $1}')"
+
+	# File
+	cat >> kfmon.html << EOF
+		<tr><td class="n"><a href="${BASE_URL}/${file}" rel="nofollow">${file##*/}</a></td><td class="m">${moddate}</td><td class="s">${size}</td><td class="t">${mimetype}</td><td class="c">${checksum}</td></tr>
+EOF
+
+	# And then the MR thread...
+	case "${file##*/}" in
+		Plato-*_KOReader-v*.zip )
+			mr_file="BOTH"
+		;;
+		KOReader-v*.zip )
+			mr_file="KOREADER"
+		;;
+		Plato-*.zip )
+			mr_file="PLATO"
+		;;
+		* )
+			echo "Unknown file for ${file##*/} !!"
+			exit 1
+		;;
+	esac
+
+	# Do the actual substitution...
+	sed -e "s~%${mr_file}%~[url=${BASE_URL}/${file}]${file##*/}[/url]  [B]|[/B]  [I]${moddate}[/I]  [B]|[/B]  ${size}  [B]|[/B]  [COLOR=\"DimGray\"]${checksum}[/COLOR]~" -i KFMON_PUB_BB
 done
 
 cat >> kfmon.html << EOF
@@ -238,7 +234,7 @@ swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfmon.html
 
 # Clean it up...
 echo "* Cleanup . . ."
-#rm -rfv ./kfmon.html
+rm -rfv ./kfmon.html
 
 # Go back
 cd -
