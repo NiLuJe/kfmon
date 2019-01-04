@@ -12,11 +12,11 @@ if sys.version_info < (3, 7):
 	raise SystemExit("This script requires Python 3.7+")
 
 from bs4 import BeautifulSoup
+import defusedxml.lxml
 from distutils.version import LooseVersion
 from email.utils import parsedate
 from github import Github
 from markdown import markdown
-import defusedxml.lxml
 import os
 from pathlib import Path
 import requests
@@ -28,7 +28,7 @@ from time import mktime
 print("* Looking for the latest KFMon install package . . .")
 kfm = Path("Kobo")
 kfmon_package = None
-# There should only ever be one, but glob returns a list ;)
+# There *should* only ever be one, but assume I might do something stupid later down the road...
 for kfmon in kfm.glob("KFMon-v*-g*.zip"):
 	print("* Found {}".format(kfmon.name))
 	kfmon_package = kfmon.resolve(strict=True)
@@ -53,10 +53,10 @@ plato_scripts_url = None
 for release in plato.get_releases():
 	version = release.tag_name
 	print("Looking at Plato {} ...".format(version))
-	# Plato doesn't actually store releases in assets, so, parse the MD body of the Release Notes instead
+	# Plato doesn't actually store releases in assets, so, parse the MD body of the Release Notes instead to pull the links
 	notes = defusedxml.lxml.fromstring(markdown(release.body))
 	for link in notes.xpath("//a"):
-		# We want both the main fmon package, as well as the launcher scripts
+		# We want both the main Plato package, as well as the launcher scripts
 		if plato_main_url is None and link.text == "plato-{}.zip".format(version):
 			plato_main_url = link.get("href")
 		if plato_scripts_url is None and link.text == "plato-launcher-fmon-{}.zip".format(version):
@@ -113,6 +113,7 @@ koreader_nightly_url = "{}{}/koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".form
 # We'll want to tame down the version...
 koreader_nightly_version = koreader_nightly_version.split("-g")[0]
 
+# Recap what we found
 print("\nKOReader Release {}:\n{}\nKOReader Nightly {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(koreader_version, koreader_url, koreader_nightly_version, koreader_nightly_url, plato_version, plato_main_url, plato_scripts_url))
 gh = None
 
@@ -139,7 +140,7 @@ r = requests.get(plato_main_url)
 if r.status_code != 200:
 	raise SystemExit("Couldn't download the latest Plato release!")
 # We'll restore its mtime later...
-plato_date = mktime(parsedate(r.headers['Last-Modified']))
+plato_date = mktime(parsedate(r.headers["Last-Modified"]))
 with pl_main.open(mode="w+b") as f:
 	f.write(r.content)
 pl_scripts = Path(t / "Plato-Scripts.zip")
@@ -182,7 +183,7 @@ r = requests.get(koreader_url)
 if r.status_code != 200:
 	raise SystemExit("Couldn't download the latest KOReader release!")
 # We'll restore its mtime later...
-koreader_date = mktime(parsedate(r.headers['Last-Modified']))
+koreader_date = mktime(parsedate(r.headers["Last-Modified"]))
 with ko_main.open(mode="w+b") as f:
 	f.write(r.content)
 
@@ -195,7 +196,7 @@ Path(ko / "icons").rmdir()
 
 # Then stage KOReader
 shutil.unpack_archive(ko_main, ko / ".adds")
-# Filter out some extraneous stuff
+# Filter out some extraneous stuff (old fmon relics)
 Path(ko / ".adds" / "koreader.png").unlink()
 Path(ko / ".adds" / "README_kobo.txt").unlink()
 
