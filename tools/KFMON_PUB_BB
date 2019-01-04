@@ -1,0 +1,31 @@
+You'll find here links to so called [B]"one-click"[/B] install packages for both [url=https://github.com/koreader/koreader]KOReader[/url] & [url=https://github.com/baskerville/plato]Plato[/url].
+This is primarily aimed at brand new users, with the goal of getting things to work in the most fool-proof manner possible, by simply unpacking a single ZIP archive in the root of your Kobo eReader over USB.
+To make this possible, these packages rely on [url=https://github.com/NiLuJe/kfmon]KFMon[/url].
+
+For existing users, if you're happy with your current setup, by all means, carry on! ;). If you're curious as to what this actually [I]does[/I] to original KOreader/Plato packages, the gory details are [url=https://github.com/NiLuJe/kfmon/blob/master/tools/one-click.py]all here[/url]!
+
+Now that this is out of the way, on to the good stuff!
+
+As mentioned earlier, the installation instructions are dead simple:
+1. Choose what you want to install: KOReader, Plato, or both, and download the appropriate ZIP from the listing below.
+2. Plug your Kobo eReader to your computer over USB.
+3. Directly extract the ZIP archive you've just downloaded to the [I]root[/I] directory of your device (i.e., not under [I]any[/I] subdirectory). [COLOR="DarkGrey"](That's the [B]"one click"[/B] bit ;p)[/COLOR]
+   NOTE: Prefer the "Extract To" approach vs. manually copy/pasting or drag'n dropping bits of the ZIP content yourself, as preserving the integrity of the directory structure and its contents is of paramount importance!
+4. Eject & unplug your device. The Kobo software should then appear to be processing a book, before restarting to process an update.
+   NOTE: If it [I]doesn't[/I] attempt to reboot, that's a sure thing something went wrong in the previous step (hint: see the NOTE).
+5. Once your device has finished rebooting, you should simply be able to tap on the KOReader or Plato icon in your Home or your Library to launch it!
+
+The listing follows this format:
+[B]Description[/B]  |  [B]D/L Link[/B]  |  [B]Last Modified[/B]  |  [B]Size[/B]  |  [B]MD5 Checksum[/B]  |  [B]MR Thread[/B]
+
+[COLOR="DarkGrey"][I](A barebones version of this listing is also available [url=http://kfmon-pub.AUTH-2ac4bfee353948ec8ea7fd1710574097.storage.sbg1.cloud.ovh.net/kfmon.html]here[/url]).[/I][/COLOR]
+
+[SIZE="4"][b][u]One-Click Kobo Packages:[/u][/b][/SIZE]
+
+[LIST]
+[*][COLOR="RoyalBlue"][B]KOReader[/B][/COLOR]  [B]|[/B]  %KOREADER%  [B]|[/B]  [url=https://www.mobileread.com/forums/forumdisplay.php?f=276]KOReader[/url]
+[*][COLOR="RoyalBlue"][B]Plato[/B][/COLOR]  [B]|[/B]  %PLATO%  [B]|[/B]  [url=https://www.mobileread.com/forums/showthread.php?t=292914]Plato[/url]
+[*][COLOR="RoyalBlue"][B]KOReader AND Plato[/B][/COLOR]  [B]|[/B]  %BOTH%  [B]|[/B]  [url=http://www.mobileread.com/forums/showthread.php?t=274231]KFMon[/url]
+[/LIST]
+
+[INDENT]%LASTUPDATED%[/INDENT]
