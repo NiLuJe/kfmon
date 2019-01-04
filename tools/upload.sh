@@ -12,6 +12,7 @@
 SCRIPTS_BASE_DIR="$(readlink -f "${BASH_SOURCE%/*}")"
 
 ## This config file sources my PCS credentials...
+# shellcheck disable=SC1090
 source ~/.mr_settings
 
 ## And also sets these constants, specific to this script.
@@ -60,6 +61,7 @@ cp -pv "${SCRIPTS_BASE_DIR}/KFMON_PUB_BB" ./
 
 # Upload!
 echo "* Uploading . . ."
+# shellcheck disable=SC2035
 swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} *.zip
 
 # Make it public straightaway so that the URL check will work...
@@ -163,7 +165,7 @@ for file in *.zip ; do
 	until curl --output /dev/null --silent --head --fail "${BASE_URL}/${file}" ; do
 		# Try to re-upload it...
 		echo "*!!* Hu ho, ${file} wasn't uploaded successfully, trying again... *!!*"
-		swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} ${file}
+		swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} "${file}"
 		# Wait a bit...
 		sleep 5
 	done
@@ -237,7 +239,8 @@ echo "* Cleanup . . ."
 rm -rfv ./kfmon.html
 
 # Go back
-cd -
+# shellcheck disable=SC2103
+#cd -
 
 # And we're done :)
 exit 0
