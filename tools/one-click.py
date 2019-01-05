@@ -40,8 +40,8 @@ for kfmon in kfm.glob("KFMon-v*-g*.zip"):
 if kfmon_package is None:
 	raise SystemExit("Couldn't find a KFMon install package!")
 
-# We'll be doing as much as possible through the GitHub API, unauthenticated
-gh = Github()
+# We'll be doing as much as possible through the GitHub API, possibly authenticated
+gh = Github(os.getenv("GH_API_ACCESS_TOK"))
 
 # Get the latest Plato release
 print("* Looking for the latest Plato release . . .")
