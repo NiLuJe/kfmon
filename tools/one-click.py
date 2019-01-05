@@ -18,7 +18,6 @@ from email.utils import parsedate
 from github import Github
 from io import DEFAULT_BUFFER_SIZE
 from markdown import markdown
-from math import ceil
 import os
 from pathlib import Path
 import requests
@@ -145,7 +144,6 @@ if r.status_code != 200:
 # We'll restore its mtime later...
 plato_date = mktime(parsedate(r.headers["Last-Modified"]))
 clen = int(r.headers.get("Content-Length", 0))
-print("clen: {:.2f}MB".format(clen / 1024 / 1024))
 wrote = 0
 with pl_main.open(mode="w+b") as f:
 	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
@@ -159,7 +157,6 @@ r = requests.get(plato_scripts_url, stream=True)
 if r.status_code != 200:
 	raise SystemExit("Couldn't download the latest Plato scripts package!")
 clen = int(r.headers.get("Content-Length", 0))
-print("clen: {:.2f}KB".format(clen / 1024))
 wrote = 0
 with pl_scripts.open(mode="w+b") as f:
 	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
@@ -204,7 +201,6 @@ if r.status_code != 200:
 # We'll restore its mtime later...
 koreader_date = mktime(parsedate(r.headers["Last-Modified"]))
 clen = int(r.headers.get("Content-Length", 0))
-print("clen: {:.2f}MB".format(clen / 1024 / 1024))
 wrote = 0
 with ko_main.open(mode="w+b") as f:
 	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
