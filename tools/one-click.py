@@ -16,13 +16,16 @@ import defusedxml.lxml
 from distutils.version import LooseVersion
 from email.utils import parsedate
 from github import Github
+from io import DEFAULT_BUFFER_SIZE
 from markdown import markdown
+from math import ceil
 import os
 from pathlib import Path
 import requests
 import shutil
 from tempfile import gettempdir
 from time import mktime
+from tqdm import tqdm
 
 # We'll need the current KFMon install package first
 print("* Looking for the latest KFMon install package . . .")
@@ -136,19 +139,35 @@ pl = Path(t / "Plato")
 
 # Download both packages...
 pl_main = Path(t / "Plato.zip")
-r = requests.get(plato_main_url)
+r = requests.get(plato_main_url, stream=True)
 if r.status_code != 200:
 	raise SystemExit("Couldn't download the latest Plato release!")
 # We'll restore its mtime later...
 plato_date = mktime(parsedate(r.headers["Last-Modified"]))
+clen = int(r.headers.get("Content-Length", 0))
+print("clen: {:.2f}MB".format(clen / 1024 / 1024))
+wrote = 0
 with pl_main.open(mode="w+b") as f:
-	f.write(r.content)
+	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
+			wrote += f.write(data)
+			pbar.update(len(data))
+if clen != 0 and wrote != clen:
+	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 pl_scripts = Path(t / "Plato-Scripts.zip")
-r = requests.get(plato_scripts_url)
+r = requests.get(plato_scripts_url, stream=True)
 if r.status_code != 200:
 	raise SystemExit("Couldn't download the latest Plato scripts package!")
+clen = int(r.headers.get("Content-Length", 0))
+print("clen: {:.2f}KB".format(clen / 1024))
+wrote = 0
 with pl_scripts.open(mode="w+b") as f:
-	f.write(r.content)
+	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
+			wrote += f.write(data)
+			pbar.update(len(data))
+if clen != 0 and wrote != clen:
+	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 
 # Stage KFMon first
 shutil.unpack_archive(kfmon_package, pl)
@@ -179,13 +198,21 @@ ko = Path(t / "KOReader")
 
 # Download the package
 ko_main = Path(t / "KOReader.zip")
-r = requests.get(koreader_url)
+r = requests.get(koreader_url, stream=True)
 if r.status_code != 200:
 	raise SystemExit("Couldn't download the latest KOReader release!")
 # We'll restore its mtime later...
 koreader_date = mktime(parsedate(r.headers["Last-Modified"]))
+clen = int(r.headers.get("Content-Length", 0))
+print("clen: {:.2f}MB".format(clen / 1024 / 1024))
+wrote = 0
 with ko_main.open(mode="w+b") as f:
-	f.write(r.content)
+	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
+			wrote += f.write(data)
+			pbar.update(len(data))
+if clen != 0 and wrote != clen:
+	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 
 # Stage KFMon first
 shutil.unpack_archive(kfmon_package, ko)
