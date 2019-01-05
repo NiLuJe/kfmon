@@ -17,6 +17,7 @@ from distutils.version import LooseVersion
 from email.utils import parsedate
 from github import Github
 from io import DEFAULT_BUFFER_SIZE
+import logging
 from markdown import markdown
 import os
 from pathlib import Path
@@ -25,6 +26,10 @@ import shutil
 from tempfile import gettempdir
 from time import mktime
 from tqdm import tqdm
+
+# Set up a logger for shutil.make_archive
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger("KFMon")
 
 # We'll need the current KFMon install package first
 print("* Looking for the latest KFMon install package . . .")
@@ -132,11 +137,12 @@ t = Path(tmpdir / "KFMon")
 t.mkdir(parents=True, exist_ok=True)
 
 # Start with Plato
-print("* Creating a one-click package for Plato . . .")
+print("\n* Creating a one-click package for Plato . . .")
 # It'll be staged in its own directory
 pl = Path(t / "Plato")
 
 # Download both packages...
+print("* Downloading original package")
 pl_main = Path(t / "Plato.zip")
 r = requests.get(plato_main_url, stream=True)
 if r.status_code != 200:
@@ -167,6 +173,7 @@ if clen != 0 and wrote != clen:
 	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 
 # Stage KFMon first
+print("* Staging it . . .")
 shutil.unpack_archive(kfmon_package, pl)
 # Filter out KOReader config & icons
 Path(pl / ".adds/kfmon/config/koreader.ini").unlink()
@@ -177,9 +184,10 @@ shutil.unpack_archive(pl_scripts, pl)
 shutil.unpack_archive(pl_main, pl / ".adds/plato")
 
 # Finally, zip it up!
+print("* Bundling it . . .")
 pl_basename = "Plato-{}".format(plato_version)
 pl_zip = Path(t / pl_basename)
-shutil.make_archive(pl_zip, format="zip", root_dir=pl, base_dir=".")
+shutil.make_archive(pl_zip, format="zip", root_dir=pl, base_dir=".", logger=logger)
 # And restore Plato's original mtime...
 pl_zip = pl_zip.with_name("{}.zip".format(pl_basename))
 os.utime(pl_zip, times=(plato_date, plato_date))
@@ -189,11 +197,12 @@ shutil.rmtree(pl)
 pl = None
 
 # Do KOReader next
-print("* Creating a one-click package for KOReader . . .")
+print("\n* Creating a one-click package for KOReader . . .")
 # It'll be staged in its own directory
 ko = Path(t / "KOReader")
 
 # Download the package
+print("* Downloading original package")
 ko_main = Path(t / "KOReader.zip")
 r = requests.get(koreader_url, stream=True)
 if r.status_code != 200:
@@ -211,6 +220,7 @@ if clen != 0 and wrote != clen:
 	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 
 # Stage KFMon first
+print("* Staging it . . .")
 shutil.unpack_archive(kfmon_package, ko)
 # Filter out Plato config & icons
 Path(ko / ".adds/kfmon/config/plato.ini").unlink()
@@ -224,9 +234,10 @@ Path(ko / ".adds" / "koreader.png").unlink()
 Path(ko / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
+print("* Bundling it . . .")
 ko_basename = "KOReader-{}".format(koreader_version)
 ko_zip = Path(t / ko_basename)
-shutil.make_archive(ko_zip, format="zip", root_dir=ko, base_dir=".")
+shutil.make_archive(ko_zip, format="zip", root_dir=ko, base_dir=".", logger=logger)
 # And restore KOReader's original mtime...
 ko_zip = ko_zip.with_name("{}.zip".format(ko_basename))
 os.utime(ko_zip, times=(koreader_date, koreader_date))
@@ -236,10 +247,11 @@ shutil.rmtree(ko)
 ko = None
 
 # And while we're there, I guess we can do both at once ;)
-print("* Creating a one-click package for Plato + KOReader . . .")
+print("\n* Creating a one-click package for Plato + KOReader . . .")
 pk = Path(t / "Both")
 
 # Stage KFMon first
+print("* Staging it . . .")
 shutil.unpack_archive(kfmon_package, pk)
 # Then Plato
 shutil.unpack_archive(pl_scripts, pk)
@@ -251,9 +263,10 @@ Path(pk / ".adds" / "koreader.png").unlink()
 Path(pk / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
+print("* Bundling it . . .")
 pk_basename = "Plato-{}_KOReader-{}".format(plato_version, koreader_version)
 pk_zip = Path(t / pk_basename)
-shutil.make_archive(pk_zip, format="zip", root_dir=pk, base_dir=".")
+shutil.make_archive(pk_zip, format="zip", root_dir=pk, base_dir=".", logger=logger)
 # And restore KFMon's original mtime...
 pk_zip = pk_zip.with_name("{}.zip".format(pk_basename))
 os.utime(pk_zip, times=(kfmon_date, kfmon_date))
