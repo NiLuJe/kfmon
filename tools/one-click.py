@@ -154,8 +154,9 @@ wrote = 0
 with pl_main.open(mode="w+b") as f:
 	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
 		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
-			wrote += f.write(data)
-			pbar.update(len(data))
+			written = f.write(data)
+			wrote += written
+			pbar.update(written)
 if clen != 0 and wrote != clen:
 	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 pl_scripts = Path(t / "Plato-Scripts.zip")
@@ -167,8 +168,9 @@ wrote = 0
 with pl_scripts.open(mode="w+b") as f:
 	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
 		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
-			wrote += f.write(data)
-			pbar.update(len(data))
+			written = f.write(data)
+			wrote += written
+			pbar.update(written)
 if clen != 0 and wrote != clen:
 	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 
@@ -214,8 +216,9 @@ wrote = 0
 with ko_main.open(mode="w+b") as f:
 	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
 		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
-			wrote += f.write(data)
-			pbar.update(len(data))
+			written = f.write(data)
+			wrote += written
+			pbar.update(written)
 if clen != 0 and wrote != clen:
 	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 
