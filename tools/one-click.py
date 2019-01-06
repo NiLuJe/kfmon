@@ -144,35 +144,35 @@ pl = Path(t / "Plato")
 # Download both packages...
 print("* Downloading original package")
 pl_main = Path(t / "Plato.zip")
-r = requests.get(plato_main_url, stream=True)
-if r.status_code != 200:
-	raise SystemExit("Couldn't download the latest Plato release!")
-# We'll restore its mtime later...
-plato_date = mktime(parsedate(r.headers["Last-Modified"]))
-clen = int(r.headers.get("Content-Length", 0))
-wrote = 0
-with pl_main.open(mode="w+b") as f:
-	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
-			written = f.write(data)
-			wrote += written
-			pbar.update(written)
-if clen != 0 and wrote != clen:
-	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
+with requests.get(plato_main_url, stream=True) as r:
+	if r.status_code != 200:
+		raise SystemExit("Couldn't download the latest Plato release!")
+	# We'll restore its mtime later...
+	plato_date = mktime(parsedate(r.headers["Last-Modified"]))
+	clen = int(r.headers.get("Content-Length", 0))
+	wrote = 0
+	with pl_main.open(mode="w+b") as f:
+		with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+			for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
+				written = f.write(data)
+				wrote += written
+				pbar.update(written)
+	if clen != 0 and wrote != clen:
+		raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 pl_scripts = Path(t / "Plato-Scripts.zip")
-r = requests.get(plato_scripts_url, stream=True)
-if r.status_code != 200:
-	raise SystemExit("Couldn't download the latest Plato scripts package!")
-clen = int(r.headers.get("Content-Length", 0))
-wrote = 0
-with pl_scripts.open(mode="w+b") as f:
-	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
-			written = f.write(data)
-			wrote += written
-			pbar.update(written)
-if clen != 0 and wrote != clen:
-	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
+with requests.get(plato_scripts_url, stream=True) as r:
+	if r.status_code != 200:
+		raise SystemExit("Couldn't download the latest Plato scripts package!")
+	clen = int(r.headers.get("Content-Length", 0))
+	wrote = 0
+	with pl_scripts.open(mode="w+b") as f:
+		with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+			for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
+				written = f.write(data)
+				wrote += written
+				pbar.update(written)
+	if clen != 0 and wrote != clen:
+		raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 
 # Stage KFMon first
 print("* Staging it . . .")
@@ -206,21 +206,21 @@ ko = Path(t / "KOReader")
 # Download the package
 print("* Downloading original package")
 ko_main = Path(t / "KOReader.zip")
-r = requests.get(koreader_url, stream=True)
-if r.status_code != 200:
-	raise SystemExit("Couldn't download the latest KOReader release!")
-# We'll restore its mtime later...
-koreader_date = mktime(parsedate(r.headers["Last-Modified"]))
-clen = int(r.headers.get("Content-Length", 0))
-wrote = 0
-with ko_main.open(mode="w+b") as f:
-	with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-		for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
-			written = f.write(data)
-			wrote += written
-			pbar.update(written)
-if clen != 0 and wrote != clen:
-	raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
+with requests.get(koreader_url, stream=True) as r:
+	if r.status_code != 200:
+		raise SystemExit("Couldn't download the latest KOReader release!")
+	# We'll restore its mtime later...
+	koreader_date = mktime(parsedate(r.headers["Last-Modified"]))
+	clen = int(r.headers.get("Content-Length", 0))
+	wrote = 0
+	with ko_main.open(mode="w+b") as f:
+		with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+			for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
+				written = f.write(data)
+				wrote += written
+				pbar.update(written)
+	if clen != 0 and wrote != clen:
+		raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
 
 # Stage KFMon first
 print("* Staging it . . .")
