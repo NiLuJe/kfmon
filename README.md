@@ -64,7 +64,7 @@ In any case, you can confirm KFMon's behavior by checking its log, which we'll c
 
 ## How can I add my own actions?
 
-Each action gets a [dedicated INI file](/config/koreader.ini) in the config folder, so just drop a new `.ini` in the config folder.
+Each action gets a [dedicated INI file](/config/usbnet.ini) in the config folder, so just drop a new `.ini` in the config folder.
 This should make it trivial to port existing fmon setups.
 As you would expect, a simple file/action pair only requires two entries:
 
@@ -93,6 +93,8 @@ And you will have to set *all three* of the following key/value pairs:
 `db_comment = A cool app that does neat stuff made by an awesome team.`, which sets the Comment shown in the "Details" panel of the "book" in the Library.
 
 Note that these three fields will be cropped at 128 characters.
+
+When in doubt, look at an existing config, like the [USBNet](/config/usbnet.ini) one (and its matching [icon](/resources/usbnet.png)), tailored for my USBNet/USBMS toggle script from [KoboStuff](https://www.mobileread.com/forums/showthread.php?t=254214) ;).
 
 ## How do I uninstall this?
 
