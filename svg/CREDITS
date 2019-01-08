@@ -1,0 +1,5 @@
+usbnet.svg:
+	* Mangled from KDE's breeze media-flash-symbolic.svg, Copyright (C) 2014 Uri Herrera <uri_herrera@nitrux.in> and others,
+	  Licensed under the LGPL-3 (https://www.gnu.org/licenses/lgpl.html),
+	  (https://github.com/KDE/breeze-icons/blob/master/icons/devices/symbolic/media-flash-symbolic.svg)
+	* Ethernet plug idea shamelessly pilfered from @pazos' cervantes-safemode (https://github.com/pazos/cervantes-safemode/blob/master/images/usbnet.png) ;).
