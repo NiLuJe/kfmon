@@ -70,4 +70,4 @@ fi
 
 # We've got a Kobo, we've got a package, let's go!
 echo "* Installing ${AVAILABLE_PKGS[${j}]} . . ."
-unzip "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
+unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
