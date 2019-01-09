@@ -12,7 +12,7 @@ $KOBO_MOUNTPOINT=$NULL
 $KOBO_MOUNTPOINT=Get-Disk | Where BusType -eq USB | Get-Partition | Get-Volume
 
 # Sanity check...
-if (NOT Test-Path "$KOBO_MOUNTPOINT" + "\.kobo") {
+if (NOT Test-Path $KOBO_MOUNTPOINT + "\.kobo") {
 	Write-Host("Can't find a .kobo directory, " + $KOBO_MOUNTPOINT + " doesn't appear to point to a Kobo eReader... Is one actually mounted?")
 	Exit 1
 }
@@ -30,7 +30,7 @@ for ($i = 0; $i -lt $AVAILABLE_PKGS.Length; $i++) {
 	Write-Host($i + ": " + $AVAILABLE_PKGS[$i])
 }
 
-$j = Read-Host -Prompt '* Enter the number corresponding to the one you want to install'
+$j = Read-Host -Prompt "* Enter the number corresponding to the one you want to install"
 
 # Check if that was a sane reply...
 if (NOT $j -is [int]) {
