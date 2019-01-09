@@ -36,7 +36,7 @@ print("* Looking for the latest KFMon install package . . .")
 kfm = Path("Kobo")
 kfmon_package = None
 # There *should* only ever be one, but assume I might do something stupid later down the road...
-for kfmon in kfm.glob("KFMon-v*-g*.zip"):
+for kfmon in kfm.glob("KFMon-v*.zip"):
 	print("* Found {}".format(kfmon.name))
 	kfmon_package = kfmon.resolve(strict=True)
 	# Remember its mtime
