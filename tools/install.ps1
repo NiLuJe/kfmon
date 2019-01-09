@@ -30,14 +30,10 @@ for ($i = 0; $i -lt $AVAILABLE_PKGS.Length; $i++) {
 	Write-Host($i + ": " + $AVAILABLE_PKGS[$i])
 }
 
-# FIXME: No CR!
-Write-Host("* Enter the number corresponding to the one you want to install: ")
-# FIXME: read!
-read j
+$j = Read-Host -Prompt '* Enter the number corresponding to the one you want to install'
 
 # Check if that was a sane reply...
-# FIXME: Fix that! (is integer check)
-if (NOT $j -eq $j ) {
+if (NOT $j -is [int]) {
 	Write-Host("That wasn't a number!")
 	Exit 1
 }
