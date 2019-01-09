@@ -12,7 +12,7 @@ $KOBO_MOUNTPOINT=$NULL
 $KOBO_MOUNTPOINT=Get-Disk | Where BusType -eq USB | Get-Partition | Get-Volume | Where FileSystemLabel -eq KOBOeReader
 
 # Sanity check...
-if ($KOBO_MOUNTPOINT -eq $NULL) {
+if ($NULL -eq $KOBO_MOUNTPOINT) {
 	Write-Host("Couldn't find a Kobo eReader volume! Is one actually mounted?")
 	Read-Host -Prompt "Nothing to do! Press Enter to exit"
 	Exit 1
