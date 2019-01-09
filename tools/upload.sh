@@ -144,7 +144,7 @@ cat > kfmon.html << EOF
 			</tbody>
 
 			<!-- Some more links... -->
-			<tr><td class="n"><a href="http://www.mobileread.com/forums/showthread.php?t=225030">Matching Thread @ MR</a></td><td class="m">- &nbsp;</td><td class="s">- &nbsp;</td><td class="t">Link</td><td class="c">- &nbsp;</td></tr>
+			<tr><td class="n"><a href="https://www.mobileread.com/forums/showthread.php?t=314220">Matching Thread @ MR</a></td><td class="m">- &nbsp;</td><td class="s">- &nbsp;</td><td class="t">Link</td><td class="c">- &nbsp;</td></tr>
 			<tr><td class="n"><a href="https://github.com/koreader/koreader">KOReader @ GitHub</a></td><td class="m">- &nbsp;</td><td class="s">- &nbsp;</td><td class="t">Link</td><td class="c">- &nbsp;</td></tr>
 			<tr><td class="n"><a href="https://github.com/baskerville/plato">Plato @ GitHub</a></td><td class="m">- &nbsp;</td><td class="s">- &nbsp;</td><td class="t">Link</td><td class="c">- &nbsp;</td></tr>
 			<tr><td class="n"><a href="https://github.com/NiLuJe/kfmon">KFMon @ GitHub</a></td><td class="m">- &nbsp;</td><td class="s">- &nbsp;</td><td class="t">Link</td><td class="c">- &nbsp;</td></tr>
