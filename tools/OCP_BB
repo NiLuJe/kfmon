@@ -1,0 +1,50 @@
+Alternatively, I've also come up with small scripts to automate the process somewhat, with a few caveats:
+
+[LIST]
+[*] They rely on decently recent features, on every platform (i.e., Windows 10, a not terribly outdated macOS version, and a decently recent Linux distribution).
+[*] They'll only behave properly with a *single* Kobo plugged to the computer. Running 'em with *no* Kobo plugged in is safe, running 'em with multiple Kobos may lead to unexpected behavior. It may be handled sanely, but it may not.
+[*] On macOS, this doesn't protect you from some of its stupid [url=https://www.mobileread.com/forums/showpost.php?p=3724649&postcount=96]"Quality of Life"[/url] features. Of particular interest here, Safari and its tendency to do stupid things with ZIP archives. If you don't want to change your Safari settings, you'll have to fish out the original ZIP archive from your Trash.
+[*] Most browers will treat the scripts as text files, so you'll have to [i]Right Click[/i] > [i]Save Link As[/i] (or [i]Dowload Link File[/i] in Safari) on the links to download them.
+[/LIST]
+
+With that out of the way, here's what this is supposed to automate: figuring out where the Kobo is mounted, asking you to confirm what you want to install, and properly unpacking the right archive.
+
+Onwards!
+
+[SIZE="4"][b][u][COLOR="RoyalBlue"]Windows:[/COLOR][/u][/b][/SIZE]
+[LIST=1]
+[*] Check the previous message, and download the ZIP package that you're interested in.
+[*] Download the [url=https://github.com/NiLuJe/kfmon/raw/master/tools/install.ps1]Windows install script[/url], [b]in the same folder[/b].
+[*] Run the install script with PowerShell ([i]Right Click[/i] > [i]Run with PowerShell[/i]).
+   That should look like this:
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168964&d=1547068529][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168964&stc=1&thumb=1&d=1547068529[/img][/url]
+[*] Follow the on-screen instructions.
+[*] Eject & unplug your Kobo, watch it process & reboot :).
+[/LIST]
+
+[SIZE="4"][b][u][COLOR="RoyalBlue"]macOS:[/COLOR][/u][/b][/SIZE]
+[LIST=1]
+[*] Check the previous message, and download the ZIP package that you're interested in, remembering the macOS/Safari quirks I mentioned above.
+[*] Download the [url=https://github.com/NiLuJe/kfmon/raw/master/tools/install.sh]*nix install script[/url], [b]in the same folder[/b].
+[*] Run the install script with Terminal ([i]Right Click[/i] > [i]Open With[/i] > [i]Other...[/i] > Flip the combobox to [i]All Applications[/i] > [i]Utilities[/i] > [i]Terminal.app[/i]) [color=Grey][macOS is awesome. -_-"][/color].
+   That should look like this:
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168965&d=1547068529][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168965&stc=1&thumb=1&d=1547068529[/img][/url]
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168966&d=1547068529][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168966&stc=1&thumb=1&d=1547068529[/img][/url]
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168967&d=1547068529][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168967&stc=1&thumb=1&d=1547068529[/img][/url]
+[*] Follow the on-screen instructions. Close the window when it's done.
+[*] Eject & unplug your Kobo, watch it process & reboot :).
+[/LIST]
+
+[SIZE="4"][b][u][COLOR="RoyalBlue"]Linux:[/COLOR][/u][/b][/SIZE]
+[LIST=1]
+[*] Check the previous message, and download the ZIP package that you're interested in.
+[*] Download the [url=https://github.com/NiLuJe/kfmon/raw/master/tools/install.sh]*nix install script[/url], [b]in the same folder[/b].
+[*] Run the install script with your favorite terminal emulator.
+   Here's how it looks like on KDE:
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168968&d=1547068529][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168968&stc=1&thumb=1&d=1547068529[/img][/url]
+[*] Follow the on-screen instructions. Close the window when it's done.
+[*] Eject & unplug your Kobo, watch it process & reboot :).
+[/LIST]
+
+And that's it! For reference, here's how the script's output could look like:
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168969&d=1547068539][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168969&stc=1&thumb=1&d=1547068539[/img][/url]

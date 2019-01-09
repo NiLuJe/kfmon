@@ -7,13 +7,15 @@ For existing users, if you're happy with your current setup, by all means, carry
 Now that this is out of the way, on to the good stuff!
 
 As mentioned earlier, the installation instructions are dead simple:
-1. Choose what you want to install: KOReader, Plato, or both, and download the appropriate ZIP from the listing below.
-2. Plug your Kobo eReader to your computer over USB.
-3. Directly extract the ZIP archive you've just downloaded to the [I]root[/I] directory of your device (i.e., not under [I]any[/I] subdirectory). [COLOR="DarkGrey"](That's the [B]"one click"[/B] bit ;p)[/COLOR]
+[LIST=1]
+[*] Choose what you want to install: KOReader, Plato, or both, and download the appropriate ZIP from the listing below.
+[*] Plug your Kobo eReader to your computer over USB.
+[*] Directly extract the ZIP archive you've just downloaded to the [I]root[/I] directory of your device (i.e., not under [I]any[/I] subdirectory). [COLOR="DarkGrey"](That's the [B]"one click"[/B] bit ;p)[/COLOR]
    NOTE: Prefer the "Extract To" approach (and allow replacing existing content if it's asked of you) vs. manually copy/pasting or drag'n dropping bits of the ZIP content yourself, as preserving the integrity of the directory structure and its contents is of paramount importance!
-4. Eject & unplug your device. The Kobo software should then appear to be processing a book, before restarting to process an update.
+[*] Eject & unplug your device. The Kobo software should then appear to be processing a book, before restarting to process an update.
    NOTE: If it [I]doesn't[/I] attempt to reboot, that's a sure thing something went wrong in the previous step (hint: see the NOTE).
-5. Once your device has finished rebooting, you should simply be able to tap on the KOReader or Plato icon in your Home or your Library to launch it!
+[*] Once your device has finished rebooting, you should simply be able to tap on the KOReader or Plato icon in your Home or your Library to launch it!
+[/LIST]
 
 The listing follows this format:
 [B]Description[/B]  |  [B]D/L Link[/B]  |  [B]Last Modified[/B]  |  [B]Size[/B]  |  [B]MD5 Checksum[/B]  |  [B]MR Thread[/B]
