@@ -3,7 +3,7 @@
 #
 # Quick'n dirty helper to pickup a Kobo's USBMS mountpoint...
 # Spoiler alert: I've never written anything in PowerShell before :D
-# NOTE: Requires PowerShell 5+
+# NOTE: Requires PowerShell 5+ (Expand-Archive. ALso, I only have a Win10 box to test this anyway ;p).
 #
 ##
 
