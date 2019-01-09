@@ -14,7 +14,7 @@ $KOBO_MOUNTPOINT=Get-Disk | Where BusType -eq USB | Get-Partition | Get-Volume |
 # Sanity check...
 if ($NULL -eq $KOBO_MOUNTPOINT) {
 	Write-Host("Couldn't find a Kobo eReader volume! Is one actually mounted?")
-	Read-Host -Prompt "Nothing to do! Press Enter to exit"
+	Read-Host -Prompt "* Nothing to do! Press Enter to exit"
 	Exit 1
 }
 
@@ -24,7 +24,7 @@ $KOBO_MOUNTPOINT=$KOBO_MOUNTPOINT.DriveLetter
 $KOBO_DIR=$KOBO_MOUNTPOINT + ":\.kobo"
 if (-NOT (Test-Path $KOBO_DIR)) {
 	Write-Host("Can't find a .kobo directory, " + $KOBO_MOUNTPOINT + ": doesn't appear to point to a Kobo eReader... Is one actually mounted?")
-	Read-Host -Prompt "Nothing to do! Press Enter to exit"
+	Read-Host -Prompt "* Nothing to do! Press Enter to exit"
 	Exit 1
 }
 
@@ -52,13 +52,13 @@ $j = [int]$j
 # And check if that was successful.
 if (-NOT ($j -is [int])) {
 	Write-Host("That wasn't a number!")
-	Read-Host -Prompt "No changes were made! Press Enter to exit"
+	Read-Host -Prompt "* No changes were made! Press Enter to exit"
 	Exit 1
 }
 
 if ($j -lt 0 -OR $j -ge $AVAILABLE_PKGS.Length) {
 	Write-Host("That number was out of range!")
-	Read-Host -Prompt "No changes were made! Press Enter to exit"
+	Read-Host -Prompt "* No changes were made! Press Enter to exit"
 	Exit 1
 }
 
@@ -70,7 +70,7 @@ Expand-Archive $AVAILABLE_PKGS[$j] -DestinationPath $KOBO_DEST -Force
 
 # Much like in the error paths, draw a final prompt so that the window stays up...
 if ($?) {
-	Read-Host -Prompt "Installation successful! Press Enter to exit"
+	Read-Host -Prompt "* Installation successful! Press Enter to exit"
 } else {
-	Read-Host -Prompt "Installation FAILED! No cleanup will be done! Press Enter to exit"
+	Read-Host -Prompt "* Installation FAILED! No cleanup will be done! Press Enter to exit"
 }

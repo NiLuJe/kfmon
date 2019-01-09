@@ -71,3 +71,11 @@ fi
 # We've got a Kobo, we've got a package, let's go!
 echo "* Installing ${AVAILABLE_PKGS[${j}]} . . ."
 unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
+
+ret=$?
+if [ ${ret} -eq 0 ] ; then
+	echo "* Installation successful!"
+else
+	echo "* Installation FAILED! No cleanup will be done!"
+	exit ${ret}
+fi
