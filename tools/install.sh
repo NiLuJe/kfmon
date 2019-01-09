@@ -54,8 +54,8 @@ for i in "${!AVAILABLE_PKGS[@]}" ; do
 	echo "${i}: ${AVAILABLE_PKGS[${i}]}"
 done
 
-echo -n "* Enter the number corresponding to the one you want to install: "
-read -r j
+# NOTE: Read a *single* character, which should cover 99% of use-cases
+read -r -p "* Enter the number corresponding to the one you want to install: " -n 1 j
 
 # Check if that was a sane reply...
 if ! [ "${j}" -eq "${j}" ] 2>/dev/null ; then
