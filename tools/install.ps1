@@ -1,3 +1,4 @@
+#Requires -Version 5.0
 ##
 #
 # Quick'n dirty helper to pickup a Kobo's USBMS mountpoint...
