@@ -50,12 +50,12 @@ for file in KOReader-v*.zip Plato-*.zip KFMon-v*.zip ; do
 done
 
 echo "* Here are the available packages:"
-for i in ${!AVAILABLE_PKGS[@]} ; do
+for i in "${!AVAILABLE_PKGS[@]}" ; do
 	echo "${i}: ${AVAILABLE_PKGS[${i}]}"
 done
 
 echo -n "* Enter the number corresponding to the one you want to install: "
-read j
+read -r j
 
 # Check if that was a sane reply...
 if ! [ "${j}" -eq "${j}" ] 2>/dev/null ; then
