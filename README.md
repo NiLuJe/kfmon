@@ -46,6 +46,10 @@ The same is also true for [Plato](https://www.mobileread.com/forums/showthread.p
 
 If any of these extra icons in your Library bother you, you *can* safely delete them however you wish, but you'll also have to delete the matching config files if you want to avoid the warning message a config without its icon will trigger ;).
 
+### One Click Packages
+
+If your ultimate goal is installing KOReader and/or Plato *for the first time*, I'm also providing "one-click" packages that rely on KFMon to do just that: take a look at the [MobileRead thread](https://www.mobileread.com/forums/showthread.php?t=314220) ;).
+
 ## How can I tinker with it?
 
 The config files are stored in the */mnt/onboard/***.adds/kfmon/config** folder.
