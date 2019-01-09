@@ -45,7 +45,7 @@ fi
 
 # Ask the user what they want to install...
 AVAILABLE_PKGS=()
-for file in Plato-*_KOReader-v*.zip KOReader-v*.zip Plato-*.zip KFMon-v*.zip ; do
+for file in KOReader-v*.zip Plato-*.zip KFMon-v*.zip ; do
 	[[ -f "${file}" ]] && AVAILABLE_PKGS+=("${file}")
 done
 
@@ -55,26 +55,19 @@ for i in ${!AVAILABLE_PKGS[@]} ; do
 done
 
 echo -n "* Enter the number corresponding to the one you want to install: "
-read choice
+read j
 
 # Check if that was a sane reply...
-is_integer()
-{
-	# Cheap trick ;)
-	[[ "${1}" -eq "${1}" ]] 2>/dev/null
-	return $?
-}
-
-if ! is_integer "${choice}" ; then
+if ! [ "${j}" -eq "${j}" ] 2>/dev/null ; then
 	echo "That wasn't a number!"
 	exit -1
 fi
 
-if [[ ${choice} -lt 0 ]] || [[ ${choice} -ge ${#AVAILABLE_PKGS[@]} ]] ; then
+if [[ ${j} -lt 0 ]] || [[ ${j} -ge ${#AVAILABLE_PKGS[@]} ]] ; then
 	echo "That number was out of range!"
 	exit -1
 fi
 
 # We've got a Kobo, we've got a package, let's go!
-echo "* Installing ${AVAILABLE_PKGS[${choice}]} . . ."
-echo unzip "${AVAILABLE_PKGS[${choice}]}" -d "${KOBO_MOUNTPOINT}"
+echo "* Installing ${AVAILABLE_PKGS[${j}]} . . ."
+echo unzip "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
