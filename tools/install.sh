@@ -38,6 +38,11 @@ case "${PLATFORM}" in
 esac
 
 # Sanity check...
+if [[ "${KOBO_MOUNTPOINT}" == "/dev/null" ]] ; then
+	echo "Couldn't find a Kobo eReader volume! Is one actually mounted?"
+	exit -1
+fi
+
 if [[ ! -d "${KOBO_MOUNTPOINT}/.kobo" ]] ; then
 	echo "Can't find a .kobo directory, ${KOBO_MOUNTPOINT} doesn't appear to point to a Kobo eReader... Is one actually mounted?"
 	exit -1
