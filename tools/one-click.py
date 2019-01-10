@@ -13,15 +13,16 @@ if sys.version_info < (3, 7):
 
 from bs4 import BeautifulSoup
 import defusedxml.lxml
-from distutils.version import LooseVersion
 from email.utils import parsedate
 from github import Github
 from io import DEFAULT_BUFFER_SIZE
 import logging
 from markdown import markdown
+from natsort import natsorted
 import os
 from pathlib import Path
 import requests
+from semver import parse_version_info
 import shutil
 from tempfile import gettempdir
 from time import mktime
@@ -81,12 +82,18 @@ plato = None
 print("* Looking for the latest KOReader release . . .")
 koreader = gh.get_repo("koreader/koreader")
 latest_koreader = koreader.get_latest_release()
+# Try to pickup a hotfix release if there's one...
+latest_ko_tag = koreader.get_tags()[0].name
 koreader_version = latest_koreader.tag_name
 koreader_url = None
 # Loop over assets until we find the Kobo package ;)
 for asset in latest_koreader.get_assets():
 	if asset.name == "koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_version):
 		koreader_url = asset.browser_download_url
+		break
+	elif asset.name == "koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(latest_ko_tag):
+		koreader_url = asset.browser_download_url
+		koreader_version = latest_ko_tag
 		break
 
 if koreader_url is None:
@@ -106,11 +113,20 @@ if r.status_code != 200:
 soup = BeautifulSoup(r.text, "lxml")
 # We're of course concerned with the links
 ko_nightlies = []
+ko_semver = []
 for link in soup.find_all("a"):
 	# We want the link, minus the final /
-	ko_nightlies.append(link.get("href")[:-1])
+	if link.get("href") != "../":
+		ko_nightlies.append(link.get("href")[:-1])
+		ko_semver.append(link.get("href")[1:-1])
 # Sort that to find the latest one...
-ko_nightlies.sort(key=LooseVersion, reverse=True)
+print(ko_nightlies)
+for ver in ko_nightlies:
+	print("{} is a {}".format(ver, type(ver)))
+print(natsorted(ko_nightlies, key=lambda x: x.replace('.', '~')+'z'))
+print(sorted(ko_semver, key=parse_version_info))
+raise SystemExit
+#ko_nightlies.sort(key=LooseVersion, reverse=True)
 koreader_nightly_version = ko_nightlies[0]
 if koreader_nightly_version is None:
 	raise SystemExit("Couldn't find the latest KOReader nightly!")
