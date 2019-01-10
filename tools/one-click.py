@@ -22,7 +22,6 @@ from natsort import natsorted
 import os
 from pathlib import Path
 import requests
-from semver import parse_version_info
 import shutil
 from tempfile import gettempdir
 from time import mktime
@@ -113,21 +112,12 @@ if r.status_code != 200:
 soup = BeautifulSoup(r.text, "lxml")
 # We're of course concerned with the links
 ko_nightlies = []
-ko_semver = []
 for link in soup.find_all("a"):
 	# We want the link, minus the final /
 	if link.get("href") != "../":
 		ko_nightlies.append(link.get("href")[:-1])
-		ko_semver.append(link.get("href")[1:-1])
 # Sort that to find the latest one...
-print(ko_nightlies)
-for ver in ko_nightlies:
-	print("{} is a {}".format(ver, type(ver)))
-print(natsorted(ko_nightlies, key=lambda x: x.replace('.', '~')+'z'))
-print(sorted(ko_semver, key=parse_version_info))
-raise SystemExit
-#ko_nightlies.sort(key=LooseVersion, reverse=True)
-koreader_nightly_version = ko_nightlies[0]
+koreader_nightly_version = natsorted(ko_nightlies, key=lambda x: x.replace('.', '~')+'z', reverse=True)[0]
 if koreader_nightly_version is None:
 	raise SystemExit("Couldn't find the latest KOReader nightly!")
 soup = None
