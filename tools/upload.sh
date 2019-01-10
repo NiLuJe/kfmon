@@ -236,6 +236,7 @@ echo "* Uploading index . . ."
 swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfmon.html
 
 # Handle the *nix install helper script, which we tar to preserve the exec bit...
+echo "* Uploading install scripts . . ."
 tar cvf kfm_nix_install.tar install.sh
 swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_nix_install.tar
 
