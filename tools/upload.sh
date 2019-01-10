@@ -58,6 +58,7 @@ echo "* Setting up staging directory . . ."
 cd /tmp/KFMon
 # Move our stuff...
 cp -pv "${SCRIPTS_BASE_DIR}/KFMON_PUB_BB" ./
+cp -pv "${SCRIPTS_BASE_DIR}/install.sh" ./
 
 # Upload!
 echo "* Uploading . . ."
@@ -234,9 +235,18 @@ echo "* Uploading index . . ."
 # Push it to the cloud...
 swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfmon.html
 
+# Handle the *nix install helper script, which we tar to preserve the exec bit...
+tar cvf kfm_nix_install.tar install.sh
+swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_nix_install.tar
+
+# macOS is a special snowflake...
+cp -pv install.sh install.command
+tar cvf kfm_mac_install.tar install.command
+swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_mac_install.tar
+
 # Clean it up...
 echo "* Cleanup . . ."
-rm -rfv ./kfmon.html
+rm -rfv ./kfmon.html ./kfm_nix_install.tar ./install.sh ./kfm_mac_install.tar ./install.command
 
 # Go back
 # shellcheck disable=SC2103

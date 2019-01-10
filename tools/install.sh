@@ -4,6 +4,9 @@
 #
 ##
 
+# Force a cd to the script's directory, because on macOS, a command script has a fixed $PWD set to $HOME...
+cd -- "$(dirname "${BASH_SOURCE}")"
+
 # We're ultimately going to need unzip...
 if ! unzip -v &>/dev/null ; then
 	echo "This script relies on unzip!"
