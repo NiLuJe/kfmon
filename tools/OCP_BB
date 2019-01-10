@@ -17,7 +17,7 @@ Onwards!
 [*] Download the [url=https://github.com/NiLuJe/kfmon/raw/master/tools/install.ps1]Windows install script[/url], [b]in the same folder[/b].
 [*] Run the install.ps1 script with PowerShell ([i]Right Click[/i] > [i]Run with PowerShell[/i]).
    That should look like this:
-[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168964][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168964&stc=1&thumb=1[/img][/url]
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168964][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168964&thumb=1[/img][/url]
 [*] Follow the on-screen instructions.
 [*] Eject & unplug your Kobo, watch it process & reboot :).
 [/LIST]
@@ -28,8 +28,8 @@ Onwards!
 [*] Download the [url=http://kfmon-pub.auth-2ac4bfee353948ec8ea7fd1710574097.storage.sbg1.cloud.ovh.net/kfm_mac_install.zip]macOS install script archive[/url], and [i]unzip it[/i] [b]in the same folder[/b].
 [*] Run the install.command script ([i]Right Click[/i] > [i]Open[/i] > Then click [b]Open[/b] in the GateKeeper popup).
    That should look like this:
-[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168975][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168975&stc=1&thumb=1[/img][/url]
-[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168976][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168976&stc=1&thumb=1[/img][/url]
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168975][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168975&thumb=1[/img][/url]
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168976][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168976&thumb=1[/img][/url]
 [*] Follow the on-screen instructions. Close the window when it's done.
 [*] Eject & unplug your Kobo, watch it process & reboot :).
 [/LIST]
@@ -40,10 +40,10 @@ Onwards!
 [*] Download the [url=http://kfmon-pub.auth-2ac4bfee353948ec8ea7fd1710574097.storage.sbg1.cloud.ovh.net/kfm_nix_install.zip]*nix install script archive[/url], and [i]unzip it[/i] [b]in the same folder[/b].
 [*] Run the install.sh script with your favorite terminal emulator.
    Here's how it looks like on KDE:
-[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168968][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168968&stc=1&thumb=1[/img][/url]
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168968][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168968&thumb=1[/img][/url]
 [*] Follow the on-screen instructions. Close the window when it's done.
 [*] Eject & unplug your Kobo, watch it process & reboot :).
 [/LIST]
 
 And that's it! For reference, here's how the script's output could look like:
-[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168969][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168969&stc=1&thumb=1[/img][/url]
+[url=https://www.mobileread.com/forums/attachment.php?attachmentid=168969][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168969&thumb=1[/img][/url]
