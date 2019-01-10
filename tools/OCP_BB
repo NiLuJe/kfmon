@@ -15,7 +15,7 @@ Onwards!
 [LIST=1]
 [*] Check the previous message, and download the ZIP package that you're interested in.
 [*] Download the [url=https://github.com/NiLuJe/kfmon/raw/master/tools/install.ps1]Windows install script[/url], [b]in the same folder[/b].
-[*] Run the install script with PowerShell ([i]Right Click[/i] > [i]Run with PowerShell[/i]).
+[*] Run the install.ps1 script with PowerShell ([i]Right Click[/i] > [i]Run with PowerShell[/i]).
    That should look like this:
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168964&d=1547068529][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168964&stc=1&thumb=1&d=1547068529[/img][/url]
 [*] Follow the on-screen instructions.
@@ -26,7 +26,7 @@ Onwards!
 [LIST=1]
 [*] Check the previous message, and download the ZIP package that you're interested in, remembering the macOS/Safari quirks I mentioned above.
 [*] Download the [url=http://kfmon-pub.auth-2ac4bfee353948ec8ea7fd1710574097.storage.sbg1.cloud.ovh.net/kfm_mac_install.tar]macOS install script archive[/url], and [i]unpack it[/i] [b]in the same folder[/b].
-[*] Run the install script ([i]Right Click[/i] > [i]Open[/i] > Then click [b]Open[/b] in the GateKeeper popup).
+[*] Run the install.command script ([i]Right Click[/i] > [i]Open[/i] > Then click [b]Open[/b] in the GateKeeper popup).
    That should look like this:
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168975&d=1547091239][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168975&stc=1&thumb=1&d=1547091239[/img][/url]
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168976&d=1547091239][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168976&stc=1&thumb=1&d=1547091239[/img][/url]
@@ -38,7 +38,7 @@ Onwards!
 [LIST=1]
 [*] Check the previous message, and download the ZIP package that you're interested in.
 [*] Download the [url=http://kfmon-pub.auth-2ac4bfee353948ec8ea7fd1710574097.storage.sbg1.cloud.ovh.net/kfm_nix_install.tar]*nix install script archive[/url], and [i]unpack it[/i] [b]in the same folder[/b].
-[*] Run the install script with your favorite terminal emulator.
+[*] Run the install.sh script with your favorite terminal emulator.
    Here's how it looks like on KDE:
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168968&d=1547068529][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168968&stc=1&thumb=1&d=1547068529[/img][/url]
 [*] Follow the on-screen instructions. Close the window when it's done.
