@@ -39,6 +39,13 @@ foreach ($pat in $VALID_GLOBS) {
 	}
 }
 
+# Sanity check...
+if ($AVAILABLE_PKGS.Length -eq 0) {
+	Write-Host("No supported packages found in the current directory (" + $pwd +")!")
+	Read-Host -Prompt "* Nothing to do! Press Enter to exit"
+	Exit 1
+}
+
 Write-Host("* Here are the available packages:")
 for ($i = 0; $i -lt $AVAILABLE_PKGS.Length; $i++) {
 	Write-Host([string]$i + ": " + $AVAILABLE_PKGS[$i])

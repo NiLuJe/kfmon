@@ -57,6 +57,12 @@ for file in KOReader-v*.zip Plato-*.zip KFMon-v*.zip ; do
 	[[ -f "${file}" ]] && AVAILABLE_PKGS+=("${file}")
 done
 
+# Sanity check...
+if [[ ${#AVAILABLE_PKGS[@]} -eq 0 ]] ; then
+	echo "No supported packages found in the current directory (${PWD})!"
+	exit -1
+fi
+
 echo "* Here are the available packages:"
 for i in "${!AVAILABLE_PKGS[@]}" ; do
 	echo "${i}: ${AVAILABLE_PKGS[${i}]}"
