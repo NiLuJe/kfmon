@@ -235,19 +235,19 @@ echo "* Uploading index . . ."
 # Push it to the cloud...
 swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfmon.html
 
-# Handle the *nix install helper script, which we tar to preserve the exec bit...
+# Handle the *nix install helper script, which we zip up to preserve the exec bit...
 echo "* Uploading install scripts . . ."
-tar cvf kfm_nix_install.tar install.sh
-swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_nix_install.tar
+zip kfm_nix_install.zip install.sh
+swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_nix_install.zip
 
 # macOS is a special snowflake...
 cp -pv install.sh install.command
-tar cvf kfm_mac_install.tar install.command
-swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_mac_install.tar
+zip kfm_mac_install.zip install.command
+swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_mac_install.zip
 
 # Clean it up...
 echo "* Cleanup . . ."
-rm -rfv ./kfmon.html ./kfm_nix_install.tar ./install.sh ./kfm_mac_install.tar ./install.command
+rm -rfv ./kfmon.html ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command
 
 # Go back
 # shellcheck disable=SC2103
