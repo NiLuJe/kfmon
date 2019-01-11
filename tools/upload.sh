@@ -59,6 +59,7 @@ cd /tmp/KFMon
 # Move our stuff...
 cp -pv "${SCRIPTS_BASE_DIR}/KFMON_PUB_BB" ./
 cp -pv "${SCRIPTS_BASE_DIR}/install.sh" ./
+cp -pv "${SCRIPTS_BASE_DIR}/install.ps1" ./
 
 # Upload!
 echo "* Uploading . . ."
@@ -245,9 +246,12 @@ cp -pv install.sh install.command
 zip kfm_mac_install.zip install.command
 swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_mac_install.zip
 
+# Mirror Windows script, too
+swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} install.ps1
+
 # Clean it up...
 echo "* Cleanup . . ."
-rm -rfv ./kfmon.html ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command
+rm -rfv ./kfmon.html ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command ./install.ps1
 
 # Go back
 # shellcheck disable=SC2103
