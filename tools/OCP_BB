@@ -9,6 +9,8 @@ Alternatively, I've also come up with small scripts to automate the process some
 
 With that out of the way, here's what this is supposed to automate: figuring out where the Kobo is mounted, asking you to confirm what you want to install, and properly unpacking the right archive.
 
+Note that, in addition to the packages in the first post, the scripts also handle [url=https://www.mobileread.com/forums/showthread.php?t=274231]KFMon[/url]'s standalone install package, to quickly restore functionality after a FW update, for instance ;).
+
 Onwards!
 
 [SIZE="4"][b][u][COLOR="RoyalBlue"]Windows:[/COLOR][/u][/b][/SIZE]

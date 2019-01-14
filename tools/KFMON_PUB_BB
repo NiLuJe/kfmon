@@ -17,6 +17,8 @@ As mentioned earlier, the installation instructions are dead simple:
 [*] Once your device has finished rebooting, you should simply be able to tap on the KOReader or Plato icon in your Home or your Library to launch it!
 [/LIST]
 
+[B]NOTE:[/B] Something that bears repeating from [url=https://github.com/NiLuJe/kfmon#things-to-watch-out-for]KFMon's FAQ[/url]: a FW update will [i]disable[/i] it, so you'll have to reinstall it after a FW update in order to be able to launch stuff again. You can either use these packages or the standalone [url=https://www.mobileread.com/forums/showthread.php?t=274231]KFMon[/url] package.
+
 The listing follows this format:
 [B]Description[/B]  |  [B]D/L Link[/B]  |  [B]Last Modified[/B]  |  [B]Size[/B]  |  [B]MD5 Checksum[/B]  |  [B]MR Thread[/B]
 
