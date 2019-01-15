@@ -1,4 +1,3 @@
-#Requires -Version 5.0
 ##
 #
 # Quick'n dirty helper to pickup a Kobo's USBMS mountpoint...
@@ -6,6 +5,14 @@
 # NOTE: Requires PowerShell 5+ (Expand-Archive. ALso, I only have a Win10 box to test this anyway ;p).
 #
 ##
+
+# Do a version check manually instead of relying on require, so we can keep the window open...
+if ($PSVersionTable.PSVersion.Major -lt 5)
+{
+	Write-Warning -Message "This script requires PowerShell 5+ to run!"
+	Read-Host -Prompt "* Can't do anything! Press Enter to exit"
+	Exit 1
+}
 
 # Find out where the Kobo is mounted...
 $KOBO_MOUNTPOINT=$NULL
