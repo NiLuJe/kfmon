@@ -9,7 +9,7 @@
 # Do a version check manually instead of relying on require, so we can keep the window open...
 if ($PSVersionTable.PSVersion.Major -lt 5)
 {
-	Write-Warning -Message "This script requires PowerShell 5+ to run!"
+	Write-Warning -Message "This script requires PowerShell 5+ to run, but you're currently running PowerShell $($PSVersionTable.PSVersion)!"
 	Read-Host -Prompt "* Can't do anything! Press Enter to exit"
 	Exit 1
 }
