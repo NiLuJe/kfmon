@@ -106,6 +106,9 @@ ifndef NILUJE
 	endif
 endif
 
+# We already enforce that in SQLite, so, follow suit everywhere
+EXTRA_CPPFLAGS+=-DNDEBUG
+
 # We use pthreads, let GCC do its thing to do it right (c.f., gcc -dumpspecs | grep pthread).
 # NOTE: It mostly consists of passing -D_REENTRANT to the preprocessor, -lpthread to the linker,
 #       and setting -fprofile-update to prefer-atomic instead of single.
@@ -113,6 +116,9 @@ endif
 #       emulate the autoconf SQLite builds by simply passing -D_REENTRANT to the preprocessor in the sqlite.built recipe.
 EXTRA_CPPFLAGS+=-pthread
 LIBS+=-lpthread
+
+# We already enforce that in FBInk (& SQLite itself probably will, too), so, follow suit everywhere
+EXTRA_CPPFLAGS+=-D_GNU_SOURCE
 
 
 ##
@@ -206,6 +212,7 @@ sqlite.built:
 	env CPPFLAGS="$(CPPFLAGS) \
 	-DNDEBUG \
 	-D_REENTRANT=1 \
+	-D_GNU_SOURCE \
 	-DSQLITE_DEFAULT_MEMSTATUS=0 \
 	-DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 \
 	-DSQLITE_LIKE_DOESNT_MATCH_BLOBS \
@@ -229,7 +236,7 @@ sqlite.built:
 
 fbink.built:
 	cd FBInk && \
-	$(MAKE) strip MINIMAL=true
+	$(MAKE) strip MINIMAL=true CPPFLAGS="$(CPPFLAGS) -DNDEBUG"
 	touch fbink.built
 
 release: sqlite.built fbink.built
