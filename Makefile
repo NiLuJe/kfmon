@@ -117,7 +117,7 @@ EXTRA_CPPFLAGS+=-DNDEBUG
 EXTRA_CPPFLAGS+=-pthread
 LIBS+=-lpthread
 
-# We already enforce that in FBInk (& SQLite itself probably will, too), so, follow suit everywhere
+# We already enforce that in FBInk & KFMon (& SQLite itself probably does, too), so, follow suit everywhere
 EXTRA_CPPFLAGS+=-D_GNU_SOURCE
 
 
