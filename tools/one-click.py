@@ -117,7 +117,7 @@ for link in soup.find_all("a"):
 	if link.get("href") != "../":
 		ko_nightlies.append(link.get("href")[:-1])
 # Sort that to find the latest one...
-koreader_nightly_version = natsorted(ko_nightlies, key=lambda x: x.replace('.', '~')+'z', reverse=True)[0]
+koreader_nightly_version = natsorted(ko_nightlies, key=lambda x: x.replace('.', '~'), reverse=True)[0]
 if koreader_nightly_version is None:
 	raise SystemExit("Couldn't find the latest KOReader nightly!")
 soup = None
