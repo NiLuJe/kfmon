@@ -236,7 +236,7 @@ sqlite.built:
 
 fbink.built:
 	cd FBInk && \
-	$(MAKE) strip MINIMAL=true CPPFLAGS="$(CPPFLAGS) -DNDEBUG"
+	$(MAKE) strip MINIMAL=true CPPFLAGS="$(CPPFLAGS)"
 	touch fbink.built
 
 release: sqlite.built fbink.built
