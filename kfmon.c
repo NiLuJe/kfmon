@@ -130,6 +130,8 @@ static int
 	}
 
 	// Redirect stderr to our logfile
+	// NOTE: We do need O_APPEND (as opposed to simply calling lseek(fd, 0, SEEK_END) after open),
+	//       because auxiliary scripts *may* also append to this log file ;).
 	int flags = O_WRONLY | O_CREAT | O_APPEND;
 	// Check if we need to truncate our log because it has grown too much...
 	struct stat st;
