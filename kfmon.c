@@ -727,8 +727,8 @@ static bool
 	// Did the user want to try to update the DB for this icon?
 	bool update = watch_config[watch_idx].do_db_update;
 
-	// NOTE: Open the db in multi-thread threading mode (we build w/ threadsafe and we don't use sqlite_config),
-	//       and without a shared cache because we have no use for it, we only do SQL from the main thread.
+	// NOTE: Open the db in single-thread threading mode (we build w/o threadsafe),
+	//       and without a shared cache: we only do SQL from the main thread.
 	if (update) {
 		CALL_SQLITE(open_v2(
 		    KOBO_DB_PATH, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));

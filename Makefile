@@ -225,7 +225,7 @@ sqlite.built:
 	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
 	--enable-static \
 	--disable-shared \
-	--enable-threadsafe \
+	--disable-threadsafe \
 	--disable-load-extension \
 	--disable-editline \
 	--disable-readline \
