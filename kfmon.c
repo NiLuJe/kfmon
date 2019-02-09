@@ -247,7 +247,7 @@ static void
     wait_for_target_mountpoint(void)
 {
 	// c.f., https://stackoverflow.com/questions/5070801
-	int           mfd = open("/proc/mounts", O_RDONLY, 0);
+	int           mfd = open("/proc/mounts", O_RDONLY);
 	struct pollfd pfd;
 
 	uint8_t changes = 0;
