@@ -141,7 +141,7 @@ static int
 			flags |= O_TRUNC;
 		}
 	}
-	if ((fd = open(KFMON_LOGFILE, flags, 0600)) != -1) {
+	if ((fd = open(KFMON_LOGFILE, flags, S_IRUSR | S_IWUSR)) != -1) {
 		dup2(fd, fileno(stderr));
 		if (fd > 2 + 3) {
 			close(fd);
