@@ -1,8 +1,9 @@
 You'll find here links to so called [B]"one-click"[/B] install packages for both [url=https://github.com/koreader/koreader]KOReader[/url] & [url=https://github.com/baskerville/plato]Plato[/url].
 This is primarily aimed at brand new users, with the goal of getting things to work in the most fool-proof manner possible, by simply unpacking a single ZIP archive in the root of your Kobo eReader over USB.
-To make this possible, these packages rely on [url=https://github.com/NiLuJe/kfmon]KFMon[/url].
+To make this possible, these packages bundle [url=https://github.com/NiLuJe/kfmon]KFMon[/url].
 
-For existing users, if you're happy with your current setup, by all means, carry on! ;). If you're curious as to what this actually [I]does[/I] to original KOreader/Plato packages, the gory details are [url=https://github.com/NiLuJe/kfmon/blob/master/tools/one-click.py]all here[/url]!
+For existing users, if you're happy with your current setup, by all means, carry on! ;). Launchers are, by design, mutually exclusive: between fmon & KFMon, only the one installed [i]last[/i] will be active, but where KSM is concerned, KSM will [i]always[/i] take precedence, so this is [b]NOT[/b] designed for KSM users.
+If you're curious as to what this actually [I]does[/I] to original KOreader/Plato packages, the gory details are [url=https://github.com/NiLuJe/kfmon/blob/master/tools/one-click.py]all here[/url]!
 
 Now that this is out of the way, on to the good stuff!
 
