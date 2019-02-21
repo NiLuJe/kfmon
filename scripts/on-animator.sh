@@ -16,6 +16,8 @@ if ! pkill -0 kfmon ; then
 		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [ERR!] [PID: $$] KFMon binary '${KFMON_BIN}' cannot be executed!" >> "${KFMON_LOG}"
 	fi
 else
+	# NOTE: I'm sometimes seeing wonky behavior after an update, where we trip the "already running" check when we actually *do* need to be launched...
+	#       Possibly due to the specific timing at which on-animator runs around updates?
 	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] KFMon is already running!" >> "${KFMON_LOG}"
 fi
 
