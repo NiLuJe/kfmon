@@ -1334,22 +1334,18 @@ static bool
 			break;
 		}
 
-		// NOTE: Now that, hopefully, we're pretty sure Nickel is up or on its way up,
-		//       and has finished or will soon finish setting up the fb,
-		//       we can reinit FBInk to have up to date information...
+		// NOTE: Because the framebuffer state is liable to have changed since our last init/reinit,
+		//       either expectedly (boot -> pickel -> nickel), or a bit more unpredictably (rotation, bitdepth change),
+		//       we'll ask FBInk to make sure it has an up-to-date fb state for each new batch of events,
+		//       so that messages will be printed properly, no matter what :).
 		//       Put everything behind our mutex to be super-safe,
 		//       since we're playing with library globals...
-		//       We do this the least amount of times possible,
-		//       (i.e., once, if every watch has already been processed),
-		//       to keep locking to a minimum.
-		// NOTE: But, we may do it more than once, in fact, we'll re-init on each new event
-		//       until we get a framebuffer state that is no longer quirky
-		//       (i.e., once we're sure we got it from Nickel, and not pickel).
-		//       This is needed because processing is done very early by Nickel for "new" icons when
-		//       they end up on the Home screen straight away,
+		// NOTE: Even forgetting about rotation and bitdepth changes, which may not ever happen on most *vanilla* devices,
+		//       this is needed because processing is done very early by Nickel for "new" icons,
+		//       when they end up on the Home screen straight away,
 		//       (which is a given if you added at most 3 items, with the new Home screen).
-		//       It's problematic for us, because it's early enough that pickel is still running,
-		//       so we inherit its quirky fb setup and not Nickel's...
+		//       Not doing a reinit would be problematic, because it's early enough that pickel is still running,
+		//       so we'd be inheriting its quirky fb setup and not Nickel's...
 		pthread_mutex_lock(&ptlock);
 		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
 		fbink_reinit(FBFD_AUTO, &fbink_config);
@@ -1654,10 +1650,8 @@ int
 	//       while completely broken info would only cause the MXCFB ioctl to fail, we wouldn't segfault.
 	//       (Well, to be perfectly fair, it'd take an utterly broken finfo.smem_len to crash,
 	//       and that should never happen).
-	// NOTE: To get up to date info, we'll reinit on each new inotify event we catch,
-	//       until we get something we can keep (i.e., Nickel's fb setup),
-	//       at which point we'll stop doing those extra init calls,
-	//       because we assume no-one will mess with it again (and no-one should).
+	// NOTE: To get up to date info, we'll reinit on each new batch of inotify events we catch,
+	//       thus ensuring we'll always have an accurate snapshot of the fb state before printing messages.
 	if (daemon_config.with_notifications) {
 		fbink_print(FBFD_AUTO, "[KFMon] Successfully initialized. :)", &fbink_config);
 	}
