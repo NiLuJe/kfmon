@@ -144,6 +144,8 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 
 -   You **will** have to reinstall KFMon after a firmware update (since most FW update packages ship the vanilla version of the startup script patched to launch KFMon).  
 
+-   Speaking of updates, if, right after a KFMon update or reinstall, KFMon appears to be disabled, simply fully restart your device. There's a weird quirk involving specific timings during the Kobo update process that may prevent KFMon to start up properly. You can (manually) check the KFMon logs for more info.  
+
 -   Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/2e46feb4c27e9393771d7deefa9a790ba875a424/kfmon.h#L148) file watches. Ping me if that's not enough for you ;).  
 
 <!-- kate: indent-mode cstyle; indent-width 4; replace-tabs on; remove-trailing-spaces none; -->
