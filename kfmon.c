@@ -1334,6 +1334,27 @@ static bool
 			break;
 		}
 
+		// NOTE: Now that, hopefully, we're pretty sure Nickel is up or on its way up,
+		//       and has finished or will soon finish setting up the fb,
+		//       we can reinit FBInk to have up to date information...
+		//       Put everything behind our mutex to be super-safe,
+		//       since we're playing with library globals...
+		//       We do this the least amount of times possible,
+		//       (i.e., once, if every watch has already been processed),
+		//       to keep locking to a minimum.
+		// NOTE: But, we may do it more than once, in fact, we'll re-init on each new event
+		//       until we get a framebuffer state that is no longer quirky
+		//       (i.e., once we're sure we got it from Nickel, and not pickel).
+		//       This is needed because processing is done very early by Nickel for "new" icons when
+		//       they end up on the Home screen straight away,
+		//       (which is a given if you added at most 3 items, with the new Home screen).
+		//       It's problematic for us, because it's early enough that pickel is still running,
+		//       so we inherit its quirky fb setup and not Nickel's...
+		pthread_mutex_lock(&ptlock);
+		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+		fbink_reinit(FBFD_AUTO, &fbink_config);
+		pthread_mutex_unlock(&ptlock);
+
 		// Loop over all events in the buffer
 		for (char* ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
 			// NOTE: This trips -Wcast-align on ARM, but should be safe nonetheless ;).
@@ -1358,27 +1379,6 @@ static bool
 				LOG(LOG_CRIT,
 				    "!! Failed to match the current inotify event to any of our watched file! !!");
 			}
-
-			// NOTE: Now that, hopefully, we're pretty sure Nickel is up or on its way up,
-			//       and has finished or will soon finish setting up the fb,
-			//       we can reinit FBInk to have up to date information...
-			//       Put everything behind our mutex to be super-safe,
-			//       since we're playing with library globals...
-			//       We do this the least amount of times possible,
-			//       (i.e., once, if every watch has already been processed),
-			//       to keep locking to a minimum.
-			// NOTE: But, we may do it more than once, in fact, we'll re-init on each new event
-			//       until we get a framebuffer state that is no longer quirky
-			//       (i.e., once we're sure we got it from Nickel, and not pickel).
-			//       This is needed because processing is done very early by Nickel for "new" icons when
-			//       they end up on the Home screen straight away,
-			//       (which is a given if you added at most 3 items, with the new Home screen).
-			//       It's problematic for us, because it's early enough that pickel is still running,
-			//       so we inherit its quirky fb setup and not Nickel's...
-			pthread_mutex_lock(&ptlock);
-			// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-			fbink_reinit(FBFD_AUTO, &fbink_config);
-			pthread_mutex_unlock(&ptlock);
 
 			// Print event type
 			if (event->mask & IN_OPEN) {
