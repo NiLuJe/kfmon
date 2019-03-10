@@ -1346,6 +1346,9 @@ static bool
 		//       (which is a given if you added at most 3 items, with the new Home screen).
 		//       Not doing a reinit would be problematic, because it's early enough that pickel is still running,
 		//       so we'd be inheriting its quirky fb setup and not Nickel's...
+		// NOTE: This was moved from inside the following loop to here, just outside of it, in order to limit locking,
+		//       but it will in fact change nothing if events aren't actually batched,
+		//       which appears to be the case in most of our use-cases...
 		pthread_mutex_lock(&ptlock);
 		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
 		fbink_reinit(FBFD_AUTO, &fbink_config);
