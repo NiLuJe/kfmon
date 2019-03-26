@@ -36,7 +36,7 @@ if (-NOT (Test-Path $KOBO_DIR)) {
 }
 
 # Ask the user what they want to install...
-$VALID_GLOBS=@("KOReader-v*.zip", "Plato-*.zip", "KFMon-v*.zip")
+$VALID_GLOBS=@("KOReader-v*.zip", "Plato-*.zip", "KFMon-v*.zip", "KFMon-Uninstaller.zip")
 $AVAILABLE_PKGS=@()
 foreach ($pat in $VALID_GLOBS) {
 	foreach ($file in Get-ChildItem -Name -File $pat) {
@@ -77,10 +77,17 @@ if ($j -lt 0 -OR $j -ge $AVAILABLE_PKGS.Length) {
 }
 
 # We've got a Kobo, we've got a package, let's go!
-Write-Host("* Installing " + $AVAILABLE_PKGS[$j] + " . . .")
-$KOBO_DEST=$KOBO_MOUNTPOINT + ":\"
-#Write-Host("Expand-Archive " + $AVAILABLE_PKGS[$j] + " -DestinationPath " + $KOBO_DEST + " -Force")
-Expand-Archive $AVAILABLE_PKGS[$j] -DestinationPath $KOBO_DEST -Force
+if ($AVAILABLE_PKGS[$j] -eq "KFMon-Uninstaller.zip") {
+	Write-Host("* Uninstalling KFMon . . .")
+	$KOBO_DEST=$KOBO_DIR
+	#Write-Host("Expand-Archive " + $AVAILABLE_PKGS[$j] + " -DestinationPath " + $KOBO_DEST + " -Force")
+	Expand-Archive $AVAILABLE_PKGS[$j] -DestinationPath $KOBO_DEST -Force
+} else {
+	Write-Host("* Installing " + $AVAILABLE_PKGS[$j] + " . . .")
+	$KOBO_DEST=$KOBO_MOUNTPOINT + ":\"
+	#Write-Host("Expand-Archive " + $AVAILABLE_PKGS[$j] + " -DestinationPath " + $KOBO_DEST + " -Force")
+	Expand-Archive $AVAILABLE_PKGS[$j] -DestinationPath $KOBO_DEST -Force
+}
 
 # Much like in the error paths, draw a final prompt so that the window stays up...
 if ($?) {

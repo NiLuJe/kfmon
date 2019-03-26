@@ -46,14 +46,15 @@ if [[ -z "${KOBO_MOUNTPOINT}" ]] ; then
 	exit -1
 fi
 
-if [[ ! -d "${KOBO_MOUNTPOINT}/.kobo" ]] ; then
+KOBO_DIR="${KOBO_MOUNTPOINT}/.kobo"
+if [[ ! -d "${KOBO_DIR}" ]] ; then
 	echo "Can't find a .kobo directory, ${KOBO_MOUNTPOINT} doesn't appear to point to a Kobo eReader... Is one actually mounted?"
 	exit -1
 fi
 
 # Ask the user what they want to install...
 AVAILABLE_PKGS=()
-for file in KOReader-v*.zip Plato-*.zip KFMon-v*.zip ; do
+for file in KOReader-v*.zip Plato-*.zip KFMon-v*.zip KFMon-Uninstaller.zip ; do
 	[[ -f "${file}" ]] && AVAILABLE_PKGS+=("${file}")
 done
 
@@ -82,8 +83,13 @@ if [[ ${j} -lt 0 ]] || [[ ${j} -ge ${#AVAILABLE_PKGS[@]} ]] ; then
 fi
 
 # We've got a Kobo, we've got a package, let's go!
-echo "* Installing ${AVAILABLE_PKGS[${j}]} . . ."
-unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
+if [[ "${AVAILABLE_PKGS[${j}]}" == "KFMon-Uninstaller.zip" ]] ; then
+	echo "* Uninstalling KFMon . . ."
+	unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_DIR}"
+else
+	echo "* Installing ${AVAILABLE_PKGS[${j}]} . . ."
+	unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
+fi
 
 ret=$?
 if [ ${ret} -eq 0 ] ; then
