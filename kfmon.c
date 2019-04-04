@@ -18,60 +18,6 @@
 
 #include "kfmon.h"
 
-// Fake FBInk in my sandbox...
-#ifdef NILUJE
-const char*
-    fbink_version(void)
-{
-	return "N/A";
-}
-
-int
-    fbink_open(void)
-{
-	return EXIT_SUCCESS;
-}
-
-int
-    fbink_init(int fbfd __attribute__((unused)), const FBInkConfig* fbinkconfig __attribute__((unused)))
-{
-	return EXIT_SUCCESS;
-}
-
-int
-    fbink_print(int                fbfd __attribute__((unused)),
-		const char*        string,
-		const FBInkConfig* fbinkconfig __attribute__((unused)))
-{
-	LOG(LOG_INFO, "FBInk: %s", string);
-	return EXIT_SUCCESS;
-}
-
-int
-    fbink_printf(int                  fbfd __attribute__((unused)),
-		 const FBInkOTConfig* fbinkotconfig __attribute__((unused)),
-		 const FBInkConfig*   fbinkconfig __attribute__((unused)),
-		 const char*          fmt,
-		 ...)
-{
-	char buffer[256];
-
-	va_list args;
-	va_start(args, fmt);
-	vsnprintf(buffer, sizeof(buffer), fmt, args);
-	va_end(args);
-
-	LOG(LOG_INFO, "FBInk: %s", buffer);
-	return EXIT_SUCCESS;
-}
-
-int
-    fbink_reinit(int fbfd __attribute__((unused)), const FBInkConfig* fbinkconfig __attribute__((unused)))
-{
-	return EXIT_SUCCESS;
-}
-#endif
-
 // Because daemon() only appeared in glibc 2.21 (and doesn't double-fork anyway)
 static int
     daemonize(void)

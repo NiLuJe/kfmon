@@ -31,9 +31,10 @@ ifdef NILUJE
 else
 	# We want to link to sqlite3 explicitly statically
 	LIBS=-l:libsqlite3.a
-	# We also want FBInk when targeting real devices ;).
-	LIBS+=-l:libfbink.a
 endif
+
+# We need our bundled FBInk ;).
+LIBS+=-l:libfbink.a
 
 # NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
 ifdef DEBUG
@@ -98,12 +99,10 @@ ifdef SQLITE
 endif
 
 # And pick up FBInk, too.
-ifndef NILUJE
-	ifdef DEBUG
-		EXTRA_LDFLAGS+=-LFBInk/Debug
-	else
-		EXTRA_LDFLAGS+=-LFBInk/Release
-	endif
+ifdef DEBUG
+	EXTRA_LDFLAGS+=-LFBInk/Debug
+else
+	EXTRA_LDFLAGS+=-LFBInk/Release
 endif
 
 # We already enforce that in SQLite, so, follow suit everywhere
@@ -188,9 +187,11 @@ kobo: armcheck release
 	pushd Kobo/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && popd
 
 niluje:
+	$(MAKE) fbink.built NILUJE=true
 	$(MAKE) all NILUJE=true
 
 nilujed:
+	$(MAKE) fbink.built NILUJE=true DEBUG=true
 	$(MAKE) all NILUJE=true DEBUG=true
 
 clean:
@@ -234,10 +235,17 @@ sqlite.built:
 	$(MAKE) SHELL_OPT=""
 	touch sqlite.built
 
+ifdef NILUJE
+fbink.built:
+	cd FBInk && \
+	$(MAKE) strip MINIMAL=true LINUX=true DEBUG=$(DEBUG)
+	touch fbink.built
+else
 fbink.built:
 	cd FBInk && \
 	$(MAKE) strip MINIMAL=true
 	touch fbink.built
+endif
 
 release: sqlite.built fbink.built
 	$(MAKE) strip SQLITE=true
