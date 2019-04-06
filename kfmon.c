@@ -1541,7 +1541,7 @@ int
 
 	// Say hello :)
 	LOG(LOG_INFO,
-	    "[PID: %ld] Initializing KFMon %s (%s) | Using SQLite %s (built against version %s) | With FBInk %s",
+	    "[PID: %ld] Initializing KFMon %s (%s) | Using SQLite %s (built against %s) | With FBInk %s",
 	    (long) getpid(),
 	    KFMON_VERSION,
 	    KFMON_TIMESTAMP,
