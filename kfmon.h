@@ -55,6 +55,10 @@
 #ifndef KFMON_VERSION
 #	define KFMON_VERSION "v1.2.15"
 #endif
+// Fallback timestamp...
+#ifndef KFMON_TIMESTAMP
+#	define KFMON_TIMESTAMP __TIMESTAMP__
+#endif
 
 // Do an ifdef check to allow overriding those at compile-time...
 #ifndef KFMON_TARGET_MOUNTPOINT

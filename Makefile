@@ -88,6 +88,15 @@ endif
 # A version tag...
 KFMON_VERSION=$(shell git describe)
 EXTRA_CFLAGS+=-DKFMON_VERSION='"$(KFMON_VERSION)"'
+# A timestamp, formatted according to ISO 8601 (latest commit)...
+KFMON_TIMESTAMP=$(shell git show -s --format=%ci master)
+# NOTE: We used to use __DATE__ @ __TIME__ (i.e., the build date), which we can format the same way like so:
+#       date +'%Y-%m-%d %H:%M:%S %z'
+#       If, instead, we'd want to emulate __TIMESTAMP__ (i.e., modification date of the file):
+#       date +'%Y-%m-%d %H:%M:%S %z' -r kfmon.c
+# NOTE: If we ever need to tweak git's formatting:
+#       git show -s --format=%cd --date=format:'%Y-%m-%d @ %H:%M:%S %z' master
+EXTRA_CFLAGS+=-DKFMON_TIMESTAMP='"$(KFMON_TIMESTAMP)"'
 
 # NOTE: Always use as-needed to avoid unecessary DT_NEEDED entries :)
 LDFLAGS?=-Wl,--as-needed

@@ -1541,11 +1541,10 @@ int
 
 	// Say hello :)
 	LOG(LOG_INFO,
-	    "[PID: %ld] Initializing KFMon %s | Built on %s @ %s | Using SQLite %s (built against version %s) | With FBInk %s",
+	    "[PID: %ld] Initializing KFMon %s (%s) | Using SQLite %s (built against version %s) | With FBInk %s",
 	    (long) getpid(),
 	    KFMON_VERSION,
-	    __DATE__,
-	    __TIME__,
+	    KFMON_TIMESTAMP,
 	    sqlite3_libversion(),
 	    SQLITE_VERSION,
 	    fbink_version());
