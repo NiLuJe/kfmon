@@ -102,7 +102,7 @@ static int
 
 // Wrapper around localtime_r, making sure this part is thread-safe (used for logging)
 static struct tm*
-    get_localtime(struct tm* lt)
+    get_localtime(struct tm* restrict lt)
 {
 	time_t t = time(NULL);
 	tzset();
@@ -112,7 +112,7 @@ static struct tm*
 
 // Wrapper around strftime, making sure this part is thread-safe (used for logging)
 static char*
-    format_localtime(struct tm* lt, char* sz_time, size_t len)
+    format_localtime(struct tm* restrict lt, char* restrict sz_time, size_t len)
 {
 	// c.f., strftime(3) & https://stackoverflow.com/questions/7411301
 	strftime(sz_time, len, "%Y-%m-%d @ %H:%M:%S", lt);
@@ -127,7 +127,7 @@ static char*
     get_current_time(void)
 {
 	static struct tm local_tm = { 0 };
-	struct tm*       lt       = get_localtime(&local_tm);
+	struct tm* restrict lt    = get_localtime(&local_tm);
 
 	static char sz_time[22];
 
@@ -137,9 +137,9 @@ static char*
 // And now the same, but with user supplied storage, thus potentially thread-safe:
 // f.g., we use the stack in reaper_thread().
 static char*
-    get_current_time_r(struct tm* local_tm, char* sz_time, size_t len)
+    get_current_time_r(struct tm* restrict local_tm, char* restrict sz_time, size_t len)
 {
-	struct tm* lt = get_localtime(local_tm);
+	struct tm* restrict lt = get_localtime(local_tm);
 	return format_localtime(lt, sz_time, len);
 }
 
@@ -170,9 +170,9 @@ static bool
     is_target_mounted(void)
 {
 	// c.f., http://program-nix.blogspot.com/2008/08/c-language-check-filesystem-is-mounted.html
-	FILE*          mtab       = NULL;
-	struct mntent* part       = NULL;
-	bool           is_mounted = false;
+	FILE* restrict mtab                = NULL;
+	struct mntent* restrict part       = NULL;
+	bool                    is_mounted = false;
 
 	if ((mtab = setmntent("/proc/mounts", "r")) != NULL) {
 		while ((part = getmntent(mtab)) != NULL) {
@@ -196,7 +196,7 @@ static void
 	int           mfd = open("/proc/mounts", O_RDONLY);
 	struct pollfd pfd;
 
-	uint8_t changes = 0;
+	uint8_t changes = 0U;
 	pfd.fd          = mfd;
 	pfd.events      = POLLERR | POLLPRI;
 	pfd.revents     = 0;
@@ -213,7 +213,7 @@ static void
 		pfd.revents = 0;
 
 		// If we can't find our mountpoint after that many changes, assume we're screwed...
-		if (changes >= 5) {
+		if (changes >= 5U) {
 			LOG(LOG_ERR, "Too many mountpoint changes without finding our target (shutdown?), aborting!");
 			close(mfd);
 			exit(EXIT_FAILURE);
@@ -226,7 +226,7 @@ static void
 // Sanitize user input for keys expecting an unsigned short integer
 // NOTE: Inspired from git's strtoul_ui @ git-compat-util.h
 static int
-    strtoul_hu(const char* str, unsigned short int* result)
+    strtoul_hu(const char* str, unsigned short int* restrict result)
 {
 	// NOTE: We want to *reject* negative values (which strtoul does not)!
 	if (strchr(str, '-')) {
@@ -284,7 +284,7 @@ static int
 // Sanitize user input for keys expecting a boolean
 // NOTE: Inspired from Linux's strtobool (tools/lib/string.c) as well as sudo's implementation of the same.
 static int
-    strtobool(const char* str, bool* result)
+    strtobool(const char* restrict str, bool* restrict result)
 {
 	if (!str) {
 		LOG(LOG_WARNING, "Passed an empty value to a key expecting a boolean.");
@@ -371,9 +371,9 @@ static int
 
 // Handle parsing the main KFMon config
 static int
-    daemon_handler(void* user, const char* section, const char* key, const char* value)
+    daemon_handler(void* user, const char* restrict section, const char* restrict key, const char* restrict value)
 {
-	DaemonConfig* pconfig = (DaemonConfig*) user;
+	DaemonConfig* restrict pconfig = (DaemonConfig*) user;
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	if (MATCH("daemon", "db_timeout")) {
@@ -399,9 +399,9 @@ static int
 
 // Handle parsing a watch config
 static int
-    watch_handler(void* user, const char* section, const char* key, const char* value)
+    watch_handler(void* user, const char* restrict section, const char* restrict key, const char* restrict value)
 {
-	WatchConfig* pconfig = (WatchConfig*) user;
+	WatchConfig* restrict pconfig = (WatchConfig*) user;
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
 	// NOTE: Crappy strncpy() usage, but those char arrays are zeroed first
@@ -443,7 +443,7 @@ static int
 static bool
     validate_watch_config(void* user)
 {
-	WatchConfig* pconfig = (WatchConfig*) user;
+	WatchConfig* restrict pconfig = (WatchConfig*) user;
 
 	bool sane = true;
 
@@ -453,14 +453,14 @@ static bool
 	} else {
 		// Make sure we're not trying to set multiple watches on the same file...
 		// (because that would only actually register the first one parsed).
-		uint8_t matches = 0;
-		for (uint8_t watch_idx = 0; watch_idx < WATCH_MAX; watch_idx++) {
+		uint8_t matches = 0U;
+		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 			if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
 				matches++;
 			}
 		}
 		// Since we'll necessarily loop over ourselves, only warn if we matched two or more times.
-		if (matches >= 2) {
+		if (matches >= 2U) {
 			LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
 			sane = false;
 		}
@@ -502,9 +502,9 @@ static int
 
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
-	FTS*    ftsp;
-	FTSENT* p;
-	FTSENT* chp;
+	FTS* restrict ftsp;
+	FTSENT* restrict p;
+	FTSENT* restrict chp;
 	// We only need to walk a single directory...
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
@@ -621,7 +621,7 @@ static int
 	       daemon_config.db_timeout,
 	       daemon_config.use_syslog,
 	       daemon_config.with_notifications);
-	for (uint8_t watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+	for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
 		DBGLOG(
 		    "Watch config @ index %hhu recap: filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
@@ -642,7 +642,7 @@ static int
 // Implementation of Qt4's QtHash (c.f., qhash @
 // https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L37)
 static unsigned int
-    qhash(const unsigned char* bytes, size_t length)
+    qhash(const unsigned char* restrict bytes, size_t length)
 {
 	unsigned int h = 0;
 
@@ -751,7 +751,7 @@ static bool
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
-			uint8_t thumbnails_count = 0;
+			uint8_t thumbnails_count = 0U;
 			char    thumbnail_path[KFMON_PATH_MAX];
 
 			// Start with the full-size screensaver...
@@ -789,7 +789,7 @@ static bool
 			}
 
 			// Only give a greenlight if we got all three!
-			if (thumbnails_count == 3) {
+			if (thumbnails_count == 3U) {
 				is_processed = true;
 			}
 		}
@@ -864,14 +864,14 @@ static bool
 		//       This doesn't appear to be the case anymore, on FW >= 4.6.x (and possibly earlier),
 		//       it's now using WAL (which makes sense, and our whole job safer ;)).
 		const struct timespec zzz   = { 0L, 500000000L };
-		uint8_t               count = 0;
+		uint8_t               count = 0U;
 		while (access(KOBO_DB_PATH "-journal", F_OK) == 0) {
 			LOG(LOG_INFO,
 			    "Found a SQLite rollback journal, waiting for it to go away (iteration nr. %hhu) . . .",
 			    (uint8_t) count++);
 			nanosleep(&zzz, NULL);
 			// NOTE: Don't wait more than 10s
-			if (count >= 20) {
+			if (count >= 20U) {
 				LOG(LOG_WARNING,
 				    "Waited for the SQLite rollback journal to go away for far too long, going on anyway.");
 				break;
@@ -889,7 +889,7 @@ static bool
 static void
     init_process_table(void)
 {
-	for (uint8_t i = 0; i < WATCH_MAX; i++) {
+	for (uint8_t i = 0U; i < WATCH_MAX; i++) {
 		PT.spawn_pids[i]     = -1;
 		PT.spawn_watchids[i] = -1;
 	}
@@ -899,7 +899,7 @@ static void
 static int8_t
     get_next_available_pt_entry(void)
 {
-	for (uint8_t i = 0; i < WATCH_MAX; i++) {
+	for (uint8_t i = 0U; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == -1) {
 			return (int8_t) i;
 		}
@@ -997,7 +997,7 @@ static void*
 				// NOTE: Even if it's not entirely clear from the manpage, printf's %m *is* thread-safe,
 				//       c.f., stdio-common/vfprintf.c:962 (it's using strerror_r).
 				//       But since we're not checking errno but a custom variable, do it the hard way :)
-				char* sz_error = strerror_r(exitcode, buf, sizeof(buf));
+				const char* sz_error = strerror_r(exitcode, buf, sizeof(buf));
 				MTLOG(
 				    "[%s] [CRIT] [TID: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.",
 				    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
@@ -1199,7 +1199,7 @@ static bool
     is_watch_already_spawned(uint8_t watch_idx)
 {
 	// Walk our process table to see if the given watch currently has a registered running process
-	for (uint8_t i = 0; i < WATCH_MAX; i++) {
+	for (uint8_t i = 0U; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == (int8_t) watch_idx) {
 			return true;
 			// NOTE: Assume everything's peachy,
@@ -1219,10 +1219,10 @@ static bool
     is_blocker_running(void)
 {
 	// Walk our process table to identify watches with a currently running process
-	for (uint8_t i = 0; i < WATCH_MAX; i++) {
+	for (uint8_t i = 0U; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] != -1) {
 			// Walk the registered watch list to match that currently running watch to its block_spawns flag
-			for (uint8_t watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+			for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
 				if (PT.spawn_watchids[i] == (int8_t) watch_idx) {
 					if (watch_config[watch_idx].block_spawns) {
 						return true;
@@ -1240,7 +1240,7 @@ static bool
 static pid_t
     get_spawn_pid_for_watch(uint8_t watch_idx)
 {
-	for (uint8_t i = 0; i < WATCH_MAX; i++) {
+	for (uint8_t i = 0U; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] == (int8_t) watch_idx) {
 			return PT.spawn_pids[i];
 		}
@@ -1311,9 +1311,9 @@ static bool
 			// memcpy(&event, &ptr, sizeof(struct inotify_event *));
 
 			// Identify which of our target file we've caught an event for...
-			uint8_t watch_idx       = 0;
+			uint8_t watch_idx       = 0U;
 			bool    found_watch_idx = false;
-			for (watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+			for (watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
 				if (watch_config[watch_idx].inotify_wd == event->wd) {
 					found_watch_idx = true;
 					break;
@@ -1474,7 +1474,7 @@ static bool
 		if (destroyed_wd) {
 			// But before we do that, make sure we've removed *all* our *other* watches first
 			// (again, hoping matching was successful), since we'll be setting them up all again later...
-			for (uint8_t watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+			for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
 				if (!watch_config[watch_idx].wd_was_destroyed) {
 					// Don't do anything if that was because of an unmount...
 					// Because that assures us that everything is/will soon be gone
@@ -1642,7 +1642,7 @@ int
 		//       Relative to the earlier IN_MOVE_SELF mention, that means it'll keep tracking the file with its
 		//           new name (provided it was moved to the *same* fs,
 		//           as crossing a fs boundary will delete the original).
-		for (uint8_t watch_idx = 0; watch_idx < watch_count; watch_idx++) {
+		for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
 			watch_config[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {

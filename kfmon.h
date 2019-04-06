@@ -200,19 +200,19 @@ int        orig_stdout;
 int        orig_stderr;
 static int daemonize(void);
 
-static struct tm*  get_localtime(struct tm*);
-static char*       format_localtime(struct tm*, char*, size_t);
+static struct tm*  get_localtime(struct tm* restrict);
+static char*       format_localtime(struct tm* restrict, char* restrict, size_t);
 static char*       get_current_time(void);
-static char*       get_current_time_r(struct tm*, char*, size_t);
+static char*       get_current_time_r(struct tm* restrict, char* restrict, size_t);
 static const char* get_log_prefix(int) __attribute__((const));
 
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static int  strtoul_hu(const char*, unsigned short int*);
-static int  strtobool(const char*, bool*);
-static int  daemon_handler(void*, const char*, const char*, const char*);
-static int  watch_handler(void*, const char*, const char*, const char*);
+static int  strtoul_hu(const char*, unsigned short int* restrict);
+static int  strtobool(const char* restrict, bool* restrict);
+static int  daemon_handler(void*, const char* restrict, const char* restrict, const char* restrict);
+static int  watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
 static bool validate_watch_config(void*);
 static int  load_config(void);
 // Ugly global. Remember how many watches we set up...
@@ -225,7 +225,7 @@ WatchConfig            watch_config[WATCH_MAX] = { 0 };
 FBInkConfig            fbink_config            = { 0 };
 #pragma GCC diagnostic push
 
-static unsigned int qhash(const unsigned char*, size_t);
+static unsigned int qhash(const unsigned char* restrict, size_t);
 static bool         is_target_processed(uint8_t, bool);
 
 static void* reaper_thread(void*);
