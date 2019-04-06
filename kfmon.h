@@ -200,11 +200,11 @@ int        orig_stdout;
 int        orig_stderr;
 static int daemonize(void);
 
-struct tm*  get_localtime(struct tm*);
-char*       format_localtime(struct tm*, char*, size_t);
-char*       get_current_time(void);
-char*       get_current_time_r(struct tm*, char*, size_t);
-const char* get_log_prefix(int) __attribute__((const));
+static struct tm*  get_localtime(struct tm*);
+static char*       format_localtime(struct tm*, char*, size_t);
+static char*       get_current_time(void);
+static char*       get_current_time_r(struct tm*, char*, size_t);
+static const char* get_log_prefix(int) __attribute__((const));
 
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
@@ -216,7 +216,7 @@ static int  watch_handler(void*, const char*, const char*, const char*);
 static bool validate_watch_config(void*);
 static int  load_config(void);
 // Ugly global. Remember how many watches we set up...
-uint8_t watch_count = 0;
+uint8_t watch_count = 0U;
 // Make our config global, because I'm terrible at C.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-braces"
@@ -228,7 +228,7 @@ FBInkConfig            fbink_config            = { 0 };
 static unsigned int qhash(const unsigned char*, size_t);
 static bool         is_target_processed(uint8_t, bool);
 
-void*        reaper_thread(void*);
+static void* reaper_thread(void*);
 static pid_t spawn(char* const*, uint8_t);
 
 static bool  is_watch_already_spawned(uint8_t);

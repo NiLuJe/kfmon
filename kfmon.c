@@ -101,7 +101,7 @@ static int
 }
 
 // Wrapper around localtime_r, making sure this part is thread-safe (used for logging)
-struct tm*
+static struct tm*
     get_localtime(struct tm* lt)
 {
 	time_t t = time(NULL);
@@ -111,7 +111,7 @@ struct tm*
 }
 
 // Wrapper around strftime, making sure this part is thread-safe (used for logging)
-char*
+static char*
     format_localtime(struct tm* lt, char* sz_time, size_t len)
 {
 	// c.f., strftime(3) & https://stackoverflow.com/questions/7411301
@@ -123,7 +123,7 @@ char*
 // Return the current time formatted as 2016-04-29 @ 20:44:13 (used for logging)
 // NOTE: The use of static variables prevents this from being thread-safe,
 //       but in the main thread, we use static storage for simplicity's sake.
-char*
+static char*
     get_current_time(void)
 {
 	static struct tm local_tm = { 0 };
@@ -136,14 +136,14 @@ char*
 
 // And now the same, but with user supplied storage, thus potentially thread-safe:
 // f.g., we use the stack in reaper_thread().
-char*
+static char*
     get_current_time_r(struct tm* local_tm, char* sz_time, size_t len)
 {
 	struct tm* lt = get_localtime(local_tm);
 	return format_localtime(lt, sz_time, len);
 }
 
-const char*
+static const char*
     get_log_prefix(int prio)
 {
 	// Reuse (part of) the syslog() priority constants
@@ -937,7 +937,7 @@ static void
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
-void*
+static void*
     reaper_thread(void* ptr)
 {
 	uint8_t i = *((uint8_t*) ptr);
