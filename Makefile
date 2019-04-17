@@ -273,7 +273,7 @@ sqliteclean:
 
 distclean: clean sqliteclean fbinkclean
 	rm -rf SQLiteBuild
-	rm -rf sqlite/manifest sqlite/manifest.uuid sqlite/autom4te.cache sqlite/config.h.in~
+	rm -rf sqlite/autom4te.cache sqlite/config.h.in~
 	rm -rf sqlite.built
 	rm -rf fbink.built
 
