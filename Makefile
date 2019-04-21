@@ -5,23 +5,23 @@
 # NOTE: We want the "bare" variant of the TC env, to make sure we vendor the right stuff...
 #       i.e., source ~SVN/Configs/trunk/Kindle/Misc/x-compile.sh kobo env bare
 ifdef CROSS_TC
-	CC=$(CROSS_TC)-gcc
-	STRIP=$(CROSS_TC)-strip
+	CC:=$(CROSS_TC)-gcc
+	STRIP:=$(CROSS_TC)-strip
 else
 	CC?=gcc
 	STRIP?=strip
 endif
 
-DEBUG_CFLAGS=-Og -fno-omit-frame-pointer -pipe -g
+DEBUG_CFLAGS:=-Og -fno-omit-frame-pointer -pipe -g
 # Fallback CFLAGS, we honor the env first and foremost!
-OPT_CFLAGS=-O2 -fomit-frame-pointer -pipe
+OPT_CFLAGS:=-O2 -fomit-frame-pointer -pipe
 
 ifdef NILUJE
 	# Use the system's sqlite on my sandbox
 	# NOTE: We can't easily check the exit code of a command (outside of a recipe), so, instead,
 	#       force verbosity to stdout to check the command's output, since it's blank on success.
 	ifeq "$(shell pkg-config --exists --print-errors --errors-to-stdout sqlite3)" ""
-		LIBS=$(shell pkg-config --libs sqlite3)
+		LIBS:=$(shell pkg-config --libs sqlite3)
 	else
 		# Couldn't find SQLite via pkg-config, shit may go horribly wrong...
 		LIBS:=-lsqlite3
@@ -30,7 +30,7 @@ ifdef NILUJE
 	EXTRA_CFLAGS+=-DNILUJE
 else
 	# We want to link to sqlite3 explicitly statically
-	LIBS=-l:libsqlite3.a
+	LIBS:=-l:libsqlite3.a
 endif
 
 # We need our bundled FBInk ;).
@@ -38,11 +38,11 @@ LIBS+=-l:libfbink.a
 
 # NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
 ifdef DEBUG
-	OUT_DIR=Debug
+	OUT_DIR:=Debug
 	CFLAGS:=$(DEBUG_CFLAGS)
 	EXTRA_CFLAGS+=-DDEBUG
 else
-	OUT_DIR=Release
+	OUT_DIR:=Release
 	CFLAGS?=$(OPT_CFLAGS)
 endif
 
@@ -86,10 +86,10 @@ ifndef NILUJE
 endif
 
 # A version tag...
-KFMON_VERSION=$(shell git describe)
+KFMON_VERSION:=$(shell git describe)
 EXTRA_CFLAGS+=-DKFMON_VERSION='"$(KFMON_VERSION)"'
 # A timestamp, formatted according to ISO 8601 (latest commit)...
-KFMON_TIMESTAMP=$(shell git show -s --format=%ci master)
+KFMON_TIMESTAMP:=$(shell git show -s --format=%ci master)
 # NOTE: We used to use __DATE__ @ __TIME__ (i.e., the build date), which we can format the same way like so:
 #       date +'%Y-%m-%d %H:%M:%S %z'
 #       If, instead, we'd want to emulate __TIMESTAMP__ (i.e., modification date of the file):
@@ -103,8 +103,8 @@ LDFLAGS?=-Wl,--as-needed
 
 # Pick up our vendored build of SQLite when asked to
 ifdef SQLITE
-	EXTRA_CPPFLAGS=-ISQLiteBuild
-	EXTRA_LDFLAGS=-LSQLiteBuild/.libs
+	EXTRA_CPPFLAGS:=-ISQLiteBuild
+	EXTRA_LDFLAGS:=-LSQLiteBuild/.libs
 endif
 
 # And pick up FBInk, too.
@@ -131,9 +131,9 @@ EXTRA_CPPFLAGS+=-D_GNU_SOURCE
 
 ##
 # Now that we're done fiddling with flags, let's build stuff!
-SRCS=kfmon.c
+SRCS:=kfmon.c
 # Jump through a few hoops to be able to silence warnings on third-party code only
-INIH_SRCS=inih/ini.c
+INIH_SRCS:=inih/ini.c
 
 default: vendored
 
