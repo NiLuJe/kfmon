@@ -1385,6 +1385,14 @@ static bool
 							    "Target icon '%s' has only *just* finished processing, assuming this is a spurious post-processing event!",
 							    watch_config[watch_idx].filename);
 							should_spawn = false;
+						} else {
+							// Now that everything appears sane, clear the processing timestamp,
+							// to avoid going through this branch for the rest of this power cycle ;).
+							LOG(LOG_NOTICE,
+							    "Target icon '%s' should be properly processed by now :)",
+							    watch_config[watch_idx].filename);
+							watch_config[watch_idx].processing_ts.tv_sec  = 0;
+							watch_config[watch_idx].processing_ts.tv_nsec = 0;
 						}
 					}
 
