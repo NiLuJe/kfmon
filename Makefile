@@ -125,7 +125,8 @@ EXTRA_CPPFLAGS+=-DNDEBUG
 EXTRA_CPPFLAGS+=-pthread
 LIBS+=-lpthread
 
-# And we need -lrt for clock_gettime on most of our targets libcs...
+# And we need -lrt for clock_gettime, as our TC is targeting glibc 2.15, and it was in there before glibc 2.17...
+# Yes, Kobo FW have since moved to glibc 2.19, but that's recent (-ish), and we want binaries that will work on earlier FW than that.
 LIBS+=-lrt
 
 # We already enforce that in FBInk & KFMon (& SQLite itself probably does, too), so, follow suit everywhere
