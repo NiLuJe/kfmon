@@ -1372,7 +1372,7 @@ static bool
 					bool should_spawn = !watch_config[watch_idx].pending_processing &&
 							    is_target_processed(watch_idx, true);
 					// NOTE: In case the target file has been processed during this power cycle,
-					//       check that it happened at least 5s ago, to avoid spurious launches on start,
+					//       check that it happened at least 10s ago, to avoid spurious launches on start,
 					//       as FW 4.13 now appears to trigger an extra set of open/close events on startup,
 					//       right *after* having processed a new image. Which means that without this check,
 					//       it happily blazes right through every other checks,
@@ -1380,7 +1380,7 @@ static bool
 					if (should_spawn && watch_config[watch_idx].processing_ts.tv_sec > 0) {
 						struct timespec now = { 0 };
 						clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-						if (now.tv_sec - watch_config[watch_idx].processing_ts.tv_sec <= 5) {
+						if (now.tv_sec - watch_config[watch_idx].processing_ts.tv_sec <= 10) {
 							LOG(LOG_NOTICE,
 							    "Target icon '%s' has only *just* finished processing, assuming this is a spurious post-processing event!",
 							    watch_config[watch_idx].filename);
