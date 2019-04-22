@@ -992,7 +992,7 @@ static void*
 			//       assume the exit code is actually inherited from execvp's errno...
 			struct timespec now = { 0 };
 			clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-			// NOTE: We should be okay not using difftime on Linux (An Epoch is in UTC, time_t is int64_t).
+			// NOTE: We should be okay not using difftime on Linux (We're using a monotonic clock, time_t is int64_t).
 			if (exitcode != 0 && (now.tv_sec - then.tv_sec) <= 1) {
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
