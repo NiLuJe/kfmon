@@ -116,8 +116,22 @@ for link in soup.find_all("a"):
 	# We want the link, minus the final /
 	if link.get("href") != "../":
 		ko_nightlies.append(link.get("href")[:-1])
-# Sort that to find the latest one...
-koreader_nightly_version = natsorted(ko_nightlies, key=lambda x: x.replace('.', '~'), reverse=True)[0]
+# Sort that to find the latest one, but we'll walk them all backwards until we find one that contains a Kobo build,
+# in case the latest nightly builds was only cooked for a subset of platforms...
+for nightly in natsorted(ko_nightlies, key=lambda x: x.replace('.', '~'), reverse=True):
+	print("Looking at KOReader {} ...".format(nightly))
+	r = requests.get(koreader_nightly_url + nightly)
+	if r.status_code != 200:
+		raise SystemExit("Couldn't crawl KOReader's nightly!")
+	# And look for a Kobo build in there...
+	soup = BeautifulSoup(r.text, "lxml")
+	for link in soup.find_all("a"):
+		if "koreader-kobo-arm-kobo-linux-gnueabihf" in link.get("href"):
+			koreader_nightly_version = nightly
+			break
+	# If we found a Kobo nightly, we're done!
+	if koreader_nightly_version:
+		break
 if koreader_nightly_version is None:
 	raise SystemExit("Couldn't find the latest KOReader nightly!")
 soup = None
