@@ -125,6 +125,9 @@ EXTRA_CPPFLAGS+=-DNDEBUG
 EXTRA_CPPFLAGS+=-pthread
 LIBS+=-lpthread
 
+# And we need -lrt for clock_gettime on most of our targets libcs...
+LIBS+=-lrt
+
 # We already enforce that in FBInk & KFMon (& SQLite itself probably does, too), so, follow suit everywhere
 EXTRA_CPPFLAGS+=-D_GNU_SOURCE
 
