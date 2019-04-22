@@ -1261,9 +1261,8 @@ static bool
 	// should have the same alignment as struct inotify_event.
 	char                        buf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
 	const struct inotify_event* event;
-	bool                        destroyed_wd       = false;
-	bool                        was_unmounted      = false;
-	static bool                 pending_processing = false;
+	bool                        destroyed_wd  = false;
+	bool                        was_unmounted = false;
 
 	// Loop while events can be read from inotify file descriptor.
 	for (;;) {
@@ -1342,13 +1341,13 @@ static bool
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(watch_idx, false)) {
 						// It's not processed on OPEN, flag as pending...
-						pending_processing = true;
+						watch_config[watch_idx].pending_processing = true;
 						LOG(LOG_INFO,
 						    "Flagged target icon '%s' as pending processing ...",
 						    watch_config[watch_idx].filename);
 					} else {
 						// It's already processed, we're good!
-						pending_processing = false;
+						watch_config[watch_idx].pending_processing = false;
 					}
 				}
 			}
@@ -1370,7 +1369,8 @@ static bool
 				if (!is_watch_spawned && !is_reader_spawned) {
 					// Check that our target file has already fully been processed by Nickel
 					// before launching anything...
-					if (!pending_processing && is_target_processed(watch_idx, true)) {
+					if (!watch_config[watch_idx].pending_processing &&
+					    is_target_processed(watch_idx, true)) {
 						LOG(LOG_INFO,
 						    "Preparing to spawn %s for watch idx %hhu . . .",
 						    watch_config[watch_idx].action,
