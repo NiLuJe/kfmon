@@ -957,7 +957,8 @@ static void*
 	char      sz_time[22];
 
 	// Remember the current time for the execvp errno/exitcode heuristic...
-	time_t then = time(NULL);
+	struct timespec then = { 0 };
+	clock_gettime(CLOCK_MONOTONIC_RAW, &then);
 
 	MTLOG("[%s] [INFO] [TID: %ld] Waiting to reap process %ld (from watch idx %hhu) . . .",
 	      get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
@@ -989,9 +990,10 @@ static void*
 			//       If the process exited with a non-zero status code,
 			//       within (roughly) a second of being launched,
 			//       assume the exit code is actually inherited from execvp's errno...
-			time_t now = time(NULL);
+			struct timespec now = { 0 };
+			clock_gettime(CLOCK_MONOTONIC_RAW, &now);
 			// NOTE: We should be okay not using difftime on Linux (An Epoch is in UTC, time_t is int64_t).
-			if (exitcode != 0 && (now - then) <= 1) {
+			if (exitcode != 0 && (now.tv_sec - then.tv_sec) <= 1) {
 				char buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
 				// NOTE: Even if it's not entirely clear from the manpage, printf's %m *is* thread-safe,
