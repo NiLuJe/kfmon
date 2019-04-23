@@ -112,10 +112,9 @@ ifdef DEBUG
 	EXTRA_LDFLAGS+=-LFBInk/Debug
 else
 	EXTRA_LDFLAGS+=-LFBInk/Release
+	# We already enforce that in SQLite, so, follow suit everywhere
+	EXTRA_CPPFLAGS+=-DNDEBUG
 endif
-
-# We already enforce that in SQLite, so, follow suit everywhere
-EXTRA_CPPFLAGS+=-DNDEBUG
 
 # We use pthreads, let GCC do its thing to do it right (c.f., gcc -dumpspecs | grep pthread).
 # NOTE: It mostly consists of passing -D_REENTRANT to the preprocessor, -lpthread to the linker,
@@ -262,9 +261,10 @@ endif
 release: sqlite.built fbink.built
 	$(MAKE) strip SQLITE=true
 
-debug: sqlite.built fbink.built
+debug: sqlite.built
 	cd FBInk && \
-	$(MAKE) debug
+	$(MAKE) debug MINIMAL=true
+	touch fbink.built
 	$(MAKE) all DEBUG=true SQLITE=true
 
 fbinkclean:
