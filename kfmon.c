@@ -1420,11 +1420,14 @@ static bool
 							     basename(watch_config[watch_idx].action));
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN,
 						//       which tripped our 'pending processing' check.
-						// NOTE: Remember this, so we can avoid a spurious launch in case Nickel
+						// NOTE: The first time we encounter a not-yet process filed on close,
+						//       remember it, so we can avoid a spurious launch in case Nickel
 						//       triggers multiple open/close events in a very short amount of time,
 						//       as seems to be the case on startup since FW 4.13 for brand new files...
-						clock_gettime(CLOCK_MONOTONIC_RAW,
-							      &watch_config[watch_idx].processing_ts);
+						if (watch_config[watch_idx].processing_ts.tv_sec == 0) {
+							clock_gettime(CLOCK_MONOTONIC_RAW,
+								      &watch_config[watch_idx].processing_ts);
+						}
 					}
 				} else {
 					if (is_watch_spawned) {
