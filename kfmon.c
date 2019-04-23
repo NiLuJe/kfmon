@@ -1178,7 +1178,7 @@ static pid_t
 
 			// Prettify the thread's name. Must be <= 15 characters long (i.e., 16 bytes, NULL included).
 			char thname[16];
-			snprintf(thname, sizeof(thname), "Reaper:%ld", (long) pid);
+			snprintf(thname, sizeof(thname), "Reap:%ld", (long) pid);
 			if (pthread_setname_np(rthread, thname) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_setname_np");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_setname_np failed ?!", &fbink_config);
