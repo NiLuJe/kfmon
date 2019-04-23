@@ -14,6 +14,8 @@ ionice -c 3 -p $$
 FBINK_BIN="/usr/local/kfmon/bin/fbink"
 # Where's our log?
 KFMON_LOG="/usr/local/kfmon/kfmon.log"
+# Where's our log dump on the userstore?
+KFMON_USER_LOG="/mnt/onboard/.adds/kfmon/log/kfmon_dump.log"
 # How many lines do we want to print?
 # NOTE: Start high, we'll try to adjust it down to fit both the screen & the content later...
 LOG_LINES="25"
@@ -65,5 +67,15 @@ if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
 else
 	tail -n ${LOG_LINES} "${KFMON_LOG}" | ${FBINK_BIN} -q
 fi
+
+# Dump it in the userstore, to make it easily accessible to users without shell access
+if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
+	logread | grep -e KFMon -e FBInk > "${KFMON_USER_LOG}" 2>&1
+else
+	cp -f "${KFMON_LOG}" "${KFMON_USER_LOG}"
+fi
+# Add a timestamp, and a dump of Nickel's version tag
+echo "**** Log dumped on $(date +'%Y-%m-%d @ %H:%M:%S') ****" >> "${KFMON_USER_LOG}"
+echo "**** FW version: $(cat /mnt/onboard/.kobo/version) ****" >> "${KFMON_USER_LOG}"
 
 return 0

@@ -178,7 +178,7 @@ kobo: armcheck release
 	pushd Release && zip ../Kobo/KFMon-Uninstaller.zip KoboRoot.tgz && popd
 	rm -f Release/KoboRoot.tgz
 	rm -rf Kobo/usr/local/kfmon/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
-	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard/.kobo Kobo/etc/udev/rules.d Kobo/etc/init.d Kobo/mnt/onboard/.adds/kfmon/config Kobo/mnt/onboard/.adds/kfmon/bin Kobo/mnt/onboard/icons
+	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard/.kobo Kobo/etc/udev/rules.d Kobo/etc/init.d Kobo/mnt/onboard/.adds/kfmon/config Kobo/mnt/onboard/.adds/kfmon/bin Kobo/mnt/onboard/.adds/kfmon/log Kobo/mnt/onboard/icons
 	ln -sf $(CURDIR)/resources/koreader.png Kobo/mnt/onboard/koreader.png
 	ln -sf $(CURDIR)/resources/plato.png Kobo/mnt/onboard/icons/plato.png
 	ln -sf $(CURDIR)/resources/kfmon.png Kobo/mnt/onboard/kfmon.png
