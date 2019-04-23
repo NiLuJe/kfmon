@@ -117,7 +117,7 @@ for link in soup.find_all("a"):
 	if link.get("href") != "../":
 		ko_nightlies.append(link.get("href")[:-1])
 # Sort that to find the latest one, but we'll walk them all backwards until we find one that contains a Kobo build,
-# in case the latest nightly builds was only cooked for a subset of platforms...
+# in case the latest nightlies were only cooked for a subset of platforms...
 for nightly in natsorted(ko_nightlies, key=lambda x: x.replace('.', '~'), reverse=True):
 	print("Looking at KOReader {} ...".format(nightly))
 	r = requests.get(koreader_nightly_url + nightly)
