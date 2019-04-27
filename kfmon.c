@@ -1377,14 +1377,10 @@ static bool
 					//       right *after* having processed a new image. Which means that without this check,
 					//       it happily blazes right through every other checks,
 					//       and ends up running the new target script straightaway... :/
-					if (should_spawn && watch_config[watch_idx].processing_ts != 0U) {
-						struct timespec now;
-						uint32_t        now_ts = 0U;
-						if (clock_gettime(CLOCK_MONOTONIC_RAW, &now) == 0) {
-							now_ts = (uint32_t) now.tv_sec;
-						}
-						if (now_ts != 0U &&
-						    now_ts - watch_config[watch_idx].processing_ts <= 10) {
+					if (should_spawn && watch_config[watch_idx].processing_ts > 0) {
+						struct timespec now = { 0 };
+						clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+						if (now.tv_sec - watch_config[watch_idx].processing_ts <= 10) {
 							LOG(LOG_NOTICE,
 							    "Target icon '%s' has only *just* finished processing, assuming this is a spurious post-processing event!",
 							    watch_config[watch_idx].filename);
@@ -1395,7 +1391,7 @@ static bool
 							LOG(LOG_NOTICE,
 							    "Target icon '%s' should be properly processed by now :)",
 							    watch_config[watch_idx].filename);
-							watch_config[watch_idx].processing_ts = 0U;
+							watch_config[watch_idx].processing_ts = 0;
 						}
 					}
 
@@ -1430,8 +1426,7 @@ static bool
 						if (watch_config[watch_idx].processing_ts != 0U) {
 							struct timespec now;
 							if (clock_gettime(CLOCK_MONOTONIC_RAW, &now) == 0) {
-								watch_config[watch_idx].processing_ts =
-								    (uint32_t) now.tv_sec;
+								watch_config[watch_idx].processing_ts = now.tv_sec;
 							}
 						}
 					}
