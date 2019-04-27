@@ -154,18 +154,18 @@ typedef struct
 // What a watch config should look like
 typedef struct
 {
-	int32_t processing_ts;
-	int     inotify_wd;
-	char    filename[KFMON_PATH_MAX];
-	char    action[KFMON_PATH_MAX];
-	char    db_title[DB_SZ_MAX];
-	char    db_author[DB_SZ_MAX];
-	char    db_comment[DB_SZ_MAX];
-	bool    skip_db_checks;
-	bool    do_db_update;
-	bool    block_spawns;
-	bool    wd_was_destroyed;
-	bool    pending_processing;
+	time_t processing_ts;
+	int    inotify_wd;
+	char   filename[KFMON_PATH_MAX];
+	char   action[KFMON_PATH_MAX];
+	char   db_title[DB_SZ_MAX];
+	char   db_author[DB_SZ_MAX];
+	char   db_comment[DB_SZ_MAX];
+	bool   skip_db_checks;
+	bool   do_db_update;
+	bool   block_spawns;
+	bool   wd_was_destroyed;
+	bool   pending_processing;
 } WatchConfig;
 
 // Hardcode the max amount of watches we handle

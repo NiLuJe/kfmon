@@ -1423,7 +1423,7 @@ static bool
 						//       remember it, so we can avoid a spurious launch in case Nickel
 						//       triggers multiple open/close events in a very short amount of time,
 						//       as seems to be the case on startup since FW 4.13 for brand new files...
-						if (watch_config[watch_idx].processing_ts != 0U) {
+						if (watch_config[watch_idx].processing_ts == 0) {
 							struct timespec now;
 							if (clock_gettime(CLOCK_MONOTONIC_RAW, &now) == 0) {
 								watch_config[watch_idx].processing_ts = now.tv_sec;
