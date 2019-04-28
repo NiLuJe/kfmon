@@ -146,7 +146,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 
 -   Speaking of updates, if, right after a KFMon update or reinstall, KFMon appears to be disabled, simply fully restart your device. There's a weird quirk involving specific timings during the Kobo update process that may prevent KFMon from starting up properly. You can (manually) check the KFMon logs for more info.  
 
--   Speaking of the log, as mentioned earlier, it is located by default in */usr/local/kfmon/kfmon.log*, but tapping the KFMon icon, besides printing the tail end of it on screen, will also dump a copy of it in */mnt/onboard/***.adds/kfmon/log/kfmon_dump.log**, making it easily accessible even if you don't have shell access to your device.
+-   Speaking of the log, as mentioned earlier, it is located by default in */usr/local/kfmon/kfmon.log*, but tapping the KFMon icon, besides printing the tail end of it on screen, will also dump a full copy of it in */mnt/onboard/***.adds/kfmon/log/kfmon_dump.log**, making it easily accessible even if you don't have shell access to your device.
 
 -   Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/2e46feb4c27e9393771d7deefa9a790ba875a424/kfmon.h#L148) file watches. Ping me if that's not enough for you ;).  
 
