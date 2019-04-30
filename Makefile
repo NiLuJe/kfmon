@@ -140,8 +140,8 @@ INIH_SRCS:=inih/ini.c
 
 default: vendored
 
-OBJS:=$(SRCS:%.c=$(OUT_DIR)/%.o)
-INIH_OBJS:=$(INIH_SRCS:%.c=$(OUT_DIR)/%.o)
+OBJS:=$(addprefix $(OUT_DIR)/, $(SRCS:.c=.o))
+INIH_OBJS:=$(addprefix $(OUT_DIR)/, $(INIH_SRCS:.c=.o))
 
 # And now we can silence a few inih-specific warnings
 $(INIH_OBJS): QUIET_CFLAGS := -Wno-cast-qual -DINI_CALL_HANDLER_ON_NEW_SECTION=0
@@ -152,9 +152,14 @@ $(OUT_DIR)/%.o: %.c
 outdir:
 	mkdir -p $(OUT_DIR)/inih
 
-all: outdir kfmon
+# Make absolutely sure we create our output directories first, even with unfortunate // timings!
+# c.f., https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html#Prerequisite-Types
+$(OBJS): | outdir
+$(INIH_OBJS): | outdir
 
-vendored: outdir sqlite.built fbink.built
+all: kfmon
+
+vendored: sqlite.built fbink.built
 	$(MAKE) kfmon SQLITE=true
 
 kfmon: $(OBJS) $(INIH_OBJS)
