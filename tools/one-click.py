@@ -12,7 +12,6 @@ if sys.version_info < (3, 7):
 	raise SystemExit("This script requires Python 3.7+")
 
 from bs4 import BeautifulSoup
-import defusedxml.lxml
 from email.utils import parsedate
 from github import Github
 from io import DEFAULT_BUFFER_SIZE
@@ -60,14 +59,12 @@ plato_scripts_url = None
 for release in plato.get_releases():
 	version = release.tag_name
 	print("Looking at Plato {} ...".format(version))
-	# Plato doesn't actually store releases in assets, so, parse the MD body of the Release Notes instead to pull the links
-	notes = defusedxml.lxml.fromstring(markdown(release.body))
-	for link in notes.xpath("//a"):
-		# We want both the main Plato package, as well as the launcher scripts
-		if plato_main_url is None and link.text == "plato-{}.zip".format(version):
-			plato_main_url = link.get("href")
-		if plato_scripts_url is None and link.text == "plato-launcher-fmon-{}.zip".format(version):
-			plato_scripts_url = link.get("href")
+	# We want both the main Plato package, as well as the launcher scripts
+	for asset in release.get_assets():
+		if plato_main_url is None and asset.name == "plato-{}.zip".format(version):
+			plato_main_url = asset.browser_download_url
+		if plato_scripts_url is None and asset.name == "plato-launcher-fmon-{}.zip".format(version):
+			plato_scripts_url = asset.browser_download_url
 	# If we've got both packages, we're done!
 	if plato_main_url is not None and plato_scripts_url is not None:
 		break
