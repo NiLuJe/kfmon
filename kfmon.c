@@ -196,13 +196,14 @@ static void
 	int           mfd = open("/proc/mounts", O_RDONLY);
 	struct pollfd pfd;
 
-	uint8_t changes = 0U;
-	pfd.fd          = mfd;
-	pfd.events      = POLLERR | POLLPRI;
-	pfd.revents     = 0;
+	uint8_t changes     = 0U;
+	uint8_t max_changes = 6U;
+	pfd.fd              = mfd;
+	pfd.events          = POLLERR | POLLPRI;
+	pfd.revents         = 0;
 	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
-			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %hhu)", (uint8_t) changes++);
+			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %hhu of %hhu)", ++changes, max_changes);
 
 			// Stop polling once we know our mountpoint is available...
 			if (is_target_mounted()) {
@@ -213,7 +214,7 @@ static void
 		pfd.revents = 0;
 
 		// If we can't find our mountpoint after that many changes, assume we're screwed...
-		if (changes >= 5U) {
+		if (changes >= max_changes) {
 			LOG(LOG_ERR, "Too many mountpoint changes without finding our target (shutdown?), aborting!");
 			close(mfd);
 			exit(EXIT_FAILURE);
