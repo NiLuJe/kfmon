@@ -217,6 +217,11 @@ static void
 		if (changes >= max_changes) {
 			LOG(LOG_ERR, "Too many mountpoint changes without finding our target (shutdown?), aborting!");
 			close(mfd);
+			// NOTE: We have to hide this behind a slightly crappy check, because this runs during load_config,
+			//       at which point FBInk is not yet initialized...
+			if (fbink_config.row != 0) {
+				fbink_print(FBFD_AUTO, "[KFMon] Userstore unavailable, aborting!", &fbink_config);
+			}
 			exit(EXIT_FAILURE);
 		}
 	}
