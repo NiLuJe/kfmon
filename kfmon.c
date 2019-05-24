@@ -203,7 +203,7 @@ static void
 	pfd.revents         = 0;
 	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
-			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %hhu of %hhu)", ++changes, max_changes);
+			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %d of %hhu)", ++changes, max_changes);
 
 			// Stop polling once we know our mountpoint is available...
 			if (is_target_mounted()) {

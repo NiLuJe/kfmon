@@ -16,7 +16,6 @@ from email.utils import parsedate
 from github import Github
 from io import DEFAULT_BUFFER_SIZE
 import logging
-from markdown import markdown
 from natsort import natsorted
 import os
 from pathlib import Path
