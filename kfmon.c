@@ -565,6 +565,11 @@ static int
 							    daemon_config.use_syslog,
 							    daemon_config.with_notifications);
 						}
+					} else if (strcasecmp(p->fts_name, "kfmon.user.ini") == 0) {
+						// NOTE: Skip the user config for now,
+						//       as we cannot ensure the order in which files will be walked,
+						//       and we need it to be parsed *after* the main daemon config.
+						continue;
 					} else {
 						// NOTE: Don't blow up when trying to store more watches than we have
 						//       space for...
@@ -620,6 +625,27 @@ static int
 		}
 	}
 	fts_close(ftsp);
+
+	// Now we can see if we have an user daemon config to handle...
+	const char usercfg_path[] = KFMON_CONFIGPATH "/kfmon.user.ini";
+	if (access(usercfg_path, F_OK) == 0) {
+		ret = ini_parse(usercfg_path, daemon_handler, &daemon_config);
+		if (ret != 0) {
+			LOG(LOG_CRIT,
+			    "Failed to parse user config file '%s' (first error on line %d), will abort!",
+			    "kfmon.user.ini",
+			    ret);
+			// Flag as a failure...
+			rval = -1;
+		} else {
+			LOG(LOG_NOTICE,
+			    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%d, with_notifications=%d",
+			    "kfmon.user.ini",
+			    daemon_config.db_timeout,
+			    daemon_config.use_syslog,
+			    daemon_config.with_notifications);
+		}
+	}
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
