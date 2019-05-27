@@ -1363,13 +1363,13 @@ static bool
 				LOG(LOG_NOTICE, "Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
 				bool is_watch_spawned;
-				bool is_reader_spawned;
+				bool is_blocker_spawned;
 				pthread_mutex_lock(&ptlock);
-				is_watch_spawned  = is_watch_already_spawned(watch_idx);
-				is_reader_spawned = is_blocker_running();
+				is_watch_spawned   = is_watch_already_spawned(watch_idx);
+				is_blocker_spawned = is_blocker_running();
 				pthread_mutex_unlock(&ptlock);
 
-				if (!is_watch_spawned && !is_reader_spawned) {
+				if (!is_watch_spawned && !is_blocker_spawned) {
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(watch_idx, false)) {
 						// It's not processed on OPEN, flag as pending...
@@ -1392,13 +1392,13 @@ static bool
 				//       without risking trying to spawn multiple instances of them,
 				//       in case they end up tripping their own inotify watch ;).
 				bool is_watch_spawned;
-				bool is_reader_spawned;
+				bool is_blocker_spawned;
 				pthread_mutex_lock(&ptlock);
-				is_watch_spawned  = is_watch_already_spawned(watch_idx);
-				is_reader_spawned = is_blocker_running();
+				is_watch_spawned   = is_watch_already_spawned(watch_idx);
+				is_blocker_spawned = is_blocker_running();
 				pthread_mutex_unlock(&ptlock);
 
-				if (!is_watch_spawned && !is_reader_spawned) {
+				if (!is_watch_spawned && !is_blocker_spawned) {
 					// Check that our target file has already fully been processed by Nickel
 					// before launching anything...
 					bool should_spawn = !watch_config[watch_idx].pending_processing &&
@@ -1480,7 +1480,7 @@ static bool
 							     &fbink_config,
 							     "[KFMon] Not spawning %s: still running!",
 							     basename(watch_config[watch_idx].action));
-					} else if (is_reader_spawned) {
+					} else if (is_blocker_spawned) {
 						LOG(LOG_INFO,
 						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
 						fbink_printf(FBFD_AUTO,
