@@ -150,6 +150,8 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 
 -   Speaking of the log, as mentioned earlier, it is located by default in */usr/local/kfmon/kfmon.log*, but tapping the KFMon icon, besides printing the tail end of it on screen, will also dump a full copy of it in */mnt/onboard/***.adds/kfmon/log/kfmon_dump.log**, making it easily accessible even if you don't have shell access to your device.
 
--   Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/2e46feb4c27e9393771d7deefa9a790ba875a424/kfmon.h#L148) file watches. Ping me if that's not enough for you ;).  
+-   Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/2e46feb4c27e9393771d7deefa9a790ba875a424/kfmon.h#L148) file watches. Ping me if that's not enough for you ;).
+
+-   If, for some reason, you need to prevent KFMon from spawning *anything* for a while, just drop a blank *BLOCK* file in the *config* folder, i.e., *touch /mnt/onboard/.adds/kfmon/config/BLOCK*. Simply remove it when you want KFMon to do its thing again ;).
 
 <!-- kate: indent-mode cstyle; indent-width 4; replace-tabs on; remove-trailing-spaces none; -->
