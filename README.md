@@ -66,6 +66,8 @@ In any case, you can confirm KFMon's behavior by checking its log, which we'll c
 
 `with_notifications = 1`, which dictates whether KFMon will print on-screen feedback messages (via [FBInk](https://github.com/NiLuJe/FBInk)) when an action is launched successfully. Note that error messages will *always* be shown, regardless of this setting.
 
+Note that this file will be *overwritten* by the KFMon install package, so, if you want your changes to persist across updates, you may want to make your modifications in a copy of that file, one that you should name *kfmon***.user***.ini*.
+
 ## How can I add my own actions?
 
 Each action gets a [dedicated INI file](/config/usbnet.ini) in the config folder, so just drop a new `.ini` in the config folder.
