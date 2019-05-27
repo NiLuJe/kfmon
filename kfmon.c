@@ -1270,6 +1270,19 @@ static bool
 	return false;
 }
 
+// Check if spawns are inhibited by the global block file
+static bool
+    are_spawns_blocked(void)
+{
+	const char block_path[] = KFMON_CONFIGPATH "/BLOCK";
+	if (access(block_path, F_OK) == 0) {
+		// Global block file is here, prevent new spawns...
+		return true;
+	}
+
+	return false;
+}
+
 // Return the pid of the spawn of a given inotify watch
 static pid_t
     get_spawn_pid_for_watch(uint8_t watch_idx)
@@ -1368,8 +1381,9 @@ static bool
 				is_watch_spawned   = is_watch_already_spawned(watch_idx);
 				is_blocker_spawned = is_blocker_running();
 				pthread_mutex_unlock(&ptlock);
+				bool is_spawn_blocked = are_spawns_blocked();
 
-				if (!is_watch_spawned && !is_blocker_spawned) {
+				if (!is_watch_spawned && !is_blocker_spawned && !is_spawn_blocked) {
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(watch_idx, false)) {
 						// It's not processed on OPEN, flag as pending...
@@ -1397,8 +1411,9 @@ static bool
 				is_watch_spawned   = is_watch_already_spawned(watch_idx);
 				is_blocker_spawned = is_blocker_running();
 				pthread_mutex_unlock(&ptlock);
+				bool is_spawn_blocked = are_spawns_blocked();
 
-				if (!is_watch_spawned && !is_blocker_spawned) {
+				if (!is_watch_spawned && !is_blocker_spawned && !is_spawn_blocked) {
 					// Check that our target file has already fully been processed by Nickel
 					// before launching anything...
 					bool should_spawn = !watch_config[watch_idx].pending_processing &&
@@ -1487,6 +1502,14 @@ static bool
 							     NULL,
 							     &fbink_config,
 							     "[KFMon] Not spawning %s: blocked!",
+							     basename(watch_config[watch_idx].action));
+					} else if (is_spawn_blocked) {
+						LOG(LOG_INFO,
+						    "As the global spawn inhibiter flag is present, we won't be spawning anything!");
+						fbink_printf(FBFD_AUTO,
+							     NULL,
+							     &fbink_config,
+							     "[KFMon] Not spawning %s: inhibited!",
 							     basename(watch_config[watch_idx].action));
 					}
 				}

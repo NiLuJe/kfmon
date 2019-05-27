@@ -239,6 +239,7 @@ static pid_t spawn(char* const*, uint8_t);
 
 static bool  is_watch_already_spawned(uint8_t);
 static bool  is_blocker_running(void);
+static bool  are_spawns_blocked(void);
 static pid_t get_spawn_pid_for_watch(uint8_t);
 
 static bool handle_events(int);
