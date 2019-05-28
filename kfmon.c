@@ -671,6 +671,177 @@ static int
 	return rval;
 }
 
+// Check if watch cofigs have been added/removed/updated...
+static int
+    update_watch_configs(void)
+{
+	// Walk the config directory to pickup our ini files... (c.f.,
+	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
+	FTS* restrict ftsp;
+	FTSENT* restrict p;
+	FTSENT* restrict chp;
+	// We only need to walk a single directory...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
+	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
+#pragma GCC diagnostic pop
+	int ret;
+	int rval = 0;
+
+	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
+	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
+	    NULL) {
+		perror("[KFMon] [CRIT] fts_open");
+		return -1;
+	}
+	// Initialize ftsp with as many toplevel entries as possible.
+	chp = fts_children(ftsp, 0);
+	if (chp == NULL) {
+		// No files to traverse!
+		LOG(LOG_CRIT, "Config directory '%s' appears to be empty, aborting!", KFMON_CONFIGPATH);
+		fts_close(ftsp);
+		return -1;
+	}
+	while ((p = fts_read(ftsp)) != NULL) {
+		switch (p->fts_info) {
+			case FTS_F:
+				// Check if it's a .ini and not either an unix hidden file or a Mac resource fork...
+				if (p->fts_namelen > 4 &&
+				    strncasecmp(p->fts_name + (p->fts_namelen - 4), ".ini", 4) == 0 &&
+				    strncasecmp(p->fts_name, ".", 1) != 0) {
+					LOG(LOG_INFO, "Trying to load config file '%s' . . .", p->fts_path);
+					// We only care about *watch* configs, the main config is only loaded at startup
+					if (strcasecmp(p->fts_name, "kfmon.ini") == 0) {
+						continue;
+					} else if (strcasecmp(p->fts_name, "kfmon.user.ini") == 0) {
+						continue;
+					} else {
+						// NOTE: Don't blow up when trying to store more watches than we have
+						//       space for...
+						if (watch_count >= WATCH_MAX) {
+							LOG(LOG_WARNING,
+							    "We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!",
+							    WATCH_MAX,
+							    p->fts_name);
+							// Don't flag this as a hard failure, just warn and go on...
+							break;
+						}
+
+						// Store the results in a temporary struct,
+						// so we can compare it to our current watches...
+						WatchConfig cur_watch = { 0 };
+
+						ret = ini_parse(p->fts_path, watch_handler, &cur_watch);
+						if (ret != 0) {
+							LOG(LOG_CRIT,
+							    "Failed to parse watch config file '%s' (first error on line %d), will abort!",
+							    p->fts_name,
+							    ret);
+							// Flag as a failure...
+							rval = -1;
+						} else {
+							// Try to match it to a current watch, based on the trigger file...
+							uint8_t watch_idx    = 0U;
+							bool    is_new_watch = true;
+							for (watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+								if (strcmp(cur_watch.filename,
+									   watch_config[watch_idx].filename) == 0) {
+									// Gotcha!
+									is_new_watch = false;
+									// Update the global config *before* validation,
+									// because validates needs to ensure
+									// we won't watch the same file twice...
+									// NOTE: We don't simply dump the struct because
+									//       that watch might currently be running!
+									//       So we only update the fields related to the cfg.
+									strncpy(watch_config[watch_idx].filename,
+										cur_watch.filename,
+										KFMON_PATH_MAX - 1);
+									strncpy(watch_config[watch_idx].action,
+										cur_watch.action,
+										KFMON_PATH_MAX - 1);
+									watch_config[watch_idx].block_spawns =
+									    cur_watch.block_spawns;
+									watch_config[watch_idx].do_db_update =
+									    cur_watch.do_db_update;
+									strncpy(watch_config[watch_idx].db_title,
+										cur_watch.db_title,
+										DB_SZ_MAX - 1);
+									strncpy(watch_config[watch_idx].db_author,
+										cur_watch.db_author,
+										DB_SZ_MAX - 1);
+									strncpy(watch_config[watch_idx].db_comment,
+										cur_watch.db_comment,
+										DB_SZ_MAX - 1);
+								}
+							}
+
+							// New watch! Make it so!
+							if (is_new_watch) {
+								watch_idx               = watch_count;
+								watch_config[watch_idx] = cur_watch;
+							}
+
+							// FIXME: validate & merge for existing watches, and validate for new watches?
+							//        Clear up the mess above to make validate behave and/or avoid rewriting unchanged watches/fields...
+							if (validate_watch_config(&watch_config[watch_idx])) {
+								LOG(LOG_NOTICE,
+								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+								    watch_idx,
+								    p->fts_name,
+								    watch_config[watch_idx].filename,
+								    watch_config[watch_idx].action,
+								    watch_config[watch_idx].block_spawns,
+								    watch_config[watch_idx].do_db_update,
+								    watch_config[watch_idx].db_title,
+								    watch_config[watch_idx].db_author,
+								    watch_config[watch_idx].db_comment);
+							} else {
+								LOG(LOG_CRIT,
+								    "Watch config file '%s' is not valid, will abort!",
+								    p->fts_name);
+								rval = -1;
+							}
+
+							// Only increase count for *new* watches,
+							// we will *keep* dropped watches' data around to keep things simple.
+							// Again, even on failure, c.f., load_config
+							if (is_new_watch) {
+								watch_count++;
+							}
+						}
+					}
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	fts_close(ftsp);
+
+#ifdef DEBUG
+	// Let's recap (including failures)...
+	for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+		DBGLOG(
+		    "Watch config @ index %hhu recap: filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    watch_idx,
+		    watch_config[watch_idx].filename,
+		    watch_config[watch_idx].action,
+		    watch_config[watch_idx].block_spawns,
+		    watch_config[watch_idx].skip_db_checks,
+		    watch_config[watch_idx].do_db_update,
+		    watch_config[watch_idx].db_title,
+		    watch_config[watch_idx].db_author,
+		    watch_config[watch_idx].db_comment);
+	}
+#endif
+
+	return rval;
+}
+
 // Implementation of Qt4's QtHash (c.f., qhash @
 // https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L37)
 static unsigned int
@@ -1700,6 +1871,20 @@ int
 	while (1) {
 		LOG(LOG_INFO, "Beginning the main loop.");
 
+		// Make sure our target partition is mounted
+		if (!is_target_mounted()) {
+			LOG(LOG_INFO, "%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
+			// If it's not, wait for it to be...
+			wait_for_target_mountpoint();
+		}
+
+		// Reload *watch* configs to see if we have something new to pickup after an USBMS session
+		if (update_watch_configs() == -1) {
+			LOG(LOG_ERR, "Failed to load one or more config files, aborting!");
+			fbink_print(FBFD_AUTO, "[KFMon] Failed to update watch configs!", &fbink_config);
+			exit(EXIT_FAILURE);
+		}
+
 		// Create the file descriptor for accessing the inotify API
 		LOG(LOG_INFO, "Initializing inotify.");
 		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
@@ -1707,13 +1892,6 @@ int
 			perror("[KFMon] [ERR!] Aborting: inotify_init1");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbink_config);
 			exit(EXIT_FAILURE);
-		}
-
-		// Make sure our target file is available (i.e., the partition it resides in is mounted)
-		if (!is_target_mounted()) {
-			LOG(LOG_INFO, "%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
-			// If it's not, wait for it to be...
-			wait_for_target_mountpoint();
 		}
 
 		// Flag each of our target files for 'file was opened' and 'file was closed' events

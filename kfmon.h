@@ -221,6 +221,7 @@ static int  daemon_handler(void*, const char* restrict, const char* restrict, co
 static int  watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
 static bool validate_watch_config(void*);
 static int  load_config(void);
+static int  update_watch_configs(void);
 // Ugly global. Remember how many watches we set up...
 uint8_t watch_count = 0U;
 // Make our config global, because I'm terrible at C.
