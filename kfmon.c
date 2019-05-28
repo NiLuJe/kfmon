@@ -799,6 +799,26 @@ static int
 								    watch_config[watch_idx].db_title,
 								    watch_config[watch_idx].db_author,
 								    watch_config[watch_idx].db_comment);
+
+								if (daemon_config.with_notifications) {
+									if (is_new_watch) {
+										fbink_printf(
+										    FBFD_AUTO,
+										    NULL,
+										    &fbink_config,
+										    "[KFMon] Setup a new watch on %s",
+										    basename(watch_config[watch_idx]
+												 .filename));
+									} else {
+										fbink_printf(
+										    FBFD_AUTO,
+										    NULL,
+										    &fbink_config,
+										    "[KFMon] Updated the watch on %s",
+										    basename(watch_config[watch_idx]
+												 .filename));
+									}
+								}
 							} else {
 								LOG(LOG_CRIT,
 								    "Watch config file '%s' is not valid, will abort!",
