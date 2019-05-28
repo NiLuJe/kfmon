@@ -410,12 +410,16 @@ static int
 	WatchConfig* restrict pconfig = (WatchConfig*) user;
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(key, n) == 0
-	// NOTE: Crappy strncpy() usage, but those char arrays are zeroed first
-	//       (hence the MAX-1 len to ensure that we're NULL terminated)...
 	if (MATCH("watch", "filename")) {
-		strncpy(pconfig->filename, value, CFG_SZ_MAX - 1);    // Flawfinder: ignore
+		if (str5cpy(pconfig->filename, CFG_SZ_MAX, value, CFG_SZ_MAX, NOTRUNC) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for filename (too long?)!");
+			return 0;
+		}
 	} else if (MATCH("watch", "action")) {
-		strncpy(pconfig->action, value, CFG_SZ_MAX - 1);    // Flawfinder: ignore
+		if (str5cpy(pconfig->action, CFG_SZ_MAX, value, CFG_SZ_MAX, NOTRUNC) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for action (too long?)!");
+			return 0;
+		}
 	} else if (MATCH("watch", "skip_db_checks")) {
 		if (strtobool(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
@@ -427,11 +431,18 @@ static int
 			return 0;
 		}
 	} else if (MATCH("watch", "db_title")) {
-		strncpy(pconfig->db_title, value, DB_SZ_MAX - 1);    // Flawfinder: ignore
+		// NOTE: str5cpy returns OKTRUNC (1) if we allow truncation, which we do here
+		if (str5cpy(pconfig->db_title, DB_SZ_MAX, value, DB_SZ_MAX, TRUNC) != 0) {
+			LOG(LOG_WARN, "The value passed for db_title may have been truncated!");
+		}
 	} else if (MATCH("watch", "db_author")) {
-		strncpy(pconfig->db_author, value, DB_SZ_MAX - 1);    // Flawfinder: ignore
+		if (str5cpy(pconfig->db_author, DB_SZ_MAX, value, DB_SZ_MAX, TRUNC) != 0) {
+			LOG(LOG_WARN, "The value passed for db_author may have been truncated!");
+		}
 	} else if (MATCH("watch", "db_comment")) {
-		strncpy(pconfig->db_comment, value, DB_SZ_MAX - 1);    // Flawfinder: ignore
+		if (str5cpy(pconfig->db_comment, DB_SZ_MAX, value, DB_SZ_MAX, TRUNC) != 0) {
+			LOG(LOG_WARN, "The value passed for db_comment may have been truncated!");
+		}
 	} else if (MATCH("watch", "block_spawns")) {
 		if (strtobool(value, &pconfig->block_spawns) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
@@ -611,8 +622,7 @@ static int
 							}
 						}
 						// No matter what, switch to the next slot:
-						// we rely on zero-initialization (c.f., the comments around
-						// our strncpy() usage in watch_handler), so we can't reuse a slot,
+						// we rely on zero-initialization, so we can't reuse a slot,
 						// even in case of failure,
 						// or we risk mixing values from different config files together,
 						// which is why a broken watch config is flagged as a fatal failure.

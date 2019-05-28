@@ -26,6 +26,7 @@
 
 #include "FBInk/fbink.h"
 #include "inih/ini.h"
+#include "str5/str5.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>

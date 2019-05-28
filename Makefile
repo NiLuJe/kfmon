@@ -137,11 +137,14 @@ EXTRA_CPPFLAGS+=-D_GNU_SOURCE
 SRCS:=kfmon.c
 # Jump through a few hoops to be able to silence warnings on third-party code only
 INIH_SRCS:=inih/ini.c
+# We only need str5cpy
+STR5_SRCS:=str5/str5cpy.c
 
 default: vendored
 
 OBJS:=$(addprefix $(OUT_DIR)/, $(SRCS:.c=.o))
 INIH_OBJS:=$(addprefix $(OUT_DIR)/, $(INIH_SRCS:.c=.o))
+STR5_OBJS:=$(addprefix $(OUT_DIR)/, $(STR5_SRCS:.c=.o))
 
 # And now we can silence a few inih-specific warnings
 $(INIH_OBJS): QUIET_CFLAGS := -Wno-cast-qual -DINI_CALL_HANDLER_ON_NEW_SECTION=0
@@ -150,20 +153,21 @@ $(OUT_DIR)/%.o: %.c
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(QUIET_CFLAGS) -o $@ -c $<
 
 outdir:
-	mkdir -p $(OUT_DIR)/inih
+	mkdir -p $(OUT_DIR)/inih $(OUT_DIR)/str5
 
 # Make absolutely sure we create our output directories first, even with unfortunate // timings!
 # c.f., https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html#Prerequisite-Types
 $(OBJS): | outdir
 $(INIH_OBJS): | outdir
+$(STR5_OBJS): | outdir
 
 all: kfmon
 
 vendored: sqlite.built fbink.built
 	$(MAKE) kfmon SQLITE=true
 
-kfmon: $(OBJS) $(INIH_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(LIBS)
+kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(LIBS)
 
 strip: all
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon
@@ -213,10 +217,12 @@ nilujed:
 
 clean:
 	rm -rf Release/inih/*.o
+	rm -rf Release/str5/*.o
 	rm -rf Release/*.o
 	rm -rf Release/kfmon
 	rm -rf Release/KoboRoot.tgz
 	rm -rf Debug/inih/*.o
+	rm -rf Debug/str5/*.o
 	rm -rf Debug/*.o
 	rm -rf Debug/kfmon
 	rm -rf Kobo
