@@ -776,6 +776,8 @@ static int
 									strncpy(watch_config[watch_idx].db_comment,
 										cur_watch.db_comment,
 										DB_SZ_MAX - 1);
+									// And we're good!
+									break;
 								}
 							}
 
@@ -810,6 +812,7 @@ static int
 										    basename(watch_config[watch_idx]
 												 .filename));
 									} else {
+										// FIXME: Limit to actual updates, much like the log entry...
 										fbink_printf(
 										    FBFD_AUTO,
 										    NULL,
