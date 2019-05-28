@@ -976,8 +976,15 @@ static bool
 			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
 
 			char images_path[KFMON_PATH_MAX];
-			snprintf(
-			    images_path, KFMON_PATH_MAX, "%s/.kobo-images/%u/%u", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
+			int  len = snprintf(images_path,
+                                           sizeof(images_path),
+                                           "%s/.kobo-images/%u/%u",
+                                           KFMON_TARGET_MOUNTPOINT,
+                                           dir1,
+                                           dir2);
+			if (len < 0 || len >= sizeof(images_path)) {
+				LOG(LOG_WARNING, "Couldn't build the image path string!");
+			}
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
 			// Count the number of processed thumbnails we find...
@@ -985,7 +992,11 @@ static bool
 			char    thumbnail_path[KFMON_PATH_MAX];
 
 			// Start with the full-size screensaver...
-			snprintf(thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_FULL.parsed", images_path, image_id);
+			len = snprintf(
+			    thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
+			if (len < 0 || len >= sizeof(thumbnail_path)) {
+				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
+			}
 			DBGLOG("Checking for full-size screensaver '%s' . . .", thumbnail_path);
 			if (access(thumbnail_path, F_OK) == 0) {
 				thumbnails_count++;
@@ -1001,7 +1012,14 @@ static bool
 			//       And *that* processing triggers a set of OPEN & CLOSE,
 			//       meaning we can quite possibly run on book *exit* that first time,
 			//       (and only that first time), if database locking permits...
-			snprintf(thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
+			len = snprintf(thumbnail_path,
+				       sizeof(thumbnail_path),
+				       "%s/%s - N3_LIBRARY_FULL.parsed",
+				       images_path,
+				       image_id);
+			if (len < 0 || len >= sizeof(thumbnail_path)) {
+				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
+			}
 			DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
 			if (access(thumbnail_path, F_OK) == 0) {
 				thumbnails_count++;
@@ -1010,7 +1028,14 @@ static bool
 			}
 
 			// And finally the Library thumbnail...
-			snprintf(thumbnail_path, KFMON_PATH_MAX, "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
+			len = snprintf(thumbnail_path,
+				       sizeof(thumbnail_path),
+				       "%s/%s - N3_LIBRARY_GRID.parsed",
+				       images_path,
+				       image_id);
+			if (len < 0 || len >= sizeof(thumbnail_path)) {
+				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
+			}
 			DBGLOG("Checking for library thumbnail '%s' . . .", thumbnail_path);
 			if (access(thumbnail_path, F_OK) == 0) {
 				thumbnails_count++;
