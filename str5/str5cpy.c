@@ -1,11 +1,13 @@
 /*	@(#)	str5cpy.c	*/
-/* 
+/*
  *	v 2.0, 2016/05, Eric Sanchis <eric.sanchis@iut-rodez.fr>
  *	GNU LGPL
  */
 
 #include "str5.h"
 
+// NOTE: Compared to the original str5 implementation, this has been modified to pad the destination buffer with zeroes,
+//       like strncpy
 int
     str5cpy(char* dst, size_t dstsize, const char* src, size_t nb, size_t mode)
 {
@@ -19,7 +21,7 @@ int
 		return EMODPAR;
 
 	if (nb == 0) {
-		dst[0] = '\0';
+		memset(dst, '\0', dstsize);
 		return OKNOTRUNC;
 	}
 
@@ -28,7 +30,7 @@ int
 		;
 
 	if (srclen == 0) {
-		dst[0] = '\0';
+		memset(dst, '\0', dstsize);
 		return OKNOTRUNC;
 	}
 
@@ -47,6 +49,6 @@ int
 
 	/* dst: enough space */
 	memcpy(dst, src, nb);
-	dst[nb] = '\0';
+	memset(dst + nb, '\0', dstsize - nb);
 	return OKNOTRUNC;
 }
