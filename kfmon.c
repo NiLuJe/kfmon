@@ -933,7 +933,7 @@ static bool
 
 	// Append the proper URI scheme to our icon path...
 	char book_path[CFG_SZ_MAX + 7];
-	snprintf(book_path, CFG_SZ_MAX + 7, "file://%s", watch_config[watch_idx].filename);
+	snprintf(book_path, sizeof(book_path), "file://%s", watch_config[watch_idx].filename);
 
 	idx = sqlite3_bind_parameter_index(stmt, "@id");
 	CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
