@@ -712,13 +712,13 @@ static int
 				if (p->fts_namelen > 4 &&
 				    strncasecmp(p->fts_name + (p->fts_namelen - 4), ".ini", 4) == 0 &&
 				    strncasecmp(p->fts_name, ".", 1) != 0) {
-					LOG(LOG_INFO, "Trying to load config file '%s' . . .", p->fts_path);
 					// We only care about *watch* configs, the main config is only loaded at startup
 					if (strcasecmp(p->fts_name, "kfmon.ini") == 0) {
 						continue;
 					} else if (strcasecmp(p->fts_name, "kfmon.user.ini") == 0) {
 						continue;
 					} else {
+						LOG(LOG_INFO, "Trying to load watch config file '%s' . . .", p->fts_path);
 						// NOTE: Don't blow up when trying to store more watches than we have
 						//       space for...
 						if (watch_count >= WATCH_MAX) {
