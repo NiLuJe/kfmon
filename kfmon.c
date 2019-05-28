@@ -712,7 +712,11 @@ static int
 				if (p->fts_namelen > 4 &&
 				    strncasecmp(p->fts_name + (p->fts_namelen - 4), ".ini", 4) == 0 &&
 				    strncasecmp(p->fts_name, ".", 1) != 0) {
-					// We only care about *watch* configs, the main config is only loaded at startup
+					// NOTE: We only care about *watch* configs,
+					//       the main config is only loaded at startup
+					//       This is mainly to keep our fd shenanigans sane,
+					//       which would get a bit hairier
+					//       if we needed to be able to toggle syslog usage...
 					if (strcasecmp(p->fts_name, "kfmon.ini") == 0) {
 						continue;
 					} else if (strcasecmp(p->fts_name, "kfmon.user.ini") == 0) {
