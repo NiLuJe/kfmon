@@ -413,9 +413,9 @@ static int
 	// NOTE: Crappy strncpy() usage, but those char arrays are zeroed first
 	//       (hence the MAX-1 len to ensure that we're NULL terminated)...
 	if (MATCH("watch", "filename")) {
-		strncpy(pconfig->filename, value, KFMON_PATH_MAX - 1);    // Flawfinder: ignore
+		strncpy(pconfig->filename, value, CFG_SZ_MAX - 1);    // Flawfinder: ignore
 	} else if (MATCH("watch", "action")) {
-		strncpy(pconfig->action, value, KFMON_PATH_MAX - 1);    // Flawfinder: ignore
+		strncpy(pconfig->action, value, CFG_SZ_MAX - 1);    // Flawfinder: ignore
 	} else if (MATCH("watch", "skip_db_checks")) {
 		if (strtobool(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
@@ -763,10 +763,10 @@ static int
 									//       So we only update the fields related to the cfg.
 									strncpy(watch_config[watch_idx].filename,
 										cur_watch.filename,
-										KFMON_PATH_MAX - 1);
+										CFG_SZ_MAX - 1);
 									strncpy(watch_config[watch_idx].action,
 										cur_watch.action,
-										KFMON_PATH_MAX - 1);
+										CFG_SZ_MAX - 1);
 									watch_config[watch_idx].block_spawns =
 									    cur_watch.block_spawns;
 									watch_config[watch_idx].do_db_update =
@@ -932,8 +932,8 @@ static bool
 	    db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
 
 	// Append the proper URI scheme to our icon path...
-	char book_path[KFMON_PATH_MAX + 7];
-	snprintf(book_path, KFMON_PATH_MAX + 7, "file://%s", watch_config[watch_idx].filename);
+	char book_path[CFG_SZ_MAX + 7];
+	snprintf(book_path, CFG_SZ_MAX + 7, "file://%s", watch_config[watch_idx].filename);
 
 	idx = sqlite3_bind_parameter_index(stmt, "@id");
 	CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
