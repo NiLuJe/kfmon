@@ -11,3 +11,7 @@ This project makes use of a number of third-party libraries, which we'll acknowl
 	* FBInk (FrameBuffer eInker), Copyright (C) 2018-2019 NiLuJe <ninuje@gmail.com>,
 		Released under the GNU Affero General Public License version 3+ (https://www.gnu.org/licenses/agpl.html)
 		(https://github.com/NiLuJe/FBInk)
+
+	* str5 (Str5 functions), Copyright (C) 2016/05, Eric Sanchis <eric.sanchis@iut-rodez.fr>,
+		Released under the GNU Lesser General Public License (https://www.gnu.org/licenses/lgpl-3.0.html)
+		(http://aral.iut-rodez.fr/en/sanchis/miscellaneous/str5/str5.html)
