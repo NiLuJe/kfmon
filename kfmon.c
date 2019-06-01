@@ -506,6 +506,113 @@ static bool
 	return sane;
 }
 
+// Validate a watch config, and merge it to its final location if it's sane and updated
+static bool
+    validate_and_merge_watch_config(void* user, uint8_t target_idx)
+{
+	WatchConfig* restrict pconfig = (WatchConfig*) user;
+
+	bool sane = true;
+
+	if (pconfig->filename[0] == '\0') {
+		LOG(LOG_CRIT, "Mandatory key 'filename' is missing or blank!");
+		sane = false;
+	} else {
+		// Did it change?
+		if (strcmp(pconfig->filename, watch_config[target_idx].filename) != 0) {
+			// Yup! Update it!
+			str5cpy(watch_config[target_idx].filename, CFG_SZ_MAX, pconfig->filename, CFG_SZ_MAX, NOTRUNC);
+			LOG(LOG_NOTICE,
+			    "Updated filename to %s for watch config @ index %hhu",
+			    watch_config[target_idx].filename,
+			    target_idx);
+
+			// Make sure we're not trying to set multiple watches on the same file...
+			// (because that would only actually register the first one parsed).
+			uint8_t matches = 0U;
+			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
+					matches++;
+				}
+			}
+			// Since we'll necessarily loop over ourselves, only warn if we matched two or more times.
+			if (matches >= 2U) {
+				LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
+				sane = false;
+			}
+		}
+	}
+	if (pconfig->action[0] == '\0') {
+		LOG(LOG_CRIT, "Mandatory key 'action' is missing or blank!");
+		sane = false;
+	} else {
+		if (strcmp(pconfig->action, watch_config[target_idx].action) != 0) {
+			str5cpy(watch_config[target_idx].action, CFG_SZ_MAX, pconfig->action, CFG_SZ_MAX, NOTRUNC);
+			LOG(LOG_NOTICE,
+			    "Updated action to %s for watch config @ index %hhu",
+			    watch_config[target_idx].action,
+			    target_idx);
+		}
+	}
+
+	// Check if do_db_update was updated...
+	if (pconfig->do_db_update != watch_config[target_idx].do_db_update) {
+		watch_config[target_idx].do_db_update = pconfig->do_db_update;
+		LOG(LOG_NOTICE,
+		    "Updated do_db_update to %d for watch config @ index %hhu",
+		    watch_config[target_idx].do_db_update,
+		    target_idx);
+	}
+
+	// If we asked for a database update, the next three keys become mandatory
+	if (pconfig->do_db_update) {
+		if (pconfig->db_title[0] == '\0') {
+			LOG(LOG_CRIT, "Mandatory key 'db_title' is missing or blank!");
+			sane = false;
+		} else {
+			if (strcmp(pconfig->db_title, watch_config[target_idx].db_title) != 0) {
+				str5cpy(
+				    watch_config[target_idx].db_title, DB_SZ_MAX, pconfig->db_title, DB_SZ_MAX, TRUNC);
+				LOG(LOG_NOTICE,
+				    "Updated db_title to %s for watch config @ index %hhu",
+				    watch_config[target_idx].db_title,
+				    target_idx);
+			}
+		}
+		if (pconfig->db_author[0] == '\0') {
+			LOG(LOG_CRIT, "Mandatory key 'db_author' is missing or blank!");
+			sane = false;
+		} else {
+			if (strcmp(pconfig->db_author, watch_config[target_idx].db_author) != 0) {
+				str5cpy(
+				    watch_config[target_idx].db_author, DB_SZ_MAX, pconfig->db_author, DB_SZ_MAX, TRUNC);
+				LOG(LOG_NOTICE,
+				    "Updated db_author to %s for watch config @ index %hhu",
+				    watch_config[target_idx].db_author,
+				    target_idx);
+			}
+		}
+		if (pconfig->db_comment[0] == '\0') {
+			LOG(LOG_CRIT, "Mandatory key 'db_comment' is missing or blank!");
+			sane = false;
+		} else {
+			if (strcmp(pconfig->db_comment, watch_config[target_idx].db_comment) != 0) {
+				str5cpy(watch_config[target_idx].db_comment,
+					DB_SZ_MAX,
+					pconfig->db_comment,
+					DB_SZ_MAX,
+					TRUNC);
+				LOG(LOG_NOTICE,
+				    "Updated db_comment to %s for watch config @ index %hhu",
+				    watch_config[target_idx].db_comment,
+				    target_idx);
+			}
+		}
+	}
+
+	return sane;
+}
+
 // Load our config files...
 static int
     load_config(void)
