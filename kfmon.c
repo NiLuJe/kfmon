@@ -2039,6 +2039,9 @@ int
 		}
 
 		// Reload *watch* configs to see if we have something new to pickup after an USBMS session
+		// NOTE: Mainly up there for clarity, otherwise it technically belongs at the end of the loop.
+		//       The only minor drawback of having it up there is that it'll run on startup.
+		//       On the upside, this ensures the update codepath will see some action, and isn't completely broken ;).
 		if (update_watch_configs() == -1) {
 			LOG(LOG_ERR, "Failed to load one or more config files, aborting!");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to update watch configs!", &fbink_config);
