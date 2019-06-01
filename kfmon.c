@@ -529,20 +529,27 @@ static bool
 			// (because that would only actually register the first one parsed).
 			uint8_t matches = 0U;
 			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				// Only relevant for active watches
+				if (!watch_config[watch_idx].is_active) {
+					continue;
+				}
+
 				// Skip the to-be-updated watch, since we'll overwrite it if this check pans out...
 				if (watch_idx == target_idx) {
 					continue;
 				}
+
 				if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
 					matches++;
 				}
 			}
-			// Since we'll necessarily loop over ourselves, only warn if we matched two or more times.
-			if (matches >= 2U) {
+			// As we're not yet flagged active, we won't loop over ourselves ;).
+			if (matches >= 1U) {
 				LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
 				sane = false;
 			} else {
 				// Filename changed, and it was updated to something sane, update our target watch!
+				// NOTE: Forgo error checking, as this has already gone through an input validation pass.
 				str5cpy(watch_config[target_idx].filename,
 					CFG_SZ_MAX,
 					pconfig->filename,
@@ -968,7 +975,7 @@ static int
 								pthread_mutex_unlock(&ptlock);
 								// Don't do anything if it's already running...
 								if (is_watch_spawned) {
-									LOG(LOG_WARNING,
+									LOG(LOG_INFO,
 									    "Cannot update watch slot %hhu (%s => %s), as it's currently running! Discarding potentially new data from '%s'!",
 									    watch_idx,
 									    basename(watch_config[watch_idx].filename),
@@ -2173,8 +2180,10 @@ int
 				pthread_mutex_unlock(&ptlock);
 				if (is_watch_spawned) {
 					LOG(LOG_WARNING,
-					    "Cannot release watch slot %hhu, as it's currently running!",
-					    watch_idx);
+					    "Cannot release watch slot %hhu (%s => %s), as it's currently running!",
+					    watch_idx,
+					    basename(watch_config[watch_idx].filename),
+					    basename(watch_config[watch_idx].action));
 				} else {
 					watch_config[watch_idx] = (const WatchConfig){ 0 };
 					// NOTE: This should essentially come down to:
