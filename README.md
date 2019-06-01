@@ -12,13 +12,13 @@ This is intended as an improvement over [Sergey](https://bitbucket.org/vlasovsof
 
 The original fmon does zero sanity checking, and, given the intricacies of how Nickel actually processes books, it might trigger an action *before* the trigger file has successfully been processed by Nickel. Depending on the action in question, this might lead to fun boot loops or other weirdness ;).
 
-KFMon tries to alleviate this issue by doing a number of checks before deeming that launching the action is "safe": we first check if the file in question is even *in* the Library database, and then we confirm that it has been processed further by checking for the existence of the various thumbnails Nickel creates when first displaying a book in its Library and Homescreen.
+KFMon tries to alleviate this issue by doing a number of checks before deeming that launching the action is "safe": we first check if the file in question is even *in* the Library database, and then we confirm that it has been processed further by checking for the existence of the various thumbnails Nickel creates when first displaying a book in its Library and Homescreen. We also handle some more recent quirks of FW >= 4.13 properly.
 
 On top of that, we have a few extra features: instead of launching one instance per book/action pair, KFMon is a centralized daemon, which simply parses a number of simple INI config files. Each book/action pair gets a dedicated config file.
 
 It also keeps track of processes it has launched, mainly to ensure that for a given watch, only one single instance of its action can ever be run concurrently. As a practical exemple, this means that if you use KFMon to launch KOReader (by tapping its PNG icon), and, once inside KOReader, you try to do the very same thing, KFMon will remember that KOReader is already running, and will refuse to launch a second instance until the previous one has exited. This means that long-running apps don't necessarily need to kill KFMon when they start.
 
-There's also an extra layer of protection (user configurable, enabled for KOReader & Plato) that'll prevent simply *anything* from being launched as long as that custom document reader is still running.
+There's also an extra layer of protection (user configurable, enabled for KOReader & Plato) that'll prevent simply *anything* from being launched as long as that custom document reader is still running. (You can also enforce this behavior from *outside* of KFMon, via a BLOCK file, see the FAQ at the bottom of this page).
 
 In the same vein, KFMon's startup script will also refuse to run concurrent instances of KFMon itself.
 
@@ -30,7 +30,7 @@ Since v1.1.0, it's also using my [FBInk](https://github.com/NiLuJe/FBInk) librar
 
 **IMPORTANT NOTE**: Some of these checks requires a decently recent enough Nickel version. Make sure you're running a firmware version equal to or newer than 2.9.0! That's the only actual requirement: KFMon is completely device-agnostic, and should work on the full range of Kobo devices (even new and unreleased ones), provided they run a supported Nickel version.
 
-**NOTE**: If you're just looking for a drop-in replacement of Sergey's fmon, check out [Baskerville](https://github.com/baskerville/fmon)'s implementation of fmon. It's safer & saner than the original, while keeping parts of the design instact (namely, and of particular interest to end-users, it's using a similar config scheme).
+**NOTE**: If you're just looking for a drop-in replacement of Sergey's fmon, **and you're running FW < 4.13**, check out [Baskerville](https://github.com/baskerville/fmon)'s implementation of fmon. It's safer & saner than the original, while keeping parts of the design instact (namely, and of particular interest to end-users, it's using a similar config scheme).
 
 ## How do I install this?
 
@@ -52,13 +52,13 @@ If your ultimate goal is installing KOReader and/or Plato *for the first time*, 
 
 ## How can I tinker with it?
 
-The config files are stored in the */mnt/onboard/***.adds/kfmon/config** folder.
+The config files are stored in the */mnt/onboard/*__.adds/kfmon/config__ folder.
 
 KFMon itself has a dedicated config file, [kfmon.ini](/config/kfmon.ini), with three knobs:
 
 `db_timeout = 500`, which sets the maximum amount of time (in ms) we wait for Nickel to relinquish its hold on its database when we try to access it ourselves. If the timeout expires, KFMon assumes that Nickel is busy, and will *NOT* launch the action.
 This default value (500ms) has been successfully tested on a moderately sized Library, but if stuff appears to be failing to launch (after ~10s) on your device, and you have an extensive or complex Library, try increasing this value.  
-Note that on current FW versions (i.e., >= 4.6.x), the potential issue behind the design of this option is far less likely to ever happen, so you shouldn't have to worry about it ;).
+Note that on current FW versions (i.e., **>= 4.6.x**), the potential issue behind the design of this option is far less likely to ever happen, so you shouldn't have to worry about it ;).
 
 In any case, you can confirm KFMon's behavior by checking its log, which we'll come to presently.
 
@@ -66,7 +66,7 @@ In any case, you can confirm KFMon's behavior by checking its log, which we'll c
 
 `with_notifications = 1`, which dictates whether KFMon will print on-screen feedback messages (via [FBInk](https://github.com/NiLuJe/FBInk)) when an action is launched successfully. Note that error messages will *always* be shown, regardless of this setting.
 
-Note that this file will be *overwritten* by the KFMon install package, so, if you want your changes to persist across updates, you may want to make your modifications in a copy of that file, one that you should name *kfmon***.user***.ini*.
+Note that this file will be *overwritten* by the KFMon install package, so, if you want your changes to persist across updates, you may want to make your modifications in a copy of that file, one that you should name *kfmon*__.user__*.ini*.
 
 ## How can I add my own actions?
 
@@ -79,6 +79,8 @@ As you would expect, a simple file/action pair only requires two entries:
 `action = /mnt/onboard/.adds/mycoolapp/app.sh`, which points to the binary/script you want to trigger when your "book" is opened. This has to be an absolute path. And if this points to somewhere on the rootfs, it has to have the exec bit set.
 
 Note that the section all these key/value pairs fall under *has* to be named `[watch]`!
+
+Note that none of these two fields **can** exceed 128 characters, if they do, the whole file will be discarded!
 
 Next comes optional entries:
 
@@ -120,11 +122,10 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 
 ## Things to watch out for
 
--   If any of the watched files cannot be found, KFMon will simply forget about it, and keep honoring the rest of the watches. It will shout at you to warn you about it, though!
-    -   KFMon will only parse config files at boot.
-    -   Meaning you will need to reboot your device after adding new config files or modifying or removing existing ones ;).
-    -   If it's a new config file, try to make sure it points to a file that has already been processed by Nickel (after an USBMS plug/eject session, for instance) to save you some puzzlement ;).
-    -   If you delete one of the files being watched, don't forget to delete the matching config file, and then to reboot your device!  
+-   If any of the watched files cannot be found, KFMon will simply forget about it, and keep honoring the rest of the watches. It will shout at you to warn you about it, though!  
+    -   KFMon will only parse its own config file(s) at boot, but it *will* check for new/removed/updated watch configs after an USBMS session.  
+    -   This means you will *NOT* need to reboot your device after adding new config files or modifying or removing existing ones ;).  
+    -   But if you delete one of the files being watched, don't forget to delete the matching config file, or KFMon will continue to try to watch it (and thus warn about it).  
 
 -   Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
     -   Good news: If your FW version is recent enough to feature the new Homescreen, there's a good chance things will work in a more logical fashion (because the last few files added now automatically pop up on the Home page) ;).  
@@ -135,7 +136,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 -   KFMon only expects to watch for files in the internal storage of the device (i.e., *onboard*). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).  
 
 -   Proper interaction with KOReader in general requires a recent version of KOReader (i.e., >= 2015.11-1735).
-    -   As far as for successfully restarting nickel on exit is concerned, I'd also recommend running a current FW version (last tested on FW 4.7.x - 4.14.x).  
+    -   As far as for successfully restarting nickel on exit is concerned, I'd also recommend running a current FW version (last tested on FW 4.7.x - 4.15.x).  
 
 -   When either KOReader or Plato is launched *through KFMon*, **nothing** will be allowed to spawn while that document reader is still running. This is to prevent spurious events that may be triggered by their file manager.  
 
