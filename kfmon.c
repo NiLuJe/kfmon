@@ -1030,7 +1030,8 @@ static int
 	}
 	fts_close(ftsp);
 
-	// Purge stale watch entries (in case a config has been deleted, but not its watched file)
+	// Purge stale watch entries (in case a config has been deleted, but not its watched file;
+	// or if an existing config file was updated, but failed to pass watch_handler @ ini_parse).
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		// It of course needs to be active first so it can potentially be stale ;)
 		if (!watch_config[watch_idx].is_active) {
@@ -1049,7 +1050,7 @@ static int
 		// It's stale, drop it now
 		if (!keep) {
 			LOG(LOG_WARNING,
-			    "Watch config @ index %hhu (%s => %s) is still active, but its config file is gone! Discarding it!",
+			    "Watch config @ index %hhu (%s => %s) is still active, but its config file is either gone or broken! Discarding it!",
 			    watch_idx,
 			    basename(watch_config[watch_idx].filename),
 			    basename(watch_config[watch_idx].action));
