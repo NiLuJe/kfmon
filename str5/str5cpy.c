@@ -9,7 +9,7 @@
 // NOTE: Compared to the original str5 implementation, this has been modified to pad the destination buffer with zeroes,
 //       like strncpy
 int
-    str5cpy(char* dst, size_t dstsize, const char* src, size_t nb, size_t mode)
+    str5cpy(char* restrict dst, size_t dstsize, const char* restrict src, size_t nb, size_t mode)
 {
 	size_t srclen;
 

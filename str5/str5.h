@@ -23,9 +23,9 @@
 	-4 /* Error : not enough space to copy/concatenate
 							   and truncation not allowed */
 
-int str5cpy(char* dst, size_t dstsize, const char* src, size_t nb, size_t mode);
+int str5cpy(char* restrict dst, size_t dstsize, const char* restrict src, size_t nb, size_t mode);
 
-int str5cat(char* dst, size_t dstsize, const char* src, size_t nb, size_t mode);
+int str5cat(char* restrict dst, size_t dstsize, const char* restrict src, size_t nb, size_t mode);
 
 #define strtcpy(dst, dstsize, src) str5cpy(dst, dstsize, src, dstsize, TRUNC)
 
