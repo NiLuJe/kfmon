@@ -880,59 +880,30 @@ static int
 									   watch_config[watch_idx].filename) == 0) {
 									// Gotcha!
 									is_new_watch = false;
-									// Update the global config *before* validation,
-									// because validates needs to ensure
-									// we won't watch the same file twice...
-									// NOTE: We don't simply dump the struct because
-									//       that watch might currently be running!
-									//       So we only update the fields related to the cfg.
-									strncpy(watch_config[watch_idx].filename,
-										cur_watch.filename,
-										CFG_SZ_MAX - 1);
-									strncpy(watch_config[watch_idx].action,
-										cur_watch.action,
-										CFG_SZ_MAX - 1);
-									watch_config[watch_idx].block_spawns =
-									    cur_watch.block_spawns;
-									watch_config[watch_idx].do_db_update =
-									    cur_watch.do_db_update;
-									strncpy(watch_config[watch_idx].db_title,
-										cur_watch.db_title,
-										DB_SZ_MAX - 1);
-									strncpy(watch_config[watch_idx].db_author,
-										cur_watch.db_author,
-										DB_SZ_MAX - 1);
-									strncpy(watch_config[watch_idx].db_comment,
-										cur_watch.db_comment,
-										DB_SZ_MAX - 1);
 									// And we're good!
 									break;
 								}
 							}
 
-							// New watch! Make it so!
 							if (is_new_watch) {
+								// New watch! Make it so!
 								watch_idx               = watch_count;
 								watch_config[watch_idx] = cur_watch;
-							}
 
-							// FIXME: validate & merge for existing watches, and validate for new watches?
-							//        Clear up the mess above to make validate behave and/or avoid rewriting unchanged watches/fields...
-							if (validate_watch_config(&watch_config[watch_idx])) {
-								LOG(LOG_NOTICE,
-								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
-								    watch_idx,
-								    p->fts_name,
-								    watch_config[watch_idx].filename,
-								    watch_config[watch_idx].action,
-								    watch_config[watch_idx].block_spawns,
-								    watch_config[watch_idx].do_db_update,
-								    watch_config[watch_idx].db_title,
-								    watch_config[watch_idx].db_author,
-								    watch_config[watch_idx].db_comment);
+								if (validate_watch_config(&watch_config[watch_idx])) {
+									LOG(LOG_NOTICE,
+									    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+									    watch_idx,
+									    p->fts_name,
+									    watch_config[watch_idx].filename,
+									    watch_config[watch_idx].action,
+									    watch_config[watch_idx].block_spawns,
+									    watch_config[watch_idx].do_db_update,
+									    watch_config[watch_idx].db_title,
+									    watch_config[watch_idx].db_author,
+									    watch_config[watch_idx].db_comment);
 
-								if (daemon_config.with_notifications) {
-									if (is_new_watch) {
+									if (daemon_config.with_notifications) {
 										fbink_printf(
 										    FBFD_AUTO,
 										    NULL,
@@ -940,8 +911,20 @@ static int
 										    "[KFMon] Setup a new watch on %s",
 										    basename(watch_config[watch_idx]
 												 .filename));
-									} else {
-										// FIXME: Limit to actual updates, much like the log entry...
+									}
+								} else {
+									LOG(LOG_CRIT,
+									    "New watch config file '%s' is not valid, will abort!",
+									    p->fts_name);
+									rval = -1;
+								}
+							} else {
+								// Updated watch! Validate what was parsed,
+								// and merge it if it's sane!
+								if (validate_and_merge_watch_config(&cur_watch,
+												    watch_idx)) {
+									// NOTE: validate_and_merge takes care of the logging
+									if (daemon_config.with_notifications) {
 										fbink_printf(
 										    FBFD_AUTO,
 										    NULL,
@@ -950,12 +933,12 @@ static int
 										    basename(watch_config[watch_idx]
 												 .filename));
 									}
+								} else {
+									LOG(LOG_CRIT,
+									    "Updated watch config file '%s' is not valid, will abort!",
+									    p->fts_name);
+									rval = -1;
 								}
-							} else {
-								LOG(LOG_CRIT,
-								    "Watch config file '%s' is not valid, will abort!",
-								    p->fts_name);
-								rval = -1;
 							}
 
 							// Only increase count for *new* watches,
