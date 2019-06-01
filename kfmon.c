@@ -963,37 +963,42 @@ static int
 									}
 								}
 							} else {
-								// Updated watch! Validate what was parsed,
-								// and merge it if it's sane!
-								if (validate_and_merge_watch_config(&cur_watch,
-												    watch_idx)) {
-									// NOTE: validate_and_merge takes care of the logging
-									if (daemon_config.with_notifications) {
-										fbink_printf(
-										    FBFD_AUTO,
-										    NULL,
-										    &fbink_config,
-										    "[KFMon] Updated the watch on %s",
-										    basename(watch_config[watch_idx]
-												 .filename));
-									}
-								} else {
-									LOG(LOG_CRIT,
-									    "Updated watch config file '%s' is not valid, will abort!",
+								// Updated watch!
+								pthread_mutex_lock(&ptlock);
+								bool is_watch_spawned =
+								    is_watch_already_spawned(watch_idx);
+								pthread_mutex_unlock(&ptlock);
+								// Don't do anything if it's already running...
+								if (is_watch_spawned) {
+									LOG(LOG_WARNING,
+									    "Cannot update watch slot %hhu (%s => %s), as it's currently running! Discarding potentially new data from '%s'!",
+									    watch_idx,
+									    basename(watch_config[watch_idx].filename),
+									    basename(watch_config[watch_idx].action),
 									    p->fts_name);
-									rval = -1;
-
-									// Don't keep the previous state around, clear the slot,
-									// provided that watch isn't currently running...
-									pthread_mutex_lock(&ptlock);
-									bool is_watch_spawned =
-									    is_watch_already_spawned(watch_idx);
-									pthread_mutex_unlock(&ptlock);
-									if (is_watch_spawned) {
-										LOG(LOG_WARNING,
-										    "Cannot release watch slot %hhu, as it's currently running!",
-										    watch_idx);
+								} else {
+									// Validate what was parsed, and merge it if it's sane!
+									if (validate_and_merge_watch_config(&cur_watch,
+													    watch_idx)) {
+										// NOTE: validate_and_merge takes care of the logging
+										if (daemon_config.with_notifications) {
+											fbink_printf(
+											    FBFD_AUTO,
+											    NULL,
+											    &fbink_config,
+											    "[KFMon] Updated the watch on %s",
+											    basename(
+												watch_config[watch_idx]
+												    .filename));
+										}
 									} else {
+										LOG(LOG_CRIT,
+										    "Updated watch config file '%s' is not valid, will abort!",
+										    p->fts_name);
+										rval = -1;
+
+										// Don't keep the previous state around,
+										// clear the slot.
 										watch_config[watch_idx] =
 										    (const WatchConfig){ 0 };
 										LOG(LOG_NOTICE,
