@@ -896,16 +896,6 @@ static int
 						continue;
 					} else {
 						LOG(LOG_INFO, "Trying to load watch config file '%s' . . .", p->fts_path);
-						// NOTE: Don't blow up when trying to store more watches than we have
-						//       space for...
-						if (watch_count >= WATCH_MAX) {
-							LOG(LOG_WARNING,
-							    "We've already setup the maximum amount of watches we can handle (%d), discarding '%s'!",
-							    WATCH_MAX,
-							    p->fts_name);
-							// Don't flag this as a hard failure, just warn and go on...
-							break;
-						}
 
 						// Store the results in a temporary struct,
 						// so we can compare it to our current watches...
@@ -940,11 +930,11 @@ static int
 								// New watch! Make it so!
 								int8_t new_watch_idx = get_next_available_watch_entry();
 								if (new_watch_idx < 0) {
-									// NOTE: Given the watch_count check above,
-									//       this should never really happen...
+									// NOTE: Because watch_count cannot be trusted during this pass ;).
 									LOG(LOG_WARNING,
-									    "Can't find an available watch slot for '%s', discarding it!",
-									    p->fts_name);
+									    "Can't find an available watch slot for '%s', probably because we've already setup the maximum amount of watches we can handle (%d), discarding it!",
+									    p->fts_name,
+									    WATCH_MAX);
 								} else {
 									watch_idx               = (uint8_t) new_watch_idx;
 									watch_config[watch_idx] = cur_watch;
