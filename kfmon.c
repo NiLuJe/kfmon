@@ -874,9 +874,10 @@ static int
 	}
 
 	// Keep track of which watch indexes are up-to-date, so we can drop stale watches if some configs were deleted.
+	int8_t new_watch_list[WATCH_MAX];
 	// NOTE: Init to -1 because 0 is a valid watch index ;).
-	int8_t  new_watch_list[WATCH_MAX] = { -1 };
-	uint8_t new_watch_count           = 0U;
+	memset(&new_watch_list, -1, sizeof(new_watch_list));
+	uint8_t new_watch_count = 0U;
 
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
