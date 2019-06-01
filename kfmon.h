@@ -163,8 +163,8 @@ typedef struct
 {
 	time_t processing_ts;
 	int    inotify_wd;
-	char   filename[KFMON_PATH_MAX];
-	char   action[KFMON_PATH_MAX];
+	char   filename[CFG_SZ_MAX];
+	char   action[CFG_SZ_MAX];
 	char   db_title[DB_SZ_MAX];
 	char   db_author[DB_SZ_MAX];
 	char   db_comment[DB_SZ_MAX];
