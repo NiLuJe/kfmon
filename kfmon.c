@@ -626,6 +626,18 @@ static bool
 	return sane;
 }
 
+// Returns the index of the first usable entry in the watch list
+static int8_t
+    get_next_available_watch_entry(void)
+{
+	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+		if (!watch_config[watch_idx].is_active) {
+			return (int8_t) watch_idx;
+		}
+	}
+	return -1;
+}
+
 // Load our config files...
 static int
     load_config(void)
@@ -900,44 +912,55 @@ static int
 
 							if (is_new_watch) {
 								// New watch! Make it so!
-								watch_idx = watch_count;    // FIXME: First free slot
-								watch_config[watch_idx] = cur_watch;
-
-								if (validate_watch_config(&watch_config[watch_idx])) {
-									LOG(LOG_NOTICE,
-									    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
-									    watch_idx,
-									    p->fts_name,
-									    watch_config[watch_idx].filename,
-									    watch_config[watch_idx].action,
-									    watch_config[watch_idx].block_spawns,
-									    watch_config[watch_idx].do_db_update,
-									    watch_config[watch_idx].db_title,
-									    watch_config[watch_idx].db_author,
-									    watch_config[watch_idx].db_comment);
-
-									// Flag it as active
-									watch_config[watch_idx].is_active = true;
-									watch_count++;
-
-									if (daemon_config.with_notifications) {
-										fbink_printf(
-										    FBFD_AUTO,
-										    NULL,
-										    &fbink_config,
-										    "[KFMon] Setup a new watch on %s",
-										    basename(watch_config[watch_idx]
-												 .filename));
-									}
-								} else {
-									LOG(LOG_CRIT,
-									    "New watch config file '%s' is not valid, will abort!",
+								int8_t new_watch_idx = get_next_available_watch_entry();
+								if (new_watch_idx == -1) {
+									// NOTE: Given the watch_count check above,
+									//       this should never really happen...
+									LOG(LOG_WARNING,
+									    "Can't find an available watch slot for '%s', discarding it!",
 									    p->fts_name);
-									rval = -1;
+								} else {
+									watch_idx               = (uint8_t) new_watch_idx;
+									watch_config[watch_idx] = cur_watch;
 
-									// Clear the slot
-									watch_config[watch_idx] =
-									    (const WatchConfig){ 0 };
+									if (validate_watch_config(
+										&watch_config[watch_idx])) {
+										LOG(LOG_NOTICE,
+										    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+										    watch_idx,
+										    p->fts_name,
+										    watch_config[watch_idx].filename,
+										    watch_config[watch_idx].action,
+										    watch_config[watch_idx].block_spawns,
+										    watch_config[watch_idx].do_db_update,
+										    watch_config[watch_idx].db_title,
+										    watch_config[watch_idx].db_author,
+										    watch_config[watch_idx].db_comment);
+
+										// Flag it as active
+										watch_config[watch_idx].is_active = true;
+										watch_count++;
+
+										if (daemon_config.with_notifications) {
+											fbink_printf(
+											    FBFD_AUTO,
+											    NULL,
+											    &fbink_config,
+											    "[KFMon] Setup a new watch on %s",
+											    basename(
+												watch_config[watch_idx]
+												    .filename));
+										}
+									} else {
+										LOG(LOG_CRIT,
+										    "New watch config file '%s' is not valid, will abort!",
+										    p->fts_name);
+										rval = -1;
+
+										// Clear the slot
+										watch_config[watch_idx] =
+										    (const WatchConfig){ 0 };
+									}
 								}
 							} else {
 								// Updated watch! Validate what was parsed,

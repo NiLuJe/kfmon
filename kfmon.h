@@ -223,14 +223,15 @@ static const char* get_log_prefix(int) __attribute__((const));
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static int  strtoul_hu(const char*, unsigned short int* restrict);
-static int  strtobool(const char* restrict, bool* restrict);
-static int  daemon_handler(void*, const char* restrict, const char* restrict, const char* restrict);
-static int  watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
-static bool validate_watch_config(void*);
-static bool validate_and_merge_watch_config(void*, uint8_t);
-static int  load_config(void);
-static int  update_watch_configs(void);
+static int    strtoul_hu(const char*, unsigned short int* restrict);
+static int    strtobool(const char* restrict, bool* restrict);
+static int    daemon_handler(void*, const char* restrict, const char* restrict, const char* restrict);
+static int    watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
+static bool   validate_watch_config(void*);
+static bool   validate_and_merge_watch_config(void*, uint8_t);
+static int8_t get_next_available_watch_entry(void);
+static int    load_config(void);
+static int    update_watch_configs(void);
 // Ugly global. Remember how many watches we set up...
 uint8_t watch_count = 0U;
 // Make our config global, because I'm terrible at C.
