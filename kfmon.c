@@ -543,7 +543,7 @@ static bool
 					matches++;
 				}
 			}
-			// As we're not yet flagged active, we won't loop over ourselves ;).
+			// We explicitly make sure not to loop over ourselves ;).
 			if (matches >= 1U) {
 				LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
 				sane = false;
@@ -985,7 +985,8 @@ static int
 									// Validate what was parsed, and merge it if it's sane!
 									if (validate_and_merge_watch_config(&cur_watch,
 													    watch_idx)) {
-										// NOTE: validate_and_merge takes care of the logging
+										// NOTE: validate_and_merge takes care of both
+										//       logging and updating the watch data
 										if (daemon_config.with_notifications) {
 											fbink_printf(
 											    FBFD_AUTO,
