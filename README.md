@@ -30,7 +30,7 @@ Since v1.1.0, it's also using my [FBInk](https://github.com/NiLuJe/FBInk) librar
 
 **IMPORTANT NOTE**: Some of these checks requires a decently recent enough Nickel version. Make sure you're running a firmware version equal to or newer than 2.9.0! That's the only actual requirement: KFMon is completely device-agnostic, and should work on the full range of Kobo devices (even new and unreleased ones), provided they run a supported Nickel version.
 
-**NOTE**: If you're just looking for a drop-in replacement of Sergey's fmon, **and you're running FW < 4.13**, check out [Baskerville](https://github.com/baskerville/fmon)'s implementation of fmon. It's safer & saner than the original, while keeping parts of the design instact (namely, and of particular interest to end-users, it's using a similar config scheme).
+**NOTE**: If you know you're running a legacy fmon-friendly FW version, and you're just looking for a drop-in replacement of Sergey's fmon, check out [Baskerville](https://github.com/baskerville/fmon)'s implementation of fmon. It's safer & saner than the original, while keeping parts of the design instact (namely, and of particular interest to end-users, it's using a similar config scheme).
 
 ## How do I install this?
 
