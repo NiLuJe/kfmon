@@ -21,7 +21,7 @@ KFMON_USER_LOG="/mnt/onboard/.adds/kfmon/log/kfmon_dump.log"
 LOG_LINES="25"
 
 # See how many lines we can actually print...
-eval $(${FBINK_BIN} -qe)
+eval $(${FBINK_BIN} -e)
 # Try to account for linebreaks...
 MAXCHARS="$(awk -v LOG_LINES=${LOG_LINES} -v MAXCOLS=${MAXCOLS} -v MAXROWS=${MAXROWS} 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
 
