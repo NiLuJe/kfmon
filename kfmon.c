@@ -1171,6 +1171,59 @@ static bool
 
 	sqlite3_finalize(stmt);
 
+	// NOTE: If the file doesn't appear to have been processed by Nickel yet, despite clearly existing on the FS,
+	// since we got an inotify event from it, see if there isn't a case issue in the filename specified in the .ini...
+	// (FAT32 is case-insensitive, but we make a case sensitive SQL query, because it's much faster!)
+	if (!is_processed) {
+		bool broken_case = false;
+
+		CALL_SQLITE(prepare_v2(
+		    db,
+		    "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id COLLATE NOCASE AND ContentType = '6');",
+		    -1,
+		    &stmt,
+		    NULL));
+		idx = sqlite3_bind_parameter_index(stmt, "@id");
+		CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
+
+		rc = sqlite3_step(stmt);
+		if (rc == SQLITE_ROW) {
+			DBGLOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
+			if (sqlite3_column_int(stmt, 0) == 1) {
+				is_processed = true;
+				broken_case  = true;
+			}
+		}
+
+		sqlite3_finalize(stmt);
+
+		// If the case-insensitive query worked, do yet another query to log the expected filename...
+		if (broken_case) {
+			CALL_SQLITE(prepare_v2(
+			    db,
+			    "SELECT ContentID FROM content WHERE ContentID = @id COLLATE NOCASE AND ContentType = '6';",
+			    -1,
+			    &stmt,
+			    NULL));
+			idx = sqlite3_bind_parameter_index(stmt, "@id");
+			CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
+
+			rc = sqlite3_step(stmt);
+			if (rc == SQLITE_ROW) {
+				// Warn, and update book_path, so we don't have to do any more slow case-insensitive queries...
+				snprintf(book_path, sizeof(book_path), "%s", sqlite3_column_text(stmt, 0));
+				DBGLOG("SELECT SQL query returned: %s", book_path);
+				LOG(LOG_WARNING,
+				    "Watch config @ index %hhu has a filename field with broken case (%s -> %s)!",
+				    watch_idx,
+				    watch_config[watch_idx].filename,
+				    book_path + 7);
+			}
+
+			sqlite3_finalize(stmt);
+		}
+	}
+
 	// Now that we know the book exists, we also want to check if the thumbnails do,
 	// to avoid getting triggered from the thumbnail creation...
 	// NOTE: Again, this assumes FW >= 2.9.0
