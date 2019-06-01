@@ -992,7 +992,7 @@ static bool
                                            KFMON_TARGET_MOUNTPOINT,
                                            dir1,
                                            dir2);
-			if (ret < 0 || ret >= sizeof(images_path)) {
+			if (ret < 0 || (size_t) ret >= sizeof(images_path)) {
 				LOG(LOG_WARNING, "Couldn't build the image path string!");
 			}
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
@@ -1004,7 +1004,7 @@ static bool
 			// Start with the full-size screensaver...
 			ret = snprintf(
 			    thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
-			if (ret < 0 || ret >= sizeof(thumbnail_path)) {
+			if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
 				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
 			}
 			DBGLOG("Checking for full-size screensaver '%s' . . .", thumbnail_path);
@@ -1027,7 +1027,7 @@ static bool
 				       "%s/%s - N3_LIBRARY_FULL.parsed",
 				       images_path,
 				       image_id);
-			if (ret < 0 || ret >= sizeof(thumbnail_path)) {
+			if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
 				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
 			}
 			DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
@@ -1043,7 +1043,7 @@ static bool
 				       "%s/%s - N3_LIBRARY_GRID.parsed",
 				       images_path,
 				       image_id);
-			if (ret < 0 || ret >= sizeof(thumbnail_path)) {
+			if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
 				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
 			}
 			DBGLOG("Checking for library thumbnail '%s' . . .", thumbnail_path);
