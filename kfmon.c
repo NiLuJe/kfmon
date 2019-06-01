@@ -873,8 +873,10 @@ static int
 		return -1;
 	}
 
-	uint8_t watches_to_keep[WATCH_MAX] = { 0 };
-	uint8_t new_watch_count = 0U;
+	// Keep track of which watch indexes are up-to-date, so we can drop stale watches if some configs were deleted.
+	// NOTE: Init to -1 because 0 is a valid watch index ;).
+	int8_t  new_watch_list[WATCH_MAX] = { -1 };
+	uint8_t new_watch_count           = 0U;
 
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
@@ -963,7 +965,8 @@ static int
 
 										// Flag it as active
 										watch_config[watch_idx].is_active = true;
-										watch_count++;
+										new_watch_list[new_watch_count++] =
+										    (int8_t) watch_idx;
 
 										fbink_printf(
 										    FBFD_AUTO,
@@ -1002,6 +1005,8 @@ static int
 													    watch_idx)) {
 										// NOTE: validate_and_merge takes care of both
 										//       logging and updating the watch data
+										new_watch_list[new_watch_count++] =
+										    (int8_t) watch_idx;
 									} else {
 										LOG(LOG_CRIT,
 										    "Updated watch config file '%s' is not valid, it will be discarded!",
@@ -1022,7 +1027,6 @@ static int
 										LOG(LOG_NOTICE,
 										    "Released watch slot %hhu.",
 										    watch_idx);
-										watch_count--;
 									}
 								}
 							}
@@ -1036,11 +1040,45 @@ static int
 	}
 	fts_close(ftsp);
 
-	// Purge stale watch entries (if a config has been deleted, but not its watched file)
+	// Purge stale watch entries (in case a config has been deleted, but not its watched file)
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
-		if (watch_config[watch_idx].is_active) {
-
+		// It of course needs to be active first so it can potentially be stale ;)
+		if (!watch_config[watch_idx].is_active) {
+			continue;
 		}
+
+		// Is that active entry stale (i.e., we couldn't find its config file)?
+		bool keep = false;
+		for (uint8_t i = 0U; i < WATCH_MAX; i++) {
+			if ((int8_t) watch_idx == new_watch_list[i]) {
+				keep = true;
+				break;
+			}
+		}
+
+		// It's stale, drop it now
+		if (!keep) {
+			LOG(LOG_WARNING,
+			    "Watch config @ index %hhu (%s => %s) is still active, but its config file is gone! Discarding it!",
+			    watch_idx,
+			    basename(watch_config[watch_idx].filename),
+			    basename(watch_config[watch_idx].action));
+
+			fbink_printf(FBFD_AUTO,
+				     NULL,
+				     &fbink_config,
+				     "[KFMon] Dropped the watch on %s!",
+				     basename(watch_config[watch_idx].filename));
+
+			watch_config[watch_idx] = (const WatchConfig){ 0 };
+			LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
+		}
+	}
+
+	// Update global watch_count
+	if (new_watch_count != watch_count) {
+		LOG(LOG_NOTICE, "Updated active watch count from %hhu to %hhu", watch_count, new_watch_count);
+		watch_count = new_watch_count;
 	}
 
 #ifdef DEBUG
