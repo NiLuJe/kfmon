@@ -520,17 +520,14 @@ static bool
 	} else {
 		// Did it change?
 		if (strcmp(pconfig->filename, watch_config[target_idx].filename) != 0) {
-			// Yup! Update it!
-			str5cpy(watch_config[target_idx].filename, CFG_SZ_MAX, pconfig->filename, CFG_SZ_MAX, NOTRUNC);
-			LOG(LOG_NOTICE,
-			    "Updated filename to %s for watch config @ index %hhu",
-			    watch_config[target_idx].filename,
-			    target_idx);
-
 			// Make sure we're not trying to set multiple watches on the same file...
 			// (because that would only actually register the first one parsed).
 			uint8_t matches = 0U;
 			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				// Skip the to-be-updated watch, since we'll overwrite it if this check pans out...
+				if (watch_idx == target_idx) {
+					continue;
+				}
 				if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
 					matches++;
 				}
@@ -539,6 +536,17 @@ static bool
 			if (matches >= 2U) {
 				LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
 				sane = false;
+			} else {
+				// Filename changed, and it was updated to something sane, update our target watch!
+				str5cpy(watch_config[target_idx].filename,
+					CFG_SZ_MAX,
+					pconfig->filename,
+					CFG_SZ_MAX,
+					NOTRUNC);
+				LOG(LOG_NOTICE,
+				    "Updated filename to %s for watch config @ index %hhu",
+				    watch_config[target_idx].filename,
+				    target_idx);
 			}
 		}
 	}
