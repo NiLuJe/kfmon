@@ -1,5 +1,5 @@
 /*	@(#)	str5.h	*/
-/* 
+/*
  *	v 2.0, 2016/05, Eric Sanchis <eric.sanchis@iut-rodez.fr>
  *	GNU LGPL
  */
