@@ -725,14 +725,14 @@ static int
 							break;
 						}
 
+						// Assume a config is invalid until proven otherwise...
+						bool is_watch_valid = false;
 						ret = ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]);
 						if (ret != 0) {
-							LOG(LOG_CRIT,
-							    "Failed to parse watch config file '%s' (first error on line %d), will abort!",
+							LOG(LOG_WARNING,
+							    "Failed to parse watch config file '%s' (first error on line %d), it will be discarded!",
 							    p->fts_name,
 							    ret);
-							// Flag as a failure...
-							rval = -1;
 						} else {
 							if (validate_watch_config(&watch_config[watch_count])) {
 								LOG(LOG_NOTICE,
@@ -746,16 +746,17 @@ static int
 								    watch_config[watch_count].db_title,
 								    watch_config[watch_count].db_author,
 								    watch_config[watch_count].db_comment);
+
+								is_watch_valid = true;
 							} else {
-								LOG(LOG_CRIT,
-								    "Watch config file '%s' is not valid, will abort!",
+								LOG(LOG_WARNING,
+								    "Watch config file '%s' is not valid, it will be discarded!",
 								    p->fts_name);
-								rval = -1;
 							}
 						}
 						// If the watch config is valid, mark it as active, and increment the active count.
 						// Otherwise, clear the slot so it can be reused.
-						if (rval == 0) {
+						if (is_watch_valid) {
 							watch_config[watch_count].is_active = true;
 							watch_count++;
 						} else {
@@ -885,12 +886,10 @@ static int
 
 						ret = ini_parse(p->fts_path, watch_handler, &cur_watch);
 						if (ret != 0) {
-							LOG(LOG_CRIT,
-							    "Failed to parse watch config file '%s' (first error on line %d), will abort!",
+							LOG(LOG_WARNING,
+							    "Failed to parse watch config file '%s' (first error on line %d), it will be discarded!",
 							    p->fts_name,
 							    ret);
-							// Flag as a failure...
-							rval = -1;
 						} else {
 							// Try to match it to a current watch, based on the trigger file...
 							uint8_t watch_idx    = 0U;
@@ -913,7 +912,7 @@ static int
 							if (is_new_watch) {
 								// New watch! Make it so!
 								int8_t new_watch_idx = get_next_available_watch_entry();
-								if (new_watch_idx == -1) {
+								if (new_watch_idx < 0) {
 									// NOTE: Given the watch_count check above,
 									//       this should never really happen...
 									LOG(LOG_WARNING,
@@ -952,10 +951,9 @@ static int
 												    .filename));
 										}
 									} else {
-										LOG(LOG_CRIT,
-										    "New watch config file '%s' is not valid, will abort!",
+										LOG(LOG_WARNING,
+										    "New watch config file '%s' is not valid, it will be discarded!",
 										    p->fts_name);
-										rval = -1;
 
 										// Clear the slot
 										watch_config[watch_idx] =
@@ -993,9 +991,8 @@ static int
 										}
 									} else {
 										LOG(LOG_CRIT,
-										    "Updated watch config file '%s' is not valid, will abort!",
+										    "Updated watch config file '%s' is not valid, it will be discarded!",
 										    p->fts_name);
-										rval = -1;
 
 										// Don't keep the previous state around,
 										// clear the slot.
@@ -2048,7 +2045,7 @@ int
 
 	// Load our configs
 	if (load_config() == -1) {
-		LOG(LOG_ERR, "Failed to load one or more config files, aborting!");
+		LOG(LOG_ERR, "Failed to load server config file(s), aborting!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2117,7 +2114,7 @@ int
 		//       The only minor drawback of having it up there is that it'll run on startup.
 		//       On the upside, this ensures the update codepath will see some action, and isn't completely broken ;).
 		if (update_watch_configs() == -1) {
-			LOG(LOG_ERR, "Failed to load one or more config files, aborting!");
+			LOG(LOG_ERR, "Checking watch configs for updates failed, aborting!");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to update watch configs!", &fbink_config);
 			exit(EXIT_FAILURE);
 		}
