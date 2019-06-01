@@ -144,6 +144,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
     -   Meaning `key=value;` will probably not work as you might expect (it'll parse as `key` set to `value;` and not `value`).
     -   On a related note, a line cannot exceed 200 bytes. If the log reports a parsing error on a seemingly benign line, but one which happens to feature a humonguous amount of inline comments, that may very well be the reason ;).
     -   If the log reports a parsing error at (or near, depending on commented lines) the top of the config file, check that you haven't forgotten the `[watch]` section name ;).  
+    -   If you keep getting a "still processing" warning, despite the thumbnails having visibly been processed, make sure you respected the case properly in the filename field of the watch config: FAT32 is case-insensitive, but we make case-sensitive SQL queries because they're much faster!  
 
 -   You **will** have to reinstall KFMon after a firmware update (since most FW update packages ship the vanilla version of the startup script patched to launch KFMon).  
 

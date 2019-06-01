@@ -1174,6 +1174,9 @@ static bool
 	// NOTE: If the file doesn't appear to have been processed by Nickel yet, despite clearly existing on the FS,
 	// since we got an inotify event from it, see if there isn't a case issue in the filename specified in the .ini...
 	// (FAT32 is case-insensitive, but we make a case sensitive SQL query, because it's much faster!)
+	// NOTE: This works, but is commented out,
+	//       because it's a massive performance sink for what's essentially a very minor QOL fix for a PEBCAK...
+	/*
 	if (!is_processed) {
 		bool broken_case = false;
 
@@ -1223,6 +1226,7 @@ static bool
 			sqlite3_finalize(stmt);
 		}
 	}
+	*/
 
 	// Now that we know the book exists, we also want to check if the thumbnails do,
 	// to avoid getting triggered from the thumbnail creation...
