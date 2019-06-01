@@ -80,7 +80,7 @@ As you would expect, a simple file/action pair only requires two entries:
 
 Note that the section all these key/value pairs fall under *has* to be named `[watch]`!
 
-Note that none of these two fields **can** exceed 128 characters, if they do, the whole file will be discarded!
+Note that none of these two fields can exceed **128 characters**, if they do, the whole file will be discarded!
 
 Next comes optional entries:
 
