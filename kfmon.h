@@ -173,6 +173,7 @@ typedef struct
 	bool   block_spawns;
 	bool   wd_was_destroyed;
 	bool   pending_processing;
+	bool   is_active;
 } WatchConfig;
 
 // Hardcode the max amount of watches we handle

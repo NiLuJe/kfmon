@@ -472,12 +472,17 @@ static bool
 		// (because that would only actually register the first one parsed).
 		uint8_t matches = 0U;
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+			// Only relevant for active watches
+			if (!watch_config[watch_idx].is_active) {
+				continue;
+			}
+
 			if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
 				matches++;
 			}
 		}
-		// Since we'll necessarily loop over ourselves, only warn if we matched two or more times.
-		if (matches >= 2U) {
+		// As we're not yet flagged active, we won't loop over ourselves ;).
+		if (matches >= 1U) {
 			LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
 			sane = false;
 		}
@@ -736,12 +741,14 @@ static int
 								rval = -1;
 							}
 						}
-						// No matter what, switch to the next slot:
-						// we rely on zero-initialization, so we can't reuse a slot,
-						// even in case of failure,
-						// or we risk mixing values from different config files together,
-						// which is why a broken watch config is flagged as a fatal failure.
-						watch_count++;
+						// If the watch config is valid, mark it as active, and increment the active count.
+						// Otherwise, clear the slot so it can be reused.
+						if (rval == 0) {
+							watch_config[watch_count].is_active = true;
+							watch_count++;
+						} else {
+							watch_config[watch_count] = (const WatchConfig){ 0 };
+						}
 					}
 				}
 				break;
@@ -778,10 +785,11 @@ static int
 	       daemon_config.db_timeout,
 	       daemon_config.use_syslog,
 	       daemon_config.with_notifications);
-	for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hhu recap: filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
+		    watch_config[watch_idx].is_active,
 		    watch_config[watch_idx].filename,
 		    watch_config[watch_idx].action,
 		    watch_config[watch_idx].block_spawns,
@@ -875,7 +883,12 @@ static int
 							// Try to match it to a current watch, based on the trigger file...
 							uint8_t watch_idx    = 0U;
 							bool    is_new_watch = true;
-							for (watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+							for (watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+								// Only check active watches
+								if (!watch_config[watch_idx].is_active) {
+									continue;
+								}
+
 								if (strcmp(cur_watch.filename,
 									   watch_config[watch_idx].filename) == 0) {
 									// Gotcha!
@@ -887,7 +900,7 @@ static int
 
 							if (is_new_watch) {
 								// New watch! Make it so!
-								watch_idx               = watch_count;
+								watch_idx = watch_count;    // FIXME: First free slot
 								watch_config[watch_idx] = cur_watch;
 
 								if (validate_watch_config(&watch_config[watch_idx])) {
@@ -903,6 +916,10 @@ static int
 									    watch_config[watch_idx].db_author,
 									    watch_config[watch_idx].db_comment);
 
+									// Flag it as active
+									watch_config[watch_idx].is_active = true;
+									watch_count++;
+
 									if (daemon_config.with_notifications) {
 										fbink_printf(
 										    FBFD_AUTO,
@@ -917,6 +934,10 @@ static int
 									    "New watch config file '%s' is not valid, will abort!",
 									    p->fts_name);
 									rval = -1;
+
+									// Clear the slot
+									watch_config[watch_idx] =
+									    (const WatchConfig){ 0 };
 								}
 							} else {
 								// Updated watch! Validate what was parsed,
@@ -938,14 +959,25 @@ static int
 									    "Updated watch config file '%s' is not valid, will abort!",
 									    p->fts_name);
 									rval = -1;
-								}
-							}
 
-							// Only increase count for *new* watches,
-							// we will *keep* dropped watches' data around to keep things simple.
-							// Again, even on failure, c.f., load_config
-							if (is_new_watch) {
-								watch_count++;
+									// Don't keep the previous state around, clear the slot,
+									// provided that watch isn't currently running...
+									pthread_mutex_lock(&ptlock);
+									bool is_watch_spawned =
+									    is_watch_already_spawned(watch_idx);
+									pthread_mutex_unlock(&ptlock);
+									if (is_watch_spawned) {
+										LOG(LOG_WARNING,
+										    "Cannot release watch slot %hhu, as it's currently running!",
+										    watch_idx);
+									} else {
+										watch_config[watch_idx] =
+										    (const WatchConfig){ 0 };
+										LOG(LOG_NOTICE,
+										    "Released watch slot %hhu.",
+										    watch_idx);
+									}
+								}
 							}
 						}
 					}
@@ -959,10 +991,11 @@ static int
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
-	for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hhu recap: filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
+		    watch_config[watch_idx].is_active,
 		    watch_config[watch_idx].filename,
 		    watch_config[watch_idx].action,
 		    watch_config[watch_idx].block_spawns,
@@ -1586,8 +1619,12 @@ static bool
 	// Walk our process table to identify watches with a currently running process
 	for (uint8_t i = 0U; i < WATCH_MAX; i++) {
 		if (PT.spawn_watchids[i] != -1) {
-			// Walk the registered watch list to match that currently running watch to its block_spawns flag
-			for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+			// Walk the active watch list to match that currently running watch to its block_spawns flag
+			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				if (!watch_config[watch_idx].is_active) {
+					continue;
+				}
+
 				if (PT.spawn_watchids[i] == (int8_t) watch_idx) {
 					if (watch_config[watch_idx].block_spawns) {
 						return true;
@@ -1690,7 +1727,12 @@ static bool
 			// Identify which of our target file we've caught an event for...
 			uint8_t watch_idx       = 0U;
 			bool    found_watch_idx = false;
-			for (watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+			for (watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				// Needs to be an active watch
+				if (!watch_config[watch_idx].is_active) {
+					continue;
+				}
+
 				if (watch_config[watch_idx].inotify_wd == event->wd) {
 					found_watch_idx = true;
 					break;
@@ -1895,9 +1937,13 @@ static bool
 		}
 		// If we caught an event indicating that a watch was automatically destroyed, break the loop.
 		if (destroyed_wd) {
-			// But before we do that, make sure we've removed *all* our *other* watches first
+			// But before we do that, make sure we've removed *all* our *other* active watches first
 			// (again, hoping matching was successful), since we'll be setting them up all again later...
-			for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				if (!watch_config[watch_idx].is_active) {
+					continue;
+				}
+
 				if (!watch_config[watch_idx].wd_was_destroyed) {
 					// Don't do anything if that was because of an unmount...
 					// Because that assures us that everything is/will soon be gone
@@ -2074,7 +2120,12 @@ int
 		//       Relative to the earlier IN_MOVE_SELF mention, that means it'll keep tracking the file with its
 		//           new name (provided it was moved to the *same* fs,
 		//           as crossing a fs boundary will delete the original).
-		for (uint8_t watch_idx = 0U; watch_idx < watch_count; watch_idx++) {
+		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+			// We only care about active watches
+			if (!watch_config[watch_idx].is_active) {
+				continue;
+			}
+
 			watch_config[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watch_config[watch_idx].inotify_wd == -1) {
@@ -2090,6 +2141,21 @@ int
 				//       Since the inotify watch couldn't be setup,
 				//       there's no way for this to cause trouble down the road,
 				//       and this allows the user to fix it during an USBMS session instead of having to reboot.
+
+				// If that watch isn't currently running, clear it entirely!
+				pthread_mutex_lock(&ptlock);
+				bool is_watch_spawned = is_watch_already_spawned(watch_idx);
+				pthread_mutex_unlock(&ptlock);
+				if (is_watch_spawned) {
+					LOG(LOG_WARNING,
+					    "Cannot release watch slot %hhu, as it's currently running!",
+					    watch_idx);
+				} else {
+					watch_config[watch_idx] = (const WatchConfig){ 0 };
+					// NOTE: This should essentially come down to:
+					//memset(&watch_config[watch_idx], 0, sizeof(WatchConfig));
+					LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
+				}
 			} else {
 				LOG(LOG_NOTICE,
 				    "Setup an inotify watch for '%s' @ index %hhu.",
