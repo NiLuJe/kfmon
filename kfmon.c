@@ -779,8 +779,7 @@ static int
 						// If the watch config is valid, mark it as active, and increment the active count.
 						// Otherwise, clear the slot so it can be reused.
 						if (is_watch_valid) {
-							watch_config[watch_count].is_active = true;
-							watch_count++;
+							watch_config[watch_count++].is_active = true;
 						} else {
 							watch_config[watch_count] = (const WatchConfig){ 0 };
 						}
@@ -2107,7 +2106,7 @@ int
 
 	// Load our configs
 	if (load_config() == -1) {
-		LOG(LOG_ERR, "Failed to load server config file(s), aborting!");
+		LOG(LOG_ERR, "Failed to load daemon config file(s), aborting!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2176,7 +2175,7 @@ int
 		//       The only minor drawback of having it up there is that it'll run on startup.
 		//       On the upside, this ensures the update codepath will see some action, and isn't completely broken ;).
 		if (update_watch_configs() == -1) {
-			LOG(LOG_ERR, "Checking watch configs for updates failed, aborting!");
+			LOG(LOG_ERR, "Failed to check watch configs for updates, aborting!");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to update watch configs!", &fbink_config);
 			exit(EXIT_FAILURE);
 		}
@@ -2208,7 +2207,7 @@ int
 		//           new name (provided it was moved to the *same* fs,
 		//           as crossing a fs boundary will delete the original).
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
-			// We only care about active watches
+			// We obviously only care about active watches
 			if (!watch_config[watch_idx].is_active) {
 				continue;
 			}

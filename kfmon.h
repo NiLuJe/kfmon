@@ -145,7 +145,7 @@
 // NOTE: We mainly use this for snprintf usage with thumbnail paths.
 #define KFMON_PATH_MAX (_POSIX_PATH_MAX * 2)
 // NOTE: This is all well and good, but, in practice, we load our paths from an ini file via inih,
-//       whose default line buffer is 200 bytes. If we chop the the NUL, the CR/LF, the key and the equal sign,
+//       whose default line buffer is 200 bytes. If we chop the NUL, the CR/LF, the key and the equal sign,
 //       that would actually leave us somewhere around 186 bytes.
 //       Just chop that down to 128 for symmetry, and we'll warn in case user input doesn't fit.
 #define CFG_SZ_MAX 128
