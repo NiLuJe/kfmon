@@ -857,7 +857,6 @@ static int
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
 	int ret;
-	int rval = 0;
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
@@ -873,6 +872,10 @@ static int
 		fts_close(ftsp);
 		return -1;
 	}
+
+	uint8_t watches_to_keep[WATCH_MAX] = { 0 };
+	uint8_t new_watch_count = 0U;
+
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
@@ -1019,6 +1022,7 @@ static int
 										LOG(LOG_NOTICE,
 										    "Released watch slot %hhu.",
 										    watch_idx);
+										watch_count--;
 									}
 								}
 							}
@@ -1031,6 +1035,13 @@ static int
 		}
 	}
 	fts_close(ftsp);
+
+	// Purge stale watch entries (if a config has been deleted, but not its watched file)
+	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+		if (watch_config[watch_idx].is_active) {
+
+		}
+	}
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
@@ -1050,7 +1061,7 @@ static int
 	}
 #endif
 
-	return rval;
+	return 0;
 }
 
 // Implementation of Qt4's QtHash (c.f., qhash @
@@ -2200,6 +2211,7 @@ int
 					// NOTE: This should essentially come down to:
 					//memset(&watch_config[watch_idx], 0, sizeof(WatchConfig));
 					LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
+					watch_count--;
 				}
 			} else {
 				LOG(LOG_NOTICE,
