@@ -517,7 +517,8 @@ static bool
 {
 	WatchConfig* restrict pconfig = (WatchConfig*) user;
 
-	bool sane = true;
+	bool sane    = true;
+	bool updated = false;
 
 	if (pconfig->filename[0] == '\0') {
 		LOG(LOG_CRIT, "Mandatory key 'filename' is missing or blank!");
@@ -555,6 +556,7 @@ static bool
 					pconfig->filename,
 					CFG_SZ_MAX,
 					NOTRUNC);
+				updated = true;
 				LOG(LOG_NOTICE,
 				    "Updated filename to %s for watch config @ index %hhu",
 				    watch_config[target_idx].filename,
@@ -568,6 +570,7 @@ static bool
 	} else {
 		if (strcmp(pconfig->action, watch_config[target_idx].action) != 0) {
 			str5cpy(watch_config[target_idx].action, CFG_SZ_MAX, pconfig->action, CFG_SZ_MAX, NOTRUNC);
+			updated = true;
 			LOG(LOG_NOTICE,
 			    "Updated action to %s for watch config @ index %hhu",
 			    watch_config[target_idx].action,
@@ -578,6 +581,7 @@ static bool
 	// Check if do_db_update was updated...
 	if (pconfig->do_db_update != watch_config[target_idx].do_db_update) {
 		watch_config[target_idx].do_db_update = pconfig->do_db_update;
+		updated                               = true;
 		LOG(LOG_NOTICE,
 		    "Updated do_db_update to %d for watch config @ index %hhu",
 		    watch_config[target_idx].do_db_update,
@@ -593,6 +597,7 @@ static bool
 			if (strcmp(pconfig->db_title, watch_config[target_idx].db_title) != 0) {
 				str5cpy(
 				    watch_config[target_idx].db_title, DB_SZ_MAX, pconfig->db_title, DB_SZ_MAX, TRUNC);
+				updated = true;
 				LOG(LOG_NOTICE,
 				    "Updated db_title to %s for watch config @ index %hhu",
 				    watch_config[target_idx].db_title,
@@ -606,6 +611,7 @@ static bool
 			if (strcmp(pconfig->db_author, watch_config[target_idx].db_author) != 0) {
 				str5cpy(
 				    watch_config[target_idx].db_author, DB_SZ_MAX, pconfig->db_author, DB_SZ_MAX, TRUNC);
+				updated = true;
 				LOG(LOG_NOTICE,
 				    "Updated db_author to %s for watch config @ index %hhu",
 				    watch_config[target_idx].db_author,
@@ -622,11 +628,22 @@ static bool
 					pconfig->db_comment,
 					DB_SZ_MAX,
 					TRUNC);
+				updated = true;
 				LOG(LOG_NOTICE,
 				    "Updated db_comment to %s for watch config @ index %hhu",
 				    watch_config[target_idx].db_comment,
 				    target_idx);
 			}
+		}
+	}
+
+	if (sane && updated) {
+		if (daemon_config.with_notifications) {
+			fbink_printf(FBFD_AUTO,
+				     NULL,
+				     &fbink_config,
+				     "[KFMon] Updated the watch on %s",
+				     basename(watch_config[target_idx].filename));
 		}
 	}
 
@@ -987,20 +1004,21 @@ static int
 													    watch_idx)) {
 										// NOTE: validate_and_merge takes care of both
 										//       logging and updating the watch data
+									} else {
+										LOG(LOG_CRIT,
+										    "Updated watch config file '%s' is not valid, it will be discarded!",
+										    p->fts_name);
+
 										if (daemon_config.with_notifications) {
 											fbink_printf(
 											    FBFD_AUTO,
 											    NULL,
 											    &fbink_config,
-											    "[KFMon] Updated the watch on %s",
+											    "[KFMon] Dropped the watch on %s!",
 											    basename(
 												watch_config[watch_idx]
 												    .filename));
 										}
-									} else {
-										LOG(LOG_CRIT,
-										    "Updated watch config file '%s' is not valid, it will be discarded!",
-										    p->fts_name);
 
 										// Don't keep the previous state around,
 										// clear the slot.
