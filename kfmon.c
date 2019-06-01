@@ -638,13 +638,11 @@ static bool
 	}
 
 	if (sane && updated) {
-		if (daemon_config.with_notifications) {
-			fbink_printf(FBFD_AUTO,
-				     NULL,
-				     &fbink_config,
-				     "[KFMon] Updated the watch on %s",
-				     basename(watch_config[target_idx].filename));
-		}
+		fbink_printf(FBFD_AUTO,
+			     NULL,
+			     &fbink_config,
+			     "[KFMon] Updated the watch on %s",
+			     basename(watch_config[target_idx].filename));
 	}
 
 	return sane;
@@ -964,16 +962,13 @@ static int
 										watch_config[watch_idx].is_active = true;
 										watch_count++;
 
-										if (daemon_config.with_notifications) {
-											fbink_printf(
-											    FBFD_AUTO,
-											    NULL,
-											    &fbink_config,
-											    "[KFMon] Setup a new watch on %s",
-											    basename(
-												watch_config[watch_idx]
-												    .filename));
-										}
+										fbink_printf(
+										    FBFD_AUTO,
+										    NULL,
+										    &fbink_config,
+										    "[KFMon] Setup a new watch on %s",
+										    basename(watch_config[watch_idx]
+												 .filename));
 									} else {
 										LOG(LOG_WARNING,
 										    "New watch config file '%s' is not valid, it will be discarded!",
@@ -1009,16 +1004,13 @@ static int
 										    "Updated watch config file '%s' is not valid, it will be discarded!",
 										    p->fts_name);
 
-										if (daemon_config.with_notifications) {
-											fbink_printf(
-											    FBFD_AUTO,
-											    NULL,
-											    &fbink_config,
-											    "[KFMon] Dropped the watch on %s!",
-											    basename(
-												watch_config[watch_idx]
-												    .filename));
-										}
+										fbink_printf(
+										    FBFD_AUTO,
+										    NULL,
+										    &fbink_config,
+										    "[KFMon] Dropped the watch on %s!",
+										    basename(watch_config[watch_idx]
+												 .filename));
 
 										// Don't keep the previous state around,
 										// clear the slot.
