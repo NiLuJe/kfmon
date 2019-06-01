@@ -1825,6 +1825,10 @@ static bool
 				// NOTE: Err, that should (hopefully) never happen!
 				LOG(LOG_CRIT,
 				    "!! Failed to match the current inotify event to any of our watched file! !!");
+				// NOTE: First, point to the final slot, instead of OOB. This'll at least avoid UB.
+				//       We *probably* ought to fail harder here, though,
+				//       but I *do* want to drain the event...
+				watch_idx = WATCH_MAX - 1;
 			}
 
 			// Print event type
