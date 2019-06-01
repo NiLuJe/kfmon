@@ -123,8 +123,8 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 ## Things to watch out for
 
 -   If any of the watched files cannot be found, KFMon will simply forget about it, and keep honoring the rest of the watches. It will shout at you to warn you about it, though!  
-    -   KFMon will only parse its own config file(s) at boot, but it *will* check for new/removed/updated watch configs after an USBMS session.  
-    -   This means you will *NOT* need to reboot your device after adding new config files or modifying or removing existing ones ;).  
+    -   KFMon will only parse its own config file(s) at boot, but it *will* check for new/removed/updated **watch** config files after an USBMS session.  
+    -   This means you will *NOT* need to reboot your device after adding new config files or modifying or removing existing ones over USB ;).  
     -   But if you delete one of the files being watched, don't forget to delete the matching config file, or KFMon will continue to try to watch it (and thus warn about it).  
 
 -   Due to the exact timing at which Nickel parses books, for a completely new file, the first action might only be triggered the first time the book is *closed*, instead of opened (i.e., the moment the "Last Book Opened" tile is generated and shown on the Homescreen).
@@ -151,7 +151,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 
 -   Speaking of the log, as mentioned earlier, it is located by default in */usr/local/kfmon/kfmon.log*, but tapping the KFMon icon, besides printing the tail end of it on screen, will also dump a full copy of it in */mnt/onboard/***.adds/kfmon/log/kfmon_dump.log**, making it easily accessible even if you don't have shell access to your device.
 
--   Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/2e46feb4c27e9393771d7deefa9a790ba875a424/kfmon.h#L148) file watches. Ping me if that's not enough for you ;).
+-   Right now, KFMon supports a maximum of [16](https://github.com/NiLuJe/kfmon/blob/08f18a8f30653e88132b5ecb0fda6efc5886951a/kfmon.h#L181) file watches. Ping me if that's not enough for you ;).
 
 -   If, for some reason, you need to prevent KFMon from spawning *anything* for a while, just drop a blank *BLOCK* file in the *config* folder, i.e., *touch /mnt/onboard/.adds/kfmon/config/BLOCK*. Simply remove it when you want KFMon to do its thing again ;).
 
