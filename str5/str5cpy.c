@@ -13,12 +13,15 @@ int
 {
 	size_t srclen = 0U;
 
-	if (dst == NULL || dstsize == 0U)
+	if (dst == NULL || dstsize == 0U) {
 		return EDSTPAR;
-	if (src == NULL)
+	}
+	if (src == NULL) {
 		return ESRCPAR;
-	if (mode != TRUNC && mode != NOTRUNC)
+	}
+	if (mode != TRUNC && mode != NOTRUNC) {
 		return EMODPAR;
+	}
 
 	if (nb == 0U) {
 		memset(dst, '\0', dstsize);
@@ -37,15 +40,17 @@ int
 
 	nb = nb > srclen ? srclen : nb;
 
-	if (dstsize <= nb) /* dst: not enough space */
-	{
-		if (mode == TRUNC) /* truncation allowed */
-		{
+	/* dst: not enough space */
+	if (dstsize <= nb) {
+		if (mode == TRUNC) {
+			/* truncation allowed */
 			memcpy(dst, src, dstsize - 1U);
-			dst[dstsize - 1] = '\0';
+			dst[dstsize - 1U] = '\0';
 			return OKTRUNC;
-		} else /*  mode == NOTRUNC */
+		} else {
+			/*  mode == NOTRUNC */
 			return ETRUNC;
+		}
 	}
 
 	/* dst: enough space */
