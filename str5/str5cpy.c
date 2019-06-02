@@ -11,25 +11,26 @@
 int
     str5cpy(char* restrict dst, size_t dstsize, const char* restrict src, size_t nb, size_t mode)
 {
-	size_t srclen;
+	size_t srclen = 0U;
 
-	if (dst == NULL || dstsize == 0)
+	if (dst == NULL || dstsize == 0U)
 		return EDSTPAR;
 	if (src == NULL)
 		return ESRCPAR;
 	if (mode != TRUNC && mode != NOTRUNC)
 		return EMODPAR;
 
-	if (nb == 0) {
+	if (nb == 0U) {
 		memset(dst, '\0', dstsize);
 		return OKNOTRUNC;
 	}
 
 	/* find the nul byte of src within the first dstsize characters */
-	for (srclen = 0; srclen < dstsize && src[srclen] != '\0'; srclen++)
-		;
+	while (srclen < dstsize && src[srclen] != '\0') {
+		srclen++;
+	}
 
-	if (srclen == 0) {
+	if (srclen == 0U) {
 		memset(dst, '\0', dstsize);
 		return OKNOTRUNC;
 	}
@@ -40,7 +41,7 @@ int
 	{
 		if (mode == TRUNC) /* truncation allowed */
 		{
-			memcpy(dst, src, dstsize - 1);
+			memcpy(dst, src, dstsize - 1U);
 			dst[dstsize - 1] = '\0';
 			return OKTRUNC;
 		} else /*  mode == NOTRUNC */
