@@ -19,9 +19,12 @@ else
 fi
 
 # Ditch the pickel progress bar for FBInk's, for shit'n giggles.
-FBINK_BIN="/usr/local/kfmon/bin/fbink"
+FBINK_SHIM_BIN="/usr/local/kfmon/bin/shim"
 
-# NOTE: There's a bit of trickery involved with FBInk having to fake its process name as on-animator.sh,
-#       just so it gets killed when on-animator itself gets the axe,
-#       because that's done in a way we can't do anything about from here (SIGKILL)...
-exec ${FBINK_BIN} -z -A -1
+# NOTE: There's a bit of trickery involved where we have to launch FBInk under the on-animator.sh process name,
+#       just so it gets killed when on-animator gets the axe,
+#       because that's done in a way we can't do anything about from here (SIGKILL, which isn't propagated, and isn't trappable).
+#       Ideally, we'd use exec -a, but busybox doesn't support that flag, so, instead,
+#       we exec a shim binary that just execs FBInk under a different process name,
+#       and with the relevant options for what we want to do...
+exec ${FBINK_SHIM_BIN}
