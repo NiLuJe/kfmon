@@ -26,18 +26,25 @@ eval $(${FBINK_BIN} -e)
 MAXCHARS="$(awk -v LOG_LINES=${LOG_LINES} -v MAXCOLS=${MAXCOLS} -v MAXROWS=${MAXROWS} 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
 
 # Check if we're logging to syslog instead...
-KFMON_CFG="/mnt/onboard/.adds/kfmon/config/kfmon.ini"
-if grep use_syslog "${KFMON_CFG}" | grep -q -i -e 1 -e "on" -e "true" -e "yes" ; then
-	KFMON_USE_SYSLOG="true"
-	# And see how many lines of that we can (roughly) print at most...
+KFMON_CFG_FILES="/mnt/onboard/.adds/kfmon/config/kfmon.ini /mnt/onboard/.adds/kfmon/config/kfmon.user.ini"
+for kfmon_cfg in ${KFMON_CFG_FILES} ; do
+	if [ -f "${kfmon_cfg}" ] ; then
+		if grep use_syslog "${kfmon_cfg}" | grep -q -i -e 1 -e "on" -e "true" -e "yes" ; then
+			KFMON_USE_SYSLOG="true"
+		else
+			KFMON_USE_SYSLOG="false"
+		fi
+	fi
+done
+
+# And see how many lines of that we can (roughly) print at most...
+if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
 	while [ "$(logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | wc -c)" -gt "${MAXCHARS}" ] ; do
 		let "LOG_LINES = ${LOG_LINES} - 1"
 		# Amount of lines changed, update that!
 		MAXCHARS="$(awk -v LOG_LINES=${LOG_LINES} -v MAXCOLS=${MAXCOLS} -v MAXROWS=${MAXROWS} 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
 	done
 else
-	KFMON_USE_SYSLOG="false"
-	# And see how many lines of that we can (roughly) print at most...
 	while [ "$(tail -n ${LOG_LINES} "${KFMON_LOG}" | wc -c)" -gt "${MAXCHARS}" ] ; do
 		let "LOG_LINES = ${LOG_LINES} - 1"
 		# Amount of lines changed, update that!
