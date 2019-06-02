@@ -701,6 +701,10 @@ static int
 		fts_close(ftsp);
 		return -1;
 	}
+
+	// Keep track of how many watches we've set up
+	uint8_t watch_count = 0U;
+
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
@@ -931,7 +935,7 @@ static int
 								// New watch! Make it so!
 								int8_t new_watch_idx = get_next_available_watch_entry();
 								if (new_watch_idx < 0) {
-									// NOTE: Because watch_count cannot be trusted during this pass ;).
+									// Discard it if we already have the maximum amount of watches set up
 									LOG(LOG_WARNING,
 									    "Can't find an available watch slot for '%s', probably because we've already setup the maximum amount of watches we can handle (%d), discarding it!",
 									    p->fts_name,
@@ -1065,12 +1069,6 @@ static int
 			watch_config[watch_idx] = (const WatchConfig){ 0 };
 			LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
 		}
-	}
-
-	// Update global watch_count
-	if (new_watch_count != watch_count) {
-		LOG(LOG_NOTICE, "Updated active watch count from %hhu to %hhu", watch_count, new_watch_count);
-		watch_count = new_watch_count;
 	}
 
 #ifdef DEBUG
@@ -2302,7 +2300,6 @@ int
 					// NOTE: This should essentially come down to:
 					//memset(&watch_config[watch_idx], 0, sizeof(WatchConfig));
 					LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
-					watch_count--;
 				}
 			} else {
 				LOG(LOG_NOTICE,

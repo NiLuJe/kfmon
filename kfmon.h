@@ -232,8 +232,6 @@ static bool   validate_and_merge_watch_config(void*, uint8_t);
 static int8_t get_next_available_watch_entry(void);
 static int    load_config(void);
 static int    update_watch_configs(void);
-// Ugly global. Remember how many watches we set up...
-uint8_t watch_count = 0U;
 // Make our config global, because I'm terrible at C.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-braces"
