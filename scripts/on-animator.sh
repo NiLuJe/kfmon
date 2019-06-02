@@ -22,6 +22,11 @@ fi
 # (And also because eating > 50% CPU to draw a progress bar is ridiculous).
 FBINK_SHIM_BIN="/usr/local/kfmon/bin/shim"
 
+# NOTE: While this works as-is on current FW, this *may* be problematic on older FW,
+#       where Nickel *might* have been relying on pickel to setup the fb...
+#       This could probably be worked-around by shipping and using fbdepth like we do on KOReader.
+#       Other custom stuff that relies on the pickel setup will be left in the lurch, though...
+
 # NOTE: There's a bit of trickery involved where we have to launch FBInk under the on-animator.sh process name,
 #       just so it gets killed when on-animator gets the axe,
 #       because that's done in a way we can't do anything about from here (SIGKILL, which isn't propagated, and isn't trappable).
