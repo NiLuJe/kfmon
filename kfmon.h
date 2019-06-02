@@ -97,7 +97,7 @@
 // Log everything to stderr (which actually points to our logfile)
 #define LOG(prio, fmt, ...)                                                                                              \
 	({                                                                                                               \
-		if (daemon_config.use_syslog) {                                                                          \
+		if (daemonConfig.use_syslog) {                                                                           \
 			syslog(prio, fmt "\n", ##__VA_ARGS__);                                                           \
 		} else {                                                                                                 \
 			fprintf(stderr,                                                                                  \
@@ -111,7 +111,7 @@
 // Slight variation without date/time handling to ensure thread safety
 #define MTLOG(fmt, ...)                                                                                                  \
 	({                                                                                                               \
-		if (daemon_config.use_syslog) {                                                                          \
+		if (daemonConfig.use_syslog) {                                                                           \
 			syslog(LOG_NOTICE, fmt "\n", ##__VA_ARGS__);                                                     \
 		} else {                                                                                                 \
 			fprintf(stderr, "[KFMon] " fmt "\n", ##__VA_ARGS__);                                             \
@@ -209,9 +209,9 @@ static void init_fbink_config(void);
 	})
 
 // Remember stdin/stdout/stderr to restore them in our children
-int        orig_stdin;
-int        orig_stdout;
-int        orig_stderr;
+int        origStdin;
+int        origStdout;
+int        origStderr;
 static int daemonize(void);
 
 static struct tm*  get_localtime(struct tm* restrict);
@@ -235,9 +235,9 @@ static int    update_watch_configs(void);
 // Make our config global, because I'm terrible at C.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-braces"
-DaemonConfig           daemon_config           = { 0 };
-WatchConfig            watch_config[WATCH_MAX] = { 0 };
-FBInkConfig            fbink_config            = { 0 };
+DaemonConfig           daemonConfig           = { 0 };
+WatchConfig            watchConfig[WATCH_MAX] = { 0 };
+FBInkConfig            fbinkConfig            = { 0 };
 #pragma GCC diagnostic push
 
 static unsigned int qhash(const unsigned char* restrict, size_t);

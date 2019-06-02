@@ -59,9 +59,9 @@ static int
 
 	// Store a copy of stdin, stdout & stderr so we can restore it to our children later on...
 	// NOTE: Hence the + 3 in the two (three w/ use_syslog) following fd tests.
-	orig_stdin  = dup(fileno(stdin));
-	orig_stdout = dup(fileno(stdout));
-	orig_stderr = dup(fileno(stderr));
+	origStdin  = dup(fileno(stdin));
+	origStdout = dup(fileno(stdout));
+	origStderr = dup(fileno(stderr));
 
 	// Redirect stdin & stdout to /dev/null
 	if ((fd = open("/dev/null", O_RDWR)) != -1) {
@@ -219,8 +219,8 @@ static void
 			close(mfd);
 			// NOTE: We have to hide this behind a slightly crappy check, because this runs during load_config,
 			//       at which point FBInk is not yet initialized...
-			if (fbink_config.row != 0) {
-				fbink_print(FBFD_AUTO, "[KFMon] Userstore unavailable, aborting!", &fbink_config);
+			if (fbinkConfig.row != 0) {
+				fbink_print(FBFD_AUTO, "[KFMon] Userstore unavailable, aborting!", &fbinkConfig);
 			}
 			exit(EXIT_FAILURE);
 		}
@@ -473,11 +473,11 @@ static bool
 		uint8_t matches = 0U;
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 			// Only relevant for active watches
-			if (!watch_config[watch_idx].is_active) {
+			if (!watchConfig[watch_idx].is_active) {
 				continue;
 			}
 
-			if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
+			if (strcmp(pconfig->filename, watchConfig[watch_idx].filename) == 0) {
 				matches++;
 			}
 		}
@@ -525,13 +525,13 @@ static bool
 		sane = false;
 	} else {
 		// Did it change?
-		if (strcmp(pconfig->filename, watch_config[target_idx].filename) != 0) {
+		if (strcmp(pconfig->filename, watchConfig[target_idx].filename) != 0) {
 			// Make sure we're not trying to set multiple watches on the same file...
 			// (because that would only actually register the first one parsed).
 			uint8_t matches = 0U;
 			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 				// Only relevant for active watches
-				if (!watch_config[watch_idx].is_active) {
+				if (!watchConfig[watch_idx].is_active) {
 					continue;
 				}
 
@@ -540,7 +540,7 @@ static bool
 					continue;
 				}
 
-				if (strcmp(pconfig->filename, watch_config[watch_idx].filename) == 0) {
+				if (strcmp(pconfig->filename, watchConfig[watch_idx].filename) == 0) {
 					matches++;
 				}
 			}
@@ -551,15 +551,12 @@ static bool
 			} else {
 				// Filename changed, and it was updated to something sane, update our target watch!
 				// NOTE: Forgo error checking, as this has already gone through an input validation pass.
-				str5cpy(watch_config[target_idx].filename,
-					CFG_SZ_MAX,
-					pconfig->filename,
-					CFG_SZ_MAX,
-					NOTRUNC);
+				str5cpy(
+				    watchConfig[target_idx].filename, CFG_SZ_MAX, pconfig->filename, CFG_SZ_MAX, NOTRUNC);
 				updated = true;
 				LOG(LOG_NOTICE,
 				    "Updated filename to %s for watch config @ index %hhu",
-				    watch_config[target_idx].filename,
+				    watchConfig[target_idx].filename,
 				    target_idx);
 			}
 		}
@@ -568,23 +565,23 @@ static bool
 		LOG(LOG_CRIT, "Mandatory key 'action' is missing or blank!");
 		sane = false;
 	} else {
-		if (strcmp(pconfig->action, watch_config[target_idx].action) != 0) {
-			str5cpy(watch_config[target_idx].action, CFG_SZ_MAX, pconfig->action, CFG_SZ_MAX, NOTRUNC);
+		if (strcmp(pconfig->action, watchConfig[target_idx].action) != 0) {
+			str5cpy(watchConfig[target_idx].action, CFG_SZ_MAX, pconfig->action, CFG_SZ_MAX, NOTRUNC);
 			updated = true;
 			LOG(LOG_NOTICE,
 			    "Updated action to %s for watch config @ index %hhu",
-			    watch_config[target_idx].action,
+			    watchConfig[target_idx].action,
 			    target_idx);
 		}
 	}
 
 	// Check if do_db_update was updated...
-	if (pconfig->do_db_update != watch_config[target_idx].do_db_update) {
-		watch_config[target_idx].do_db_update = pconfig->do_db_update;
-		updated                               = true;
+	if (pconfig->do_db_update != watchConfig[target_idx].do_db_update) {
+		watchConfig[target_idx].do_db_update = pconfig->do_db_update;
+		updated                              = true;
 		LOG(LOG_NOTICE,
 		    "Updated do_db_update to %d for watch config @ index %hhu",
-		    watch_config[target_idx].do_db_update,
+		    watchConfig[target_idx].do_db_update,
 		    target_idx);
 	}
 
@@ -594,13 +591,12 @@ static bool
 			LOG(LOG_CRIT, "Mandatory key 'db_title' is missing or blank!");
 			sane = false;
 		} else {
-			if (strcmp(pconfig->db_title, watch_config[target_idx].db_title) != 0) {
-				str5cpy(
-				    watch_config[target_idx].db_title, DB_SZ_MAX, pconfig->db_title, DB_SZ_MAX, TRUNC);
+			if (strcmp(pconfig->db_title, watchConfig[target_idx].db_title) != 0) {
+				str5cpy(watchConfig[target_idx].db_title, DB_SZ_MAX, pconfig->db_title, DB_SZ_MAX, TRUNC);
 				updated = true;
 				LOG(LOG_NOTICE,
 				    "Updated db_title to %s for watch config @ index %hhu",
-				    watch_config[target_idx].db_title,
+				    watchConfig[target_idx].db_title,
 				    target_idx);
 			}
 		}
@@ -608,13 +604,13 @@ static bool
 			LOG(LOG_CRIT, "Mandatory key 'db_author' is missing or blank!");
 			sane = false;
 		} else {
-			if (strcmp(pconfig->db_author, watch_config[target_idx].db_author) != 0) {
+			if (strcmp(pconfig->db_author, watchConfig[target_idx].db_author) != 0) {
 				str5cpy(
-				    watch_config[target_idx].db_author, DB_SZ_MAX, pconfig->db_author, DB_SZ_MAX, TRUNC);
+				    watchConfig[target_idx].db_author, DB_SZ_MAX, pconfig->db_author, DB_SZ_MAX, TRUNC);
 				updated = true;
 				LOG(LOG_NOTICE,
 				    "Updated db_author to %s for watch config @ index %hhu",
-				    watch_config[target_idx].db_author,
+				    watchConfig[target_idx].db_author,
 				    target_idx);
 			}
 		}
@@ -622,16 +618,13 @@ static bool
 			LOG(LOG_CRIT, "Mandatory key 'db_comment' is missing or blank!");
 			sane = false;
 		} else {
-			if (strcmp(pconfig->db_comment, watch_config[target_idx].db_comment) != 0) {
-				str5cpy(watch_config[target_idx].db_comment,
-					DB_SZ_MAX,
-					pconfig->db_comment,
-					DB_SZ_MAX,
-					TRUNC);
+			if (strcmp(pconfig->db_comment, watchConfig[target_idx].db_comment) != 0) {
+				str5cpy(
+				    watchConfig[target_idx].db_comment, DB_SZ_MAX, pconfig->db_comment, DB_SZ_MAX, TRUNC);
 				updated = true;
 				LOG(LOG_NOTICE,
 				    "Updated db_comment to %s for watch config @ index %hhu",
-				    watch_config[target_idx].db_comment,
+				    watchConfig[target_idx].db_comment,
 				    target_idx);
 			}
 		}
@@ -640,9 +633,9 @@ static bool
 	if (sane && updated) {
 		fbink_printf(FBFD_AUTO,
 			     NULL,
-			     &fbink_config,
+			     &fbinkConfig,
 			     "[KFMon] Updated the watch on %s",
-			     basename(watch_config[target_idx].filename));
+			     basename(watchConfig[target_idx].filename));
 	}
 
 	return sane;
@@ -653,7 +646,7 @@ static int8_t
     get_next_available_watch_entry(void)
 {
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
-		if (!watch_config[watch_idx].is_active) {
+		if (!watchConfig[watch_idx].is_active) {
 			return (int8_t) watch_idx;
 		}
 	}
@@ -718,7 +711,7 @@ static int
 						// NOTE: Can technically return -1 on file open error,
 						//       but that shouldn't really ever happen
 						//       given the nature of the loop we're in ;).
-						ret = ini_parse(p->fts_path, daemon_handler, &daemon_config);
+						ret = ini_parse(p->fts_path, daemon_handler, &daemonConfig);
 						if (ret != 0) {
 							LOG(LOG_CRIT,
 							    "Failed to parse main config file '%s' (first error on line %d), will abort!",
@@ -730,9 +723,9 @@ static int
 							LOG(LOG_NOTICE,
 							    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%d, with_notifications=%d",
 							    p->fts_name,
-							    daemon_config.db_timeout,
-							    daemon_config.use_syslog,
-							    daemon_config.with_notifications);
+							    daemonConfig.db_timeout,
+							    daemonConfig.use_syslog,
+							    daemonConfig.with_notifications);
 						}
 					} else if (strcasecmp(p->fts_name, "kfmon.user.ini") == 0) {
 						// NOTE: Skip the user config for now,
@@ -753,25 +746,25 @@ static int
 
 						// Assume a config is invalid until proven otherwise...
 						bool is_watch_valid = false;
-						ret = ini_parse(p->fts_path, watch_handler, &watch_config[watch_count]);
+						ret = ini_parse(p->fts_path, watch_handler, &watchConfig[watch_count]);
 						if (ret != 0) {
 							LOG(LOG_WARNING,
 							    "Failed to parse watch config file '%s' (first error on line %d), it will be discarded!",
 							    p->fts_name,
 							    ret);
 						} else {
-							if (validate_watch_config(&watch_config[watch_count])) {
+							if (validate_watch_config(&watchConfig[watch_count])) {
 								LOG(LOG_NOTICE,
 								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 								    watch_count,
 								    p->fts_name,
-								    watch_config[watch_count].filename,
-								    watch_config[watch_count].action,
-								    watch_config[watch_count].block_spawns,
-								    watch_config[watch_count].do_db_update,
-								    watch_config[watch_count].db_title,
-								    watch_config[watch_count].db_author,
-								    watch_config[watch_count].db_comment);
+								    watchConfig[watch_count].filename,
+								    watchConfig[watch_count].action,
+								    watchConfig[watch_count].block_spawns,
+								    watchConfig[watch_count].do_db_update,
+								    watchConfig[watch_count].db_title,
+								    watchConfig[watch_count].db_author,
+								    watchConfig[watch_count].db_comment);
 
 								is_watch_valid = true;
 							} else {
@@ -783,9 +776,9 @@ static int
 						// If the watch config is valid, mark it as active, and increment the active count.
 						// Otherwise, clear the slot so it can be reused.
 						if (is_watch_valid) {
-							watch_config[watch_count++].is_active = true;
+							watchConfig[watch_count++].is_active = true;
 						} else {
-							watch_config[watch_count] = (const WatchConfig){ 0 };
+							watchConfig[watch_count] = (const WatchConfig){ 0 };
 						}
 					}
 				}
@@ -799,7 +792,7 @@ static int
 	// Now we can see if we have an user daemon config to handle...
 	const char usercfg_path[] = KFMON_CONFIGPATH "/kfmon.user.ini";
 	if (access(usercfg_path, F_OK) == 0) {
-		ret = ini_parse(usercfg_path, daemon_handler, &daemon_config);
+		ret = ini_parse(usercfg_path, daemon_handler, &daemonConfig);
 		if (ret != 0) {
 			LOG(LOG_CRIT,
 			    "Failed to parse user config file '%s' (first error on line %d), will abort!",
@@ -811,31 +804,31 @@ static int
 			LOG(LOG_NOTICE,
 			    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%d, with_notifications=%d",
 			    "kfmon.user.ini",
-			    daemon_config.db_timeout,
-			    daemon_config.use_syslog,
-			    daemon_config.with_notifications);
+			    daemonConfig.db_timeout,
+			    daemonConfig.use_syslog,
+			    daemonConfig.with_notifications);
 		}
 	}
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
 	DBGLOG("Daemon config recap: db_timeout=%hu, use_syslog=%d, with_notifications=%d",
-	       daemon_config.db_timeout,
-	       daemon_config.use_syslog,
-	       daemon_config.with_notifications);
+	       daemonConfig.db_timeout,
+	       daemonConfig.use_syslog,
+	       daemonConfig.with_notifications);
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
 		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
-		    watch_config[watch_idx].is_active,
-		    watch_config[watch_idx].filename,
-		    watch_config[watch_idx].action,
-		    watch_config[watch_idx].block_spawns,
-		    watch_config[watch_idx].skip_db_checks,
-		    watch_config[watch_idx].do_db_update,
-		    watch_config[watch_idx].db_title,
-		    watch_config[watch_idx].db_author,
-		    watch_config[watch_idx].db_comment);
+		    watchConfig[watch_idx].is_active,
+		    watchConfig[watch_idx].filename,
+		    watchConfig[watch_idx].action,
+		    watchConfig[watch_idx].block_spawns,
+		    watchConfig[watch_idx].skip_db_checks,
+		    watchConfig[watch_idx].do_db_update,
+		    watchConfig[watch_idx].db_title,
+		    watchConfig[watch_idx].db_author,
+		    watchConfig[watch_idx].db_comment);
 	}
 #endif
 
@@ -918,12 +911,12 @@ static int
 							bool    is_new_watch = true;
 							for (watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 								// Only check active watches
-								if (!watch_config[watch_idx].is_active) {
+								if (!watchConfig[watch_idx].is_active) {
 									continue;
 								}
 
 								if (strcmp(cur_watch.filename,
-									   watch_config[watch_idx].filename) == 0) {
+									   watchConfig[watch_idx].filename) == 0) {
 									// Gotcha!
 									is_new_watch = false;
 									// And we're good!
@@ -941,42 +934,42 @@ static int
 									    p->fts_name,
 									    WATCH_MAX);
 								} else {
-									watch_idx               = (uint8_t) new_watch_idx;
-									watch_config[watch_idx] = cur_watch;
+									watch_idx              = (uint8_t) new_watch_idx;
+									watchConfig[watch_idx] = cur_watch;
 
 									if (validate_watch_config(
-										&watch_config[watch_idx])) {
+										&watchConfig[watch_idx])) {
 										LOG(LOG_NOTICE,
 										    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 										    watch_idx,
 										    p->fts_name,
-										    watch_config[watch_idx].filename,
-										    watch_config[watch_idx].action,
-										    watch_config[watch_idx].block_spawns,
-										    watch_config[watch_idx].do_db_update,
-										    watch_config[watch_idx].db_title,
-										    watch_config[watch_idx].db_author,
-										    watch_config[watch_idx].db_comment);
+										    watchConfig[watch_idx].filename,
+										    watchConfig[watch_idx].action,
+										    watchConfig[watch_idx].block_spawns,
+										    watchConfig[watch_idx].do_db_update,
+										    watchConfig[watch_idx].db_title,
+										    watchConfig[watch_idx].db_author,
+										    watchConfig[watch_idx].db_comment);
 
 										// Flag it as active
-										watch_config[watch_idx].is_active = true;
+										watchConfig[watch_idx].is_active = true;
 										new_watch_list[new_watch_count++] =
 										    (int8_t) watch_idx;
 
 										fbink_printf(
 										    FBFD_AUTO,
 										    NULL,
-										    &fbink_config,
+										    &fbinkConfig,
 										    "[KFMon] Setup a new watch on %s",
-										    basename(watch_config[watch_idx]
-												 .filename));
+										    basename(
+											watchConfig[watch_idx].filename));
 									} else {
 										LOG(LOG_WARNING,
 										    "New watch config file '%s' is not valid, it will be discarded!",
 										    p->fts_name);
 
 										// Clear the slot
-										watch_config[watch_idx] =
+										watchConfig[watch_idx] =
 										    (const WatchConfig){ 0 };
 									}
 								}
@@ -991,8 +984,8 @@ static int
 									LOG(LOG_INFO,
 									    "Cannot update watch slot %hhu (%s => %s), as it's currently running! Discarding potentially new data from '%s'!",
 									    watch_idx,
-									    basename(watch_config[watch_idx].filename),
-									    basename(watch_config[watch_idx].action),
+									    basename(watchConfig[watch_idx].filename),
+									    basename(watchConfig[watch_idx].action),
 									    p->fts_name);
 								} else {
 									// Validate what was parsed, and merge it if it's sane!
@@ -1010,14 +1003,14 @@ static int
 										fbink_printf(
 										    FBFD_AUTO,
 										    NULL,
-										    &fbink_config,
+										    &fbinkConfig,
 										    "[KFMon] Dropped the watch on %s!",
-										    basename(watch_config[watch_idx]
-												 .filename));
+										    basename(
+											watchConfig[watch_idx].filename));
 
 										// Don't keep the previous state around,
 										// clear the slot.
-										watch_config[watch_idx] =
+										watchConfig[watch_idx] =
 										    (const WatchConfig){ 0 };
 										LOG(LOG_NOTICE,
 										    "Released watch slot %hhu.",
@@ -1039,7 +1032,7 @@ static int
 	// or if an existing config file was updated, but failed to pass watch_handler @ ini_parse).
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		// It of course needs to be active first so it can potentially be stale ;)
-		if (!watch_config[watch_idx].is_active) {
+		if (!watchConfig[watch_idx].is_active) {
 			continue;
 		}
 
@@ -1057,16 +1050,16 @@ static int
 			LOG(LOG_WARNING,
 			    "Watch config @ index %hhu (%s => %s) is still active, but its config file is either gone or broken! Discarding it!",
 			    watch_idx,
-			    basename(watch_config[watch_idx].filename),
-			    basename(watch_config[watch_idx].action));
+			    basename(watchConfig[watch_idx].filename),
+			    basename(watchConfig[watch_idx].action));
 
 			fbink_printf(FBFD_AUTO,
 				     NULL,
-				     &fbink_config,
+				     &fbinkConfig,
 				     "[KFMon] Dropped the watch on %s!",
-				     basename(watch_config[watch_idx].filename));
+				     basename(watchConfig[watch_idx].filename));
 
-			watch_config[watch_idx] = (const WatchConfig){ 0 };
+			watchConfig[watch_idx] = (const WatchConfig){ 0 };
 			LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
 		}
 	}
@@ -1077,15 +1070,15 @@ static int
 		DBGLOG(
 		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
-		    watch_config[watch_idx].is_active,
-		    watch_config[watch_idx].filename,
-		    watch_config[watch_idx].action,
-		    watch_config[watch_idx].block_spawns,
-		    watch_config[watch_idx].skip_db_checks,
-		    watch_config[watch_idx].do_db_update,
-		    watch_config[watch_idx].db_title,
-		    watch_config[watch_idx].db_author,
-		    watch_config[watch_idx].db_comment);
+		    watchConfig[watch_idx].is_active,
+		    watchConfig[watch_idx].filename,
+		    watchConfig[watch_idx].action,
+		    watchConfig[watch_idx].block_spawns,
+		    watchConfig[watch_idx].skip_db_checks,
+		    watchConfig[watch_idx].do_db_update,
+		    watchConfig[watch_idx].db_title,
+		    watchConfig[watch_idx].db_author,
+		    watchConfig[watch_idx].db_comment);
 	}
 #endif
 
@@ -1121,12 +1114,12 @@ static bool
 
 #ifdef DEBUG
 	// Bypass DB checks on demand for debugging purposes...
-	if (watch_config[watch_idx].skip_db_checks)
+	if (watchConfig[watch_idx].skip_db_checks)
 		return true;
 #endif
 
 	// Did the user want to try to update the DB for this icon?
-	bool update = watch_config[watch_idx].do_db_update;
+	bool update = watchConfig[watch_idx].do_db_update;
 
 	// NOTE: Open the db in single-thread threading mode (we build w/o threadsafe),
 	//       and without a shared cache: we only do SQL from the main thread.
@@ -1146,8 +1139,8 @@ static bool
 	//       This is user configurable in kfmon.ini (db_timeout key).
 	// NOTE: On current FW versions, where the DB is now using WAL, we're exceedingly unlikely to ever hit a BUSY DB
 	//       (c.f., https://www.sqlite.org/wal.html)
-	sqlite3_busy_timeout(db, (int) daemon_config.db_timeout * (wait_for_db + 1));
-	DBGLOG("SQLite busy timeout set to %dms", (int) daemon_config.db_timeout * (wait_for_db + 1));
+	sqlite3_busy_timeout(db, (int) daemonConfig.db_timeout * (wait_for_db + 1));
+	DBGLOG("SQLite busy timeout set to %dms", (int) daemonConfig.db_timeout * (wait_for_db + 1));
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book?
 	//       Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
@@ -1156,7 +1149,7 @@ static bool
 
 	// Append the proper URI scheme to our icon path...
 	char book_path[CFG_SZ_MAX + 7];
-	snprintf(book_path, sizeof(book_path), "file://%s", watch_config[watch_idx].filename);
+	snprintf(book_path, sizeof(book_path), "file://%s", watchConfig[watch_idx].filename);
 
 	idx = sqlite3_bind_parameter_index(stmt, "@id");
 	CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
@@ -1219,7 +1212,7 @@ static bool
 				LOG(LOG_WARNING,
 				    "Watch config @ index %hhu has a filename field with broken case (%s -> %s)!",
 				    watch_idx,
-				    watch_config[watch_idx].filename,
+				    watchConfig[watch_idx].filename,
 				    book_path + 7);
 			}
 
@@ -1355,7 +1348,7 @@ static bool
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			DBGLOG("SELECT SQL query returned: %s", sqlite3_column_text(stmt, 0));
-			if (strcmp((const char*) sqlite3_column_text(stmt, 0), watch_config[watch_idx].db_title) != 0) {
+			if (strcmp((const char*) sqlite3_column_text(stmt, 0), watchConfig[watch_idx].db_title) != 0) {
 				needs_update = true;
 			}
 		}
@@ -1374,11 +1367,11 @@ static bool
 		//       we only check that they are *present*...
 		//       The example config ships with a strong warning not to forget them if wanted, but that's it.
 		idx = sqlite3_bind_parameter_index(stmt, "@title");
-		CALL_SQLITE(bind_text(stmt, idx, watch_config[watch_idx].db_title, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, watchConfig[watch_idx].db_title, -1, SQLITE_STATIC));
 		idx = sqlite3_bind_parameter_index(stmt, "@author");
-		CALL_SQLITE(bind_text(stmt, idx, watch_config[watch_idx].db_author, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, watchConfig[watch_idx].db_author, -1, SQLITE_STATIC));
 		idx = sqlite3_bind_parameter_index(stmt, "@comment");
-		CALL_SQLITE(bind_text(stmt, idx, watch_config[watch_idx].db_comment, -1, SQLITE_STATIC));
+		CALL_SQLITE(bind_text(stmt, idx, watchConfig[watch_idx].db_comment, -1, SQLITE_STATIC));
 		idx = sqlite3_bind_parameter_index(stmt, "@id");
 		CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
 
@@ -1464,11 +1457,11 @@ static void
 {
 	// NOTE: The struct is zero-initialized, so we only tweak what's non-default
 	//       (the defaults are explictly designed to always be 0 for this very purpose).
-	fbink_config.row         = -5;
-	fbink_config.is_centered = true;
-	fbink_config.is_padded   = true;
+	fbinkConfig.row         = -5;
+	fbinkConfig.is_centered = true;
+	fbinkConfig.is_padded   = true;
 	// NOTE: For now, we *want* fbink_init's status report logged, so we leave this disabled.
-	// fbink_config.is_quiet = false;
+	// fbinkConfig.is_quiet = false;
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
@@ -1542,7 +1535,7 @@ static void*
 				    sz_error);
 				fbink_printf(FBFD_AUTO,
 					     NULL,
-					     &fbink_config,
+					     &fbinkConfig,
 					     "[KFMon] PID %ld exited unexpectedly: %d!",
 					     (long) cpid,
 					     exitcode);
@@ -1562,11 +1555,11 @@ static void*
 			    sigcode);
 			fbink_printf(FBFD_AUTO,
 				     NULL,
-				     &fbink_config,
+				     &fbinkConfig,
 				     "[KFMon] PID %ld was killed by signal %d!",
 				     (long) cpid,
 				     sigcode);
-			if (daemon_config.use_syslog) {
+			if (daemonConfig.use_syslog) {
 				// NOTE: No strsignal means no human-readable interpretation of the signal w/ syslog
 				//       (the %m token only works for errno)...
 				syslog(LOG_NOTICE, "%s", buf);
@@ -1600,7 +1593,7 @@ static pid_t
 	if (pid < 0) {
 		// Fork failed?
 		perror("[KFMon] [ERR!] Aborting: fork");
-		fbink_print(FBFD_AUTO, "[KFMon] fork failed ?!", &fbink_config);
+		fbink_print(FBFD_AUTO, "[KFMon] fork failed ?!", &fbinkConfig);
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
@@ -1609,12 +1602,12 @@ static pid_t
 		//       See pthread_atfork(3) for details.
 		// Do the whole stdin/stdout/stderr dance again,
 		// to ensure that child process doesn't inherit our tweaked fds...
-		dup2(orig_stdin, fileno(stdin));
-		dup2(orig_stdout, fileno(stdout));
-		dup2(orig_stderr, fileno(stderr));
-		close(orig_stdin);
-		close(orig_stdout);
-		close(orig_stderr);
+		dup2(origStdin, fileno(stdin));
+		dup2(origStdout, fileno(stdout));
+		dup2(origStderr, fileno(stderr));
+		close(origStdin);
+		close(origStdout);
+		close(origStderr);
 		// Restore signals
 		signal(SIGHUP, SIG_DFL);
 		// NOTE: We used to use execvpe when being launched from udev,
@@ -1642,7 +1635,7 @@ static pid_t
 			LOG(LOG_ERR,
 			    "Failed to find an available entry in our process table for pid %ld, aborting!",
 			    (long) pid);
-			fbink_print(FBFD_AUTO, "[KFMon] Can't spawn any more processes!", &fbink_config);
+			fbink_print(FBFD_AUTO, "[KFMon] Can't spawn any more processes!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		} else {
 			pthread_mutex_lock(&ptlock);
@@ -1658,15 +1651,15 @@ static pid_t
 			LOG(LOG_NOTICE,
 			    "Spawned process %ld (%s -> %s @ watch idx %hhu) . . .",
 			    (long) pid,
-			    watch_config[watch_idx].filename,
-			    watch_config[watch_idx].action,
+			    watchConfig[watch_idx].filename,
+			    watchConfig[watch_idx].action,
 			    watch_idx);
-			if (daemon_config.with_notifications) {
+			if (daemonConfig.with_notifications) {
 				fbink_printf(FBFD_AUTO,
 					     NULL,
-					     &fbink_config,
+					     &fbinkConfig,
 					     "[KFMon] Launched %s :)",
-					     basename(watch_config[watch_idx].action));
+					     basename(watchConfig[watch_idx].action));
 			}
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread
 			//       for every spawn...
@@ -1675,7 +1668,7 @@ static pid_t
 			uint8_t*  arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
 				LOG(LOG_ERR, "Couldn't allocate memory for thread arg, aborting!");
-				fbink_print(FBFD_AUTO, "[KFMon] OOM ?!", &fbink_config);
+				fbink_print(FBFD_AUTO, "[KFMon] OOM ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			*arg = (uint8_t) i;
@@ -1686,12 +1679,12 @@ static pid_t
 			pthread_attr_t attr;
 			if (pthread_attr_init(&attr) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_init");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_init failed ?!", &fbink_config);
+				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_init failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setdetachstate");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setdetachstate failed ?!", &fbink_config);
+				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setdetachstate failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 
@@ -1702,12 +1695,12 @@ static pid_t
 			if (pthread_attr_setstacksize(
 				&attr, MAX((1U * 1024U * 1024U) / 2U, (sizeof(void*) * 1024U * 1024U) / 8U)) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setstacksize failed ?!", &fbink_config);
+				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setstacksize failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_create(&rthread, &attr, reaper_thread, arg) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_create");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_create failed ?!", &fbink_config);
+				fbink_print(FBFD_AUTO, "[KFMon] pthread_create failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 
@@ -1716,13 +1709,13 @@ static pid_t
 			snprintf(thname, sizeof(thname), "Reap:%ld", (long) pid);
 			if (pthread_setname_np(rthread, thname) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_setname_np");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_setname_np failed ?!", &fbink_config);
+				fbink_print(FBFD_AUTO, "[KFMon] pthread_setname_np failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 
 			if (pthread_attr_destroy(&attr) != 0) {
 				perror("[KFMon] [ERR!] Aborting: pthread_attr_destroy");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_destroy failed ?!", &fbink_config);
+				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_destroy failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -1760,12 +1753,12 @@ static bool
 		if (PT.spawn_watchids[i] != -1) {
 			// Walk the active watch list to match that currently running watch to its block_spawns flag
 			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
-				if (!watch_config[watch_idx].is_active) {
+				if (!watchConfig[watch_idx].is_active) {
 					continue;
 				}
 
 				if (PT.spawn_watchids[i] == (int8_t) watch_idx) {
-					if (watch_config[watch_idx].block_spawns) {
+					if (watchConfig[watch_idx].block_spawns) {
 						return true;
 					}
 				}
@@ -1822,7 +1815,7 @@ static bool
 		ssize_t len = read(fd, buf, sizeof(buf));    // Flawfinder: ignore
 		if (len == -1 && errno != EAGAIN) {
 			perror("[KFMon] [ERR!] Aborting: read");
-			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbink_config);
+			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
 
@@ -1850,7 +1843,7 @@ static bool
 		//       which appears to be the case in most of our use-cases...
 		pthread_mutex_lock(&ptlock);
 		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-		fbink_reinit(FBFD_AUTO, &fbink_config);
+		fbink_reinit(FBFD_AUTO, &fbinkConfig);
 		pthread_mutex_unlock(&ptlock);
 
 		// Loop over all events in the buffer
@@ -1868,11 +1861,11 @@ static bool
 			bool    found_watch_idx = false;
 			for (watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 				// Needs to be an active watch
-				if (!watch_config[watch_idx].is_active) {
+				if (!watchConfig[watch_idx].is_active) {
 					continue;
 				}
 
-				if (watch_config[watch_idx].inotify_wd == event->wd) {
+				if (watchConfig[watch_idx].inotify_wd == event->wd) {
 					found_watch_idx = true;
 					break;
 				}
@@ -1889,7 +1882,7 @@ static bool
 
 			// Print event type
 			if (event->mask & IN_OPEN) {
-				LOG(LOG_NOTICE, "Tripped IN_OPEN for %s", watch_config[watch_idx].filename);
+				LOG(LOG_NOTICE, "Tripped IN_OPEN for %s", watchConfig[watch_idx].filename);
 				// Clunky detection of potential Nickel processing...
 				bool is_watch_spawned;
 				bool is_blocker_spawned;
@@ -1903,18 +1896,18 @@ static bool
 					// Only check if we're ready to spawn something...
 					if (!is_target_processed(watch_idx, false)) {
 						// It's not processed on OPEN, flag as pending...
-						watch_config[watch_idx].pending_processing = true;
+						watchConfig[watch_idx].pending_processing = true;
 						LOG(LOG_INFO,
 						    "Flagged target icon '%s' as pending processing ...",
-						    watch_config[watch_idx].filename);
+						    watchConfig[watch_idx].filename);
 					} else {
 						// It's already processed, we're good!
-						watch_config[watch_idx].pending_processing = false;
+						watchConfig[watch_idx].pending_processing = false;
 					}
 				}
 			}
 			if (event->mask & IN_CLOSE) {
-				LOG(LOG_NOTICE, "Tripped IN_CLOSE for %s", watch_config[watch_idx].filename);
+				LOG(LOG_NOTICE, "Tripped IN_CLOSE for %s", watchConfig[watch_idx].filename);
 				// NOTE: Make sure we won't run a specific command multiple times
 				//       while an earlier instance of it is still running...
 				//       This is mostly of interest for KOReader/Plato:
@@ -1932,7 +1925,7 @@ static bool
 				if (!is_watch_spawned && !is_blocker_spawned && !is_spawn_blocked) {
 					// Check that our target file has already fully been processed by Nickel
 					// before launching anything...
-					bool should_spawn = !watch_config[watch_idx].pending_processing &&
+					bool should_spawn = !watchConfig[watch_idx].pending_processing &&
 							    is_target_processed(watch_idx, true);
 					// NOTE: In case the target file has been processed during this power cycle,
 					//       check that it happened at least 10s ago, to avoid spurious launches on start,
@@ -1940,56 +1933,56 @@ static bool
 					//       right *after* having processed a new image. Which means that without this check,
 					//       it happily blazes right through every other checks,
 					//       and ends up running the new target script straightaway... :/
-					if (should_spawn && watch_config[watch_idx].processing_ts > 0) {
+					if (should_spawn && watchConfig[watch_idx].processing_ts > 0) {
 						struct timespec now = { 0 };
 						clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-						if (now.tv_sec - watch_config[watch_idx].processing_ts <= 10) {
+						if (now.tv_sec - watchConfig[watch_idx].processing_ts <= 10) {
 							LOG(LOG_NOTICE,
 							    "Target icon '%s' has only *just* finished processing, assuming this is a spurious post-processing event!",
-							    watch_config[watch_idx].filename);
+							    watchConfig[watch_idx].filename);
 							should_spawn = false;
 						} else {
 							// Now that everything appears sane, clear the processing timestamp,
 							// to avoid going through this branch for the rest of this power cycle ;).
 							LOG(LOG_NOTICE,
 							    "Target icon '%s' should be properly processed by now :)",
-							    watch_config[watch_idx].filename);
-							watch_config[watch_idx].processing_ts = 0;
+							    watchConfig[watch_idx].filename);
+							watchConfig[watch_idx].processing_ts = 0;
 						}
 					}
 
 					if (should_spawn) {
 						LOG(LOG_INFO,
 						    "Preparing to spawn %s for watch idx %hhu . . .",
-						    watch_config[watch_idx].action,
+						    watchConfig[watch_idx].action,
 						    watch_idx);
-						if (watch_config[watch_idx].block_spawns) {
+						if (watchConfig[watch_idx].block_spawns) {
 							LOG(LOG_NOTICE,
 							    "%s is flagged as a spawn blocker, it will prevent *any* event from triggering a spawn while it is still running!",
-							    watch_config[watch_idx].action);
+							    watchConfig[watch_idx].action);
 						}
 						// We're using execvp()...
-						char* const cmd[] = { watch_config[watch_idx].action, NULL };
+						char* const cmd[] = { watchConfig[watch_idx].action, NULL };
 						spawn(cmd, watch_idx);
 					} else {
 						LOG(LOG_NOTICE,
 						    "Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.",
-						    watch_config[watch_idx].filename);
+						    watchConfig[watch_idx].filename);
 						fbink_printf(FBFD_AUTO,
 							     NULL,
-							     &fbink_config,
+							     &fbinkConfig,
 							     "[KFMon] Not spawning %s: still processing!",
-							     basename(watch_config[watch_idx].action));
+							     basename(watchConfig[watch_idx].action));
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN,
 						//       which tripped our 'pending processing' check.
 						// NOTE: The first time we encounter a not-yet processed file on close,
 						//       remember it, so we can avoid a spurious launch in case Nickel
 						//       triggers multiple open/close events in a very short amount of time,
 						//       as seems to be the case on startup since FW 4.13 for brand new files...
-						if (watch_config[watch_idx].processing_ts == 0) {
+						if (watchConfig[watch_idx].processing_ts == 0) {
 							struct timespec now;
 							if (clock_gettime(CLOCK_MONOTONIC_RAW, &now) == 0) {
-								watch_config[watch_idx].processing_ts = now.tv_sec;
+								watchConfig[watch_idx].processing_ts = now.tv_sec;
 							}
 						}
 					}
@@ -2003,35 +1996,35 @@ static bool
 						LOG(LOG_INFO,
 						    "As watch idx %hhu (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!",
 						    watch_idx,
-						    watch_config[watch_idx].filename,
+						    watchConfig[watch_idx].filename,
 						    (long) spid,
-						    watch_config[watch_idx].action);
+						    watchConfig[watch_idx].action);
 						fbink_printf(FBFD_AUTO,
 							     NULL,
-							     &fbink_config,
+							     &fbinkConfig,
 							     "[KFMon] Not spawning %s: still running!",
-							     basename(watch_config[watch_idx].action));
+							     basename(watchConfig[watch_idx].action));
 					} else if (is_blocker_spawned) {
 						LOG(LOG_INFO,
 						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
 						fbink_printf(FBFD_AUTO,
 							     NULL,
-							     &fbink_config,
+							     &fbinkConfig,
 							     "[KFMon] Not spawning %s: blocked!",
-							     basename(watch_config[watch_idx].action));
+							     basename(watchConfig[watch_idx].action));
 					} else if (is_spawn_blocked) {
 						LOG(LOG_INFO,
 						    "As the global spawn inhibiter flag is present, we won't be spawning anything!");
 						fbink_printf(FBFD_AUTO,
 							     NULL,
-							     &fbink_config,
+							     &fbinkConfig,
 							     "[KFMon] Not spawning %s: inhibited!",
-							     basename(watch_config[watch_idx].action));
+							     basename(watchConfig[watch_idx].action));
 					}
 				}
 			}
 			if (event->mask & IN_UNMOUNT) {
-				LOG(LOG_NOTICE, "Tripped IN_UNMOUNT for %s", watch_config[watch_idx].filename);
+				LOG(LOG_NOTICE, "Tripped IN_UNMOUNT for %s", watchConfig[watch_idx].filename);
 				// Remember that we encountered an unmount,
 				// so we don't try to manually remove watches that are already gone...
 				was_unmounted = true;
@@ -2045,10 +2038,10 @@ static bool
 			//       on all our other watches don't seem to error out...
 			//       In the end, we behave properly, but it's still strange enough to document ;).
 			if (event->mask & IN_IGNORED) {
-				LOG(LOG_NOTICE, "Tripped IN_IGNORED for %s", watch_config[watch_idx].filename);
+				LOG(LOG_NOTICE, "Tripped IN_IGNORED for %s", watchConfig[watch_idx].filename);
 				// Remember that the watch was automatically destroyed so we can break from the loop...
-				destroyed_wd                             = true;
-				watch_config[watch_idx].wd_was_destroyed = true;
+				destroyed_wd                            = true;
+				watchConfig[watch_idx].wd_was_destroyed = true;
 			}
 			if (event->mask & IN_Q_OVERFLOW) {
 				if (event->len) {
@@ -2060,17 +2053,17 @@ static bool
 				// (... hoping matching actually was successful), and break the loop.
 				LOG(LOG_INFO,
 				    "Trying to remove inotify watch for '%s' @ index %hhu.",
-				    watch_config[watch_idx].filename,
+				    watchConfig[watch_idx].filename,
 				    watch_idx);
-				if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) == -1) {
+				if (inotify_rm_watch(fd, watchConfig[watch_idx].inotify_wd) == -1) {
 					// That's too bad, but may not be fatal, so warn only...
 					perror("[KFMon] [WARN] inotify_rm_watch");
 				} else {
 					// Flag it as gone if rm was successful
-					watch_config[watch_idx].inotify_wd = -1;
+					watchConfig[watch_idx].inotify_wd = -1;
 				}
-				destroyed_wd                             = true;
-				watch_config[watch_idx].wd_was_destroyed = true;
+				destroyed_wd                            = true;
+				watchConfig[watch_idx].wd_was_destroyed = true;
 			}
 		}
 
@@ -2083,11 +2076,11 @@ static bool
 			// But before we do that, make sure we've removed *all* our *other* active watches first
 			// (again, hoping matching was successful), since we'll be setting them up all again later...
 			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
-				if (!watch_config[watch_idx].is_active) {
+				if (!watchConfig[watch_idx].is_active) {
 					continue;
 				}
 
-				if (!watch_config[watch_idx].wd_was_destroyed) {
+				if (!watchConfig[watch_idx].wd_was_destroyed) {
 					// Don't do anything if that was because of an unmount...
 					// Because that assures us that everything is/will soon be gone
 					// (since by design, all our target files live on the same mountpoint),
@@ -2096,31 +2089,31 @@ static bool
 					if (!was_unmounted) {
 						// Check if that watch index is active to begin with,
 						// as we might have just skipped it if its target file was missing...
-						if (watch_config[watch_idx].inotify_wd == -1) {
+						if (watchConfig[watch_idx].inotify_wd == -1) {
 							LOG(LOG_INFO,
 							    "Inotify watch for '%s' @ index %hhu is already inactive!",
-							    watch_config[watch_idx].filename,
+							    watchConfig[watch_idx].filename,
 							    watch_idx);
 						} else {
 							// Log what we're doing...
 							LOG(LOG_INFO,
 							    "Trying to remove inotify watch for '%s' @ index %hhu.",
-							    watch_config[watch_idx].filename,
+							    watchConfig[watch_idx].filename,
 							    watch_idx);
-							if (inotify_rm_watch(fd, watch_config[watch_idx].inotify_wd) ==
+							if (inotify_rm_watch(fd, watchConfig[watch_idx].inotify_wd) ==
 							    -1) {
 								// That's too bad, but may not be fatal, so warn only...
 								perror("[KFMon] [WARN] inotify_rm_watch");
 							} else {
 								// It's gone!
-								watch_config[watch_idx].inotify_wd = -1;
+								watchConfig[watch_idx].inotify_wd = -1;
 							}
 						}
 					}
 				} else {
 					// Reset the flag to avoid false-positives on the next iteration of the loop,
 					// since we re-use the array's content.
-					watch_config[watch_idx].wd_was_destroyed = false;
+					watchConfig[watch_idx].wd_was_destroyed = false;
 				}
 			}
 			break;
@@ -2169,7 +2162,7 @@ int
 
 	// Squish stderr if we want to log to the syslog...
 	// (can't do that w/ the rest in daemonize, since we don't have our config yet at that point)
-	if (daemon_config.use_syslog) {
+	if (daemonConfig.use_syslog) {
 		// Redirect stderr (which is now actually our log file) to /dev/null
 		if ((fd = open("/dev/null", O_RDWR)) != -1) {
 			dup2(fd, fileno(stderr));
@@ -2192,7 +2185,7 @@ int
 	init_fbink_config();
 	// Consider not being able to print on screen a hard pass...
 	// (Mostly, it's to avoid blowing up later in fbink_print).
-	if (fbink_init(FBFD_AUTO, &fbink_config) != EXIT_SUCCESS) {
+	if (fbink_init(FBFD_AUTO, &fbinkConfig) != EXIT_SUCCESS) {
 		LOG(LOG_ERR, "Failed to initialize FBInk, aborting!");
 		exit(EXIT_FAILURE);
 	}
@@ -2212,8 +2205,8 @@ int
 	//       and that should never happen).
 	// NOTE: To get up to date info, we'll reinit on each new batch of inotify events we catch,
 	//       thus ensuring we'll always have an accurate snapshot of the fb state before printing messages.
-	if (daemon_config.with_notifications) {
-		fbink_print(FBFD_AUTO, "[KFMon] Successfully initialized. :)", &fbink_config);
+	if (daemonConfig.with_notifications) {
+		fbink_print(FBFD_AUTO, "[KFMon] Successfully initialized. :)", &fbinkConfig);
 	}
 
 	// We pretty much want to loop forever...
@@ -2233,7 +2226,7 @@ int
 		//       On the upside, this ensures the update codepath will see some action, and isn't completely broken ;).
 		if (update_watch_configs() == -1) {
 			LOG(LOG_ERR, "Failed to check watch configs for updates, aborting!");
-			fbink_print(FBFD_AUTO, "[KFMon] Failed to update watch configs!", &fbink_config);
+			fbink_print(FBFD_AUTO, "[KFMon] Failed to update watch configs!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
 
@@ -2242,7 +2235,7 @@ int
 		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
 			perror("[KFMon] [ERR!] Aborting: inotify_init1");
-			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbink_config);
+			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
 
@@ -2265,20 +2258,20 @@ int
 		//           as crossing a fs boundary will delete the original).
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 			// We obviously only care about active watches
-			if (!watch_config[watch_idx].is_active) {
+			if (!watchConfig[watch_idx].is_active) {
 				continue;
 			}
 
-			watch_config[watch_idx].inotify_wd =
-			    inotify_add_watch(fd, watch_config[watch_idx].filename, IN_OPEN | IN_CLOSE);
-			if (watch_config[watch_idx].inotify_wd == -1) {
+			watchConfig[watch_idx].inotify_wd =
+			    inotify_add_watch(fd, watchConfig[watch_idx].filename, IN_OPEN | IN_CLOSE);
+			if (watchConfig[watch_idx].inotify_wd == -1) {
 				perror("[KFMon] [WARN] inotify_add_watch");
-				LOG(LOG_WARNING, "Cannot watch '%s', discarding it!", watch_config[watch_idx].filename);
+				LOG(LOG_WARNING, "Cannot watch '%s', discarding it!", watchConfig[watch_idx].filename);
 				fbink_printf(FBFD_AUTO,
 					     NULL,
-					     &fbink_config,
+					     &fbinkConfig,
 					     "[KFMon] Failed to watch %s!",
-					     basename(watch_config[watch_idx].filename));
+					     basename(watchConfig[watch_idx].filename));
 				// NOTE: We used to abort entirely in case even one target file couldn't be watched,
 				//       but that was a bit harsh ;).
 				//       Since the inotify watch couldn't be setup,
@@ -2293,18 +2286,18 @@ int
 					LOG(LOG_WARNING,
 					    "Cannot release watch slot %hhu (%s => %s), as it's currently running!",
 					    watch_idx,
-					    basename(watch_config[watch_idx].filename),
-					    basename(watch_config[watch_idx].action));
+					    basename(watchConfig[watch_idx].filename),
+					    basename(watchConfig[watch_idx].action));
 				} else {
-					watch_config[watch_idx] = (const WatchConfig){ 0 };
+					watchConfig[watch_idx] = (const WatchConfig){ 0 };
 					// NOTE: This should essentially come down to:
-					//memset(&watch_config[watch_idx], 0, sizeof(WatchConfig));
+					//memset(&watchConfig[watch_idx], 0, sizeof(WatchConfig));
 					LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
 				}
 			} else {
 				LOG(LOG_NOTICE,
 				    "Setup an inotify watch for '%s' @ index %hhu.",
-				    watch_config[watch_idx].filename,
+				    watchConfig[watch_idx].filename,
 				    watch_idx);
 			}
 		}
@@ -2322,7 +2315,7 @@ int
 					continue;
 				}
 				perror("[KFMon] [ERR!] Aborting: poll");
-				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbink_config);
+				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 
@@ -2344,7 +2337,7 @@ int
 	}
 
 	// Why, yes, this is unreachable! Good thing it's also optional ;).
-	if (daemon_config.use_syslog) {
+	if (daemonConfig.use_syslog) {
 		closelog();
 	}
 
