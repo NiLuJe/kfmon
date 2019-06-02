@@ -1,8 +1,5 @@
 #!/bin/sh
 
-PRODUCT="$(/bin/sh /bin/kobo_config.sh)";
-[ "${PRODUCT}" != "trilogy" ] && PREFIX="${PRODUCT}-"
-
 # Launch KFMon if it isn't already running...
 KFMON_LOG="/usr/local/kfmon/kfmon.log"
 if ! pkill -0 kfmon ; then
@@ -21,9 +18,11 @@ else
 	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] KFMon is already running (PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
 fi
 
-i=0;
-while true; do
-        i=$((((i + 1)) % 11));
-        zcat "/etc/images/${PREFIX}on-${i}.raw.gz" | /usr/local/Kobo/pickel showpic 1;
-        usleep 250000;
-done
+# Ditch the pickel progress bar for FBInk's, for shit'n giggles.
+FBINK_BIN="/usr/local/kfmon/bin/fbink"
+
+# shellcheck disable=SC2046
+eval $(${FBINK_BIN} -e)
+
+# Make it fast, centered, and larger than usual.
+${FBINK_BIN} -q -M -W A2 -A -1 -S $(( FONTSIZE_MULT * 2 ))
