@@ -38,15 +38,15 @@ for kfmon_cfg in ${KFMON_CFG_FILES} ; do
 done
 
 # And see how many lines of that we can (roughly) print at most...
-if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
+if [ "${KFMON_USE_SYSLOG}" = "true" ] ; then
 	while [ "$(logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | wc -c)" -gt "${MAXCHARS}" ] ; do
-		let "LOG_LINES = ${LOG_LINES} - 1"
+		LOG_LINES=$(( LOG_LINES - 1 ))
 		# Amount of lines changed, update that!
 		MAXCHARS="$(awk -v LOG_LINES=${LOG_LINES} -v MAXCOLS=${MAXCOLS} -v MAXROWS=${MAXROWS} 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
 	done
 else
 	while [ "$(tail -n ${LOG_LINES} "${KFMON_LOG}" | wc -c)" -gt "${MAXCHARS}" ] ; do
-		let "LOG_LINES = ${LOG_LINES} - 1"
+		LOG_LINES=$(( LOG_LINES - 1 ))
 		# Amount of lines changed, update that!
 		MAXCHARS="$(awk -v LOG_LINES=${LOG_LINES} -v MAXCOLS=${MAXCOLS} -v MAXROWS=${MAXROWS} 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
 	done
@@ -56,7 +56,7 @@ fi
 sleep 2
 
 # Check if something wonky happened with our LOG_LINES trickery...
-if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
+if [ "${KFMON_USE_SYSLOG}" = "true" ] ; then
 	if [ "${LOG_LINES}" -eq "0" ] || [ "$(logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | wc -c)" -eq "0" ] ; then
 		${FBINK_BIN} -q -Mmph "Nothing to print?!"
 		exit 1
@@ -69,14 +69,14 @@ else
 fi
 
 # Everything's okay, feed it to FBInk...
-if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
+if [ "${KFMON_USE_SYSLOG}" = "true" ] ; then
 	logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | ${FBINK_BIN} -q
 else
 	tail -n ${LOG_LINES} "${KFMON_LOG}" | ${FBINK_BIN} -q
 fi
 
 # Dump it in the userstore, to make it easily accessible to users without shell access
-if [ "${KFMON_USE_SYSLOG}" == "true" ] ; then
+if [ "${KFMON_USE_SYSLOG}" = "true" ] ; then
 	logread | grep -e KFMon -e FBInk > "${KFMON_USER_LOG}" 2>&1
 else
 	cp -f "${KFMON_LOG}" "${KFMON_USER_LOG}"
