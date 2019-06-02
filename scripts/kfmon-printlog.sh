@@ -21,9 +21,10 @@ KFMON_USER_LOG="/mnt/onboard/.adds/kfmon/log/kfmon_dump.log"
 LOG_LINES="25"
 
 # See how many lines we can actually print...
+# shellcheck disable=SC2046
 eval $(${FBINK_BIN} -e)
 # Try to account for linebreaks...
-MAXCHARS="$(awk -v LOG_LINES=${LOG_LINES} -v MAXCOLS=${MAXCOLS} -v MAXROWS=${MAXROWS} 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
+MAXCHARS="$(awk -v LOG_LINES="${LOG_LINES}" -v MAXCOLS="${MAXCOLS}" -v MAXROWS="${MAXROWS}" 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
 
 # Check if we're logging to syslog instead...
 KFMON_CFG_FILES="/mnt/onboard/.adds/kfmon/config/kfmon.ini /mnt/onboard/.adds/kfmon/config/kfmon.user.ini"
@@ -42,13 +43,13 @@ if [ "${KFMON_USE_SYSLOG}" = "true" ] ; then
 	while [ "$(logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | wc -c)" -gt "${MAXCHARS}" ] ; do
 		LOG_LINES=$(( LOG_LINES - 1 ))
 		# Amount of lines changed, update that!
-		MAXCHARS="$(awk -v LOG_LINES=${LOG_LINES} -v MAXCOLS=${MAXCOLS} -v MAXROWS=${MAXROWS} 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
+		MAXCHARS="$(awk -v LOG_LINES="${LOG_LINES}" -v MAXCOLS="${MAXCOLS}" -v MAXROWS="${MAXROWS}" 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
 	done
 else
 	while [ "$(tail -n ${LOG_LINES} "${KFMON_LOG}" | wc -c)" -gt "${MAXCHARS}" ] ; do
 		LOG_LINES=$(( LOG_LINES - 1 ))
 		# Amount of lines changed, update that!
-		MAXCHARS="$(awk -v LOG_LINES=${LOG_LINES} -v MAXCOLS=${MAXCOLS} -v MAXROWS=${MAXROWS} 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
+		MAXCHARS="$(awk -v LOG_LINES="${LOG_LINES}" -v MAXCOLS="${MAXCOLS}" -v MAXROWS="${MAXROWS}" 'BEGIN { print int(MAXCOLS * (MAXROWS - (LOG_LINES / 2))) }')"
 	done
 fi
 
