@@ -24,7 +24,8 @@ FBINK_SHIM_BIN="/usr/local/kfmon/bin/shim"
 
 # NOTE: While this works as-is on current FW, this *may* be problematic on older FW,
 #       where Nickel *might* have been relying on pickel to setup the fb...
-#       This could probably be worked-around by shipping and using fbdepth like we do on KOReader.
+#       This could probably be worked-around by shipping and using fbdepth like we do on KOReader,
+#       (except only for the rotation, in order not to break old 16bpp only FW versions).
 #       Other custom stuff that relies on the pickel setup will be left in the lurch regardless, though...
 
 # NOTE: There's a bit of trickery involved where we have to launch FBInk under the on-animator.sh process name,
