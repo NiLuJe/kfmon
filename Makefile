@@ -169,6 +169,10 @@ vendored: sqlite.built fbink.built
 kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS)
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(LIBS)
 
+shim: | outdir
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/shim$(BINEXT) utils/shim.c
+	$(STRIP) --strip-unneeded $(OUT_DIR)/shim
+
 strip: all
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon
 
@@ -191,6 +195,7 @@ kobo: armcheck release
 	ln -sf $(CURDIR)/resources/plato.png Kobo/mnt/onboard/icons/plato.png
 	ln -sf $(CURDIR)/resources/kfmon.png Kobo/mnt/onboard/kfmon.png
 	ln -sf $(CURDIR)/Release/kfmon Kobo/usr/local/kfmon/bin/kfmon
+	ln -sf $(CURDIR)/Release/shim Kobo/usr/local/kfmon/bin/shim
 	ln -sf $(CURDIR)/FBInk/Release/fbink Kobo/usr/local/kfmon/bin/fbink
 	ln -sf $(CURDIR)/README.md Kobo/usr/local/kfmon/README.md
 	ln -sf $(CURDIR)/LICENSE Kobo/usr/local/kfmon/LICENSE
@@ -220,11 +225,13 @@ clean:
 	rm -rf Release/str5/*.o
 	rm -rf Release/*.o
 	rm -rf Release/kfmon
+	rm -rf Release/shim
 	rm -rf Release/KoboRoot.tgz
 	rm -rf Debug/inih/*.o
 	rm -rf Debug/str5/*.o
 	rm -rf Debug/*.o
 	rm -rf Debug/kfmon
+	rm -rf Debug/shim
 	rm -rf Kobo
 
 sqlite.built:
@@ -269,7 +276,7 @@ fbink.built:
 	touch fbink.built
 endif
 
-release: sqlite.built fbink.built
+release: sqlite.built fbink.built shim
 	$(MAKE) strip SQLITE=true
 
 debug: sqlite.built
@@ -292,4 +299,4 @@ distclean: clean sqliteclean fbinkclean
 	rm -rf sqlite.built
 	rm -rf fbink.built
 
-.PHONY: default outdir all vendored kfmon strip armcheck kobo debug niluje nilujed clean release fbinkclean sqliteclean distclean
+.PHONY: default outdir all vendored kfmon shim strip armcheck kobo debug niluje nilujed clean release fbinkclean sqliteclean distclean
