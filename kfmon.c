@@ -894,7 +894,9 @@ static int
 					} else if (strcasecmp(p->fts_name, "kfmon.user.ini") == 0) {
 						continue;
 					} else {
-						LOG(LOG_INFO, "Trying to load watch config file '%s' . . .", p->fts_path);
+						LOG(LOG_INFO,
+						    "Checking watch config file '%s' for changes . . .",
+						    p->fts_path);
 
 						// Store the results in a temporary struct,
 						// so we can compare it to our current watches...
