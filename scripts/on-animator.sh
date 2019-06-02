@@ -19,6 +19,7 @@ else
 fi
 
 # Ditch the pickel progress bar for FBInk's, for shit'n giggles.
+# (And also because eating > 50% CPU to draw a progress bar is ridiculous).
 FBINK_SHIM_BIN="/usr/local/kfmon/bin/shim"
 
 # NOTE: There's a bit of trickery involved where we have to launch FBInk under the on-animator.sh process name,
