@@ -18,20 +18,38 @@ else
 	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] KFMon is already running (PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
 fi
 
-# Ditch the pickel progress bar for FBInk's, for shit'n giggles.
+# Optionally, ditch the pickel progress bar for FBInk's, for shit'n giggles.
 # (And also because eating > 50% CPU to draw a progress bar is ridiculous).
-FBINK_SHIM_BIN="/usr/local/kfmon/bin/shim"
 
 # NOTE: While this works as-is on current FW, this *may* be problematic on older FW,
 #       where Nickel *might* have been relying on pickel to setup the fb...
 #       This could probably be worked-around by shipping and using fbdepth like we do on KOReader,
 #       (except only for the rotation, in order not to break old 16bpp only FW versions).
-#       Other custom stuff that relies on the pickel setup will be left in the lurch regardless, though...
+#       But other custom stuff that relies on the pickel setup would be left in the lurch regardless, though...
+#       As that's a decision we'd be hard pressed to make on our own, leave this in the user's hands,
+#       defaulting to a safe behavior (i.e., the vanilla progress bar).
 
-# NOTE: There's a bit of trickery involved where we have to launch FBInk under the on-animator.sh process name,
-#       just so it gets killed when on-animator gets the axe,
-#       because that's done in a way we can't do anything about from here (SIGKILL, which isn't propagated, and isn't trappable).
-#       Ideally, we'd use exec -a, but busybox doesn't support that flag, so, instead,
-#       we exec a shim binary that just execs FBInk under a different process name,
-#       and with the relevant options for what we want to do...
-exec ${FBINK_SHIM_BIN}
+# NOTE: Given when we're launched by rcS, we know onboard is mounted at that point
+KFMON_BAR_FLAG="/mnt/onboard/.adds/kfmon/config/BAR"
+
+if [ -f "${KFMON_BAR_FLAG}" ] ; then
+	FBINK_SHIM_BIN="/usr/local/kfmon/bin/shim"
+
+	# NOTE: There's a bit of trickery involved where we have to launch FBInk under the on-animator.sh process name,
+	#       just so it gets killed when on-animator gets the axe,
+	#       because that's done in a way we can't do anything about from here (SIGKILL, which isn't propagated, and isn't trappable).
+	#       Ideally, we'd use exec -a, but busybox doesn't support that flag, so, instead,
+	#       we exec a shim binary that just execs FBInk under a different process name,
+	#       and with the relevant options for what we want to do...
+	exec ${FBINK_SHIM_BIN}
+else
+	PRODUCT="$(/bin/sh /bin/kobo_config.sh)"
+	[ "${PRODUCT}" != "trilogy" ] && PREFIX="${PRODUCT}-"
+
+	i=0
+	while true ; do
+		i=$((((i + 1)) % 11))
+		zcat "/etc/images/${PREFIX}on-${i}.raw.gz" | /usr/local/Kobo/pickel showpic 1
+		usleep 250000
+	done
+fi
