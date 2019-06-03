@@ -20,6 +20,12 @@ fi
 
 # Optionally, ditch the pickel progress bar for FBInk's, for shit'n giggles.
 # (And also because eating > 50% CPU to draw a progress bar is ridiculous).
+# NOTE: That CPU usage does have an impact on boot times.
+#       As an example, on a H2O running FW 4.15, after a sync && reboot && exit over SSH:
+#       It (roughly) takes: 10s to actually power cycle (the double screen flash), 25s to start showing the progress bar,
+#                           37s for Nickel to show up.
+#       Switching to FBInk shaves those timings down to 10s, 24s and 34s, which might seem small,
+#       but relative to the amount of time on-animator actually runs, amounts to at least a 20% speedup...
 
 # NOTE: While this works as-is on current FW, this *may* be problematic on older FW,
 #       where Nickel *might* have been relying on pickel to setup the fb...
