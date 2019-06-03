@@ -156,4 +156,8 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 
 -   If, for some reason, you need to prevent KFMon from spawning *anything* for a while, just drop a blank *BLOCK* file in the *config* folder, i.e., *touch /mnt/onboard/.adds/kfmon/config/BLOCK*. Simply remove it when you want KFMon to do its thing again ;).
 
+-   You can optionally replace the boot progress bar with a faster custom alternative, in order to shave a few seconds off of Nickel's boot time. This is not done by default, because it *might* break older FW versions (say, < 4.8), and it *will* break some custom apps (f.g., Sergey's launcher, KSM) *if* you bypass Nickel entirely.
+    If you know you're safe (i.e., you're running a current FW release, and you always boot straight into Nickel), you can enable this by simply dropping a blank *BAR* file in the *config* folder, i.e., *touch /mnt/onboard/.adds/kfmon/config/BAR*.
+    Current versions of KOReader and Plato will have no issue with this new behavior.
+
 <!-- kate: indent-mode cstyle; indent-width 4; replace-tabs on; remove-trailing-spaces none; -->
