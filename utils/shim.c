@@ -24,13 +24,26 @@
 #	define _GNU_SOURCE
 #endif
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/prctl.h>
 #include <unistd.h>
 
 int
     main(void)
 {
+	// NOTE: Another viable approach to the on-animator death situation would be to make sure we get killed if our parent dies,
+	//       which is something we can achieve via a prctl flag:
+	//       prctl(PR_SET_PDEATHSIG, SIGTERM);
+	//       We'd just need to stick it here, before a standard execv() call, or in FBInk itself.
+	//       The least racy approach would probably be here,
+	//       because we probably don't want to make that behavior mandatory in FBInk, so we'd have to do it after getopt()...
+	//       f.g.,
+	//       char* const argv[] = { "/usr/local/kfmon/bin/fbink", "-Z", NULL };
+	//       execv(*argv, argv);
+	//       And finally, go back to a non-exec call in on-animator.sh ;).
+
 	// We'll launch our own FBInk binary under an assumed name, and with the options necessary to do on-animator's job ;).
 	// c.f., https://stackoverflow.com/a/31747301
 	// i.e., we just fudge argv[0] to be different from the actual binary filename...
