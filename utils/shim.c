@@ -33,7 +33,15 @@ int
 {
 	// We'll launch our own FBInk binary under an assumed name, and with the options necessary to do on-animator's job ;).
 	// c.f., https://stackoverflow.com/a/31747301
-	execl("/usr/local/kfmon/bin/fbink", "on-animator.sh", "-Z", (char*) NULL);
+	// i.e., we just fudge argv[0] to be different from the actual binary filename...
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
+	char* const argv[] = { "on-animator.sh", "-Z", NULL };
+#pragma GCC diagnostic pop
+	execv("/usr/local/kfmon/bin/fbink", argv);
 
 	return EXIT_SUCCESS;
 }
