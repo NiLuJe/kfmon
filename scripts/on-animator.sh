@@ -25,7 +25,8 @@ fi
 #       It (roughly) takes: 10s to actually power cycle (the double screen flash), 25s to start showing the progress bar,
 #                           37s for Nickel to show up.
 #       Switching to FBInk shaves those timings down to 10s, 24s and 34s, which might seem small,
-#       but relative to the amount of time on-animator actually runs, amounts to at least a 20% speedup...
+#       but relative to the amount of time on-animator actually runs, amounts to at least a 10% speedup...
+#       And on a Forma (still on 4.15), it shaves those same timings from 7s, 14s, 28s down to 7s, 11s, 25s ;).
 
 # NOTE: While this works as-is on current FW, this *may* be problematic on older FW,
 #       where Nickel *might* have been relying on pickel to setup the fb...
