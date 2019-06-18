@@ -71,9 +71,9 @@ fi
 
 # Everything's okay, feed it to FBInk...
 if [ "${KFMON_USE_SYSLOG}" = "true" ] ; then
-	logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | ${FBINK_BIN} -q --
+	logread | grep -e KFMon -e FBInk | tail -n ${LOG_LINES} | ${FBINK_BIN} -q
 else
-	tail -n ${LOG_LINES} "${KFMON_LOG}" | ${FBINK_BIN} -q --
+	tail -n ${LOG_LINES} "${KFMON_LOG}" | ${FBINK_BIN} -q
 fi
 
 # Dump it in the userstore, to make it easily accessible to users without shell access
