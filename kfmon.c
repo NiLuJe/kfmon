@@ -2124,6 +2124,17 @@ static bool
 	return destroyed_wd;
 }
 
+// Handle SQLite logging on error
+static void
+    sql_errorlogcb(void* pArg, int iErrCode, const char* zMsg)
+{
+	if (daemonConfig.use_syslog) {
+		syslog(LOG_WARNING, "[*SQL*] %d: %s\n", iErrCode, zMsg);
+	} else {
+		fprintf(stderr, "[*SQL*] [%s] %d: %s\n", get_log_prefix(LOG_WARNING), iErrCode, zMsg);
+	}
+}
+
 int
     main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
@@ -2191,6 +2202,10 @@ int
 	}
 
 	// Initialize SQLite
+	if (sqlite3_config(SQLITE_CONFIG_LOG, sql_errorlogcb, NULL) != SQLITE_OK) {
+		LOG(LOG_ERR, "Failed to setup SQLite, aborting!");
+		exit(EXIT_FAILURE);
+	}
 	if (sqlite3_initialize() != SQLITE_OK) {
 		LOG(LOG_ERR, "Failed to initialize SQLite, aborting!");
 		exit(EXIT_FAILURE);
