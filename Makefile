@@ -251,7 +251,8 @@ sqlite.built:
 	-DSQLITE_OMIT_DEPRECATED \
 	-DSQLITE_OMIT_PROGRESS_CALLBACK \
 	-DSQLITE_OMIT_SHARED_CACHE \
-	-DSQLITE_USE_ALLOCA" \
+	-DSQLITE_USE_ALLOCA \
+	-DSQLITE_OMIT_AUTOINIT" \
 	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
 	--enable-static \
 	--disable-shared \
