@@ -2190,6 +2190,12 @@ int
 		exit(EXIT_FAILURE);
 	}
 
+	// Initialize SQLite
+	if (sqlite3_initialize() != SQLITE_OK) {
+		LOG(LOG_ERR, "Failed to initialize SQLite, aborting!");
+		exit(EXIT_FAILURE);
+	}
+
 	// NOTE: Because of course we can't have nice things, at this point,
 	//       Nickel hasn't finished setting up the fb to its liking. To be fair, it hasn't even started yet ;).
 	//       On most devices, the fb is probably in a weird rotation and/or bitdepth at this point.
@@ -2336,6 +2342,8 @@ int
 		close(fd);
 	}
 
+	// Release SQLite resources. Also unreachable ;p.
+	sqlite3_shutdown();
 	// Why, yes, this is unreachable! Good thing it's also optional ;).
 	if (daemonConfig.use_syslog) {
 		closelog();
