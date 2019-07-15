@@ -253,6 +253,6 @@ static pid_t get_spawn_pid_for_watch(uint8_t);
 
 static bool handle_events(int);
 
-static void sql_errorlogcb(void*, int, const char*);
+static void sql_errorlogcb(void* __attribute__((unused)), int, const char*);
 
 #endif

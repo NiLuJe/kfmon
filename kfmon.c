@@ -2126,7 +2126,7 @@ static bool
 
 // Handle SQLite logging on error
 static void
-    sql_errorlogcb(void* pArg, int iErrCode, const char* zMsg)
+    sql_errorlogcb(void* pArg __attribute__((unused)), int iErrCode, const char* zMsg)
 {
 	if (daemonConfig.use_syslog) {
 		syslog(LOG_WARNING, "[*SQL*] %d: %s\n", iErrCode, zMsg);
