@@ -2131,7 +2131,14 @@ static void
 	if (daemonConfig.use_syslog) {
 		syslog(LOG_WARNING, "[*SQL*] %d: %s\n", iErrCode, zMsg);
 	} else {
-		fprintf(stderr, "[*SQL*] [%s] %d: %s\n", get_log_prefix(LOG_WARNING), iErrCode, zMsg);
+		// Storage needed for get_current_time_r
+		struct tm local_tm;
+		char      sz_time[22];
+		fprintf(stderr,
+			"[*SQL*] [%s] [WARN] %d: %s\n",
+			get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
+			iErrCode,
+			zMsg);
 	}
 }
 
