@@ -109,10 +109,10 @@
 	})
 
 // Slight variation without date/time handling to ensure thread safety
-#define MTLOG(fmt, ...)                                                                                                  \
+#define MTLOG(prio, fmt, ...)                                                                                            \
 	({                                                                                                               \
 		if (daemonConfig.use_syslog) {                                                                           \
-			syslog(LOG_NOTICE, fmt "\n", ##__VA_ARGS__);                                                     \
+			syslog(prio, fmt "\n", ##__VA_ARGS__);                                                           \
 		} else {                                                                                                 \
 			fprintf(stderr, "[KFMon] " fmt "\n", ##__VA_ARGS__);                                             \
 		}                                                                                                        \

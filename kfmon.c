@@ -1488,8 +1488,10 @@ static void*
 	struct timespec then = { 0 };
 	clock_gettime(CLOCK_MONOTONIC_RAW, &then);
 
-	MTLOG("[%s] [INFO] [TID: %ld] Waiting to reap process %ld (from watch idx %hhu) . . .",
+	MTLOG(LOG_INFO,
+	      "[%s] [%s] [TID: %ld] Waiting to reap process %ld (from watch idx %hhu) . . .",
 	      get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
+	      get_log_prefix(LOG_INFO),
 	      (long) tid,
 	      (long) cpid,
 	      watch_idx);
@@ -1507,13 +1509,14 @@ static void*
 	} else {
 		if (WIFEXITED(wstatus)) {
 			int exitcode = WEXITSTATUS(wstatus);
-			MTLOG(
-			    "[%s] [NOTE] [TID: %ld] Reaped process %ld (from watch idx %hhu): It exited with status %d.",
-			    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
-			    (long) tid,
-			    (long) cpid,
-			    watch_idx,
-			    exitcode);
+			MTLOG(LOG_NOTICE,
+			      "[%s] [%s] [TID: %ld] Reaped process %ld (from watch idx %hhu): It exited with status %d.",
+			      get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
+			      get_log_prefix(LOG_NOTICE),
+			      (long) tid,
+			      (long) cpid,
+			      watch_idx,
+			      exitcode);
 			// NOTE: Ugly hack to try to salvage execvp's potential error...
 			//       If the process exited with a non-zero status code,
 			//       within (roughly) a second of being launched,
@@ -1529,8 +1532,10 @@ static void*
 				//       But since we're not checking errno but a custom variable, do it the hard way :)
 				const char* sz_error = strerror_r(exitcode, buf, sizeof(buf));
 				MTLOG(
-				    "[%s] [CRIT] [TID: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.",
+				    LOG_CRIT,
+				    "[%s] [%s] [TID: %ld] If nothing was visibly launched, and/or especially if status > 1, this *may* actually be an execvp() error: %s.",
 				    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
+				    get_log_prefix(LOG_CRIT),
 				    (long) tid,
 				    sz_error);
 				fbink_printf(FBFD_AUTO,
