@@ -241,7 +241,6 @@ sqlite.built:
 	cd ../SQLiteBuild && \
 	env CPPFLAGS="$(CPPFLAGS) \
 	-DNDEBUG \
-	-D_REENTRANT=1 \
 	-D_GNU_SOURCE \
 	-DSQLITE_DQS=0 \
 	-DSQLITE_DEFAULT_MEMSTATUS=0 \
