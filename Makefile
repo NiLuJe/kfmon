@@ -254,9 +254,9 @@ sqlite.built:
 	-DSQLITE_OMIT_SHARED_CACHE \
 	-DSQLITE_USE_ALLOCA \
 	-DSQLITE_OMIT_AUTOINIT \
-	-DSQLITE_TEMP_STORE=2 \
 	-DSQLITE_OMIT_UTF16" \
 	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
+	--disable-amalgamation \
 	--enable-static \
 	--disable-shared \
 	--disable-threadsafe \
@@ -264,6 +264,7 @@ sqlite.built:
 	--disable-editline \
 	--disable-readline \
 	--disable-tcl \
+	--enable-tempstore=yes \
 	--enable-releasemode && \
 	$(MAKE) SHELL_OPT=""
 	touch sqlite.built
