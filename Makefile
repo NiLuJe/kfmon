@@ -258,6 +258,7 @@ sqlite.built:
 	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
 	--disable-amalgamation \
 	--enable-static \
+	--disable-static-shell \
 	--disable-shared \
 	--disable-threadsafe \
 	--disable-load-extension \
