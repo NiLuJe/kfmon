@@ -2134,12 +2134,9 @@ static void
 	if (daemonConfig.use_syslog) {
 		syslog(LOG_WARNING, "[*SQL*] %d (%s): %s\n", iErrCode, sqlite3_errstr(iErrCode), zMsg);
 	} else {
-		// Storage needed for get_current_time_r
-		struct tm local_tm;
-		char      sz_time[22];
 		fprintf(stderr,
 			"[*SQL*] [%s] [WARN] %d (%s): %s\n",
-			get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
+			get_current_time(),
 			iErrCode,
 			sqlite3_errstr(iErrCode),
 			zMsg);
