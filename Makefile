@@ -266,7 +266,7 @@ sqlite.built:
 	--disable-tcl \
 	--enable-tempstore=yes \
 	--enable-releasemode && \
-	$(MAKE) SHELL_OPT=""
+	$(MAKE) sqlite3.h libsqlite3.la
 	touch sqlite.built
 
 ifdef NILUJE
