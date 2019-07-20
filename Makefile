@@ -265,7 +265,7 @@ sqlite.built:
 	--disable-readline \
 	--disable-tcl \
 	--enable-tempstore=yes \
-	--enable-releasemode && \
+	--disable-releasemode && \
 	$(MAKE) sqlite3.h libsqlite3.la
 	touch sqlite.built
 
