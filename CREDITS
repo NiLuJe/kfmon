@@ -9,7 +9,7 @@ This project makes use of a number of third-party libraries, which we'll acknowl
 		(https://github.com/benhoyt/inih)
 
 	* FBInk (FrameBuffer eInker), Copyright (C) 2018-2019 NiLuJe <ninuje@gmail.com>,
-		Released under the GNU Affero General Public License version 3+ (https://www.gnu.org/licenses/agpl.html)
+		Released under the GNU General Public License version 3+ (https://www.gnu.org/licenses/gpl.html)
 		(https://github.com/NiLuJe/FBInk)
 
 	* str5 (Str5 functions), Copyright (C) 2016/05, Eric Sanchis <eric.sanchis@iut-rodez.fr>,
