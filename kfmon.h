@@ -55,7 +55,7 @@
 
 // Fallback version tag...
 #ifndef KFMON_VERSION
-#	define KFMON_VERSION "v1.3.0"
+#	define KFMON_VERSION "v1.3.1"
 #endif
 // Fallback timestamp...
 #ifndef KFMON_TIMESTAMP
