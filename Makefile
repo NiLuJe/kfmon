@@ -149,7 +149,7 @@ INIH_OBJS:=$(addprefix $(OUT_DIR)/, $(INIH_SRCS:.c=.o))
 STR5_OBJS:=$(addprefix $(OUT_DIR)/, $(STR5_SRCS:.c=.o))
 
 # And now we can silence a few inih-specific warnings
-$(INIH_OBJS): QUIET_CFLAGS := -Wno-cast-qual -DINI_CALL_HANDLER_ON_NEW_SECTION=0
+$(INIH_OBJS): QUIET_CFLAGS := -Wno-cast-qual
 
 $(OUT_DIR)/%.o: %.c
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(QUIET_CFLAGS) -o $@ -c $<
