@@ -5,12 +5,12 @@
 ##
 
 # Force a cd to the script's directory, because on macOS, a command script has a fixed $PWD set to $HOME...
-cd -P -- "$(dirname "${BASH_SOURCE[0]}")"
+cd -P -- "$(dirname "${BASH_SOURCE[0]}")" || exit 255
 
 # We're ultimately going to need unzip...
 if ! unzip -v &>/dev/null ; then
 	echo "This script relies on unzip!"
-	exit -1
+	exit 255
 fi
 
 # Are we on Linux or macOS?
@@ -24,7 +24,7 @@ case "${PLATFORM}" in
 		# Use findmnt, it's in util-linux, which should be present in every sane distro.
 		if ! findmnt -V &>/dev/null ; then
 			echo "This script relies on findmnt, from util-linux!"
-			exit -1
+			exit 255
 		fi
 
 		# Match on the FS Label, which is common to all models.
@@ -36,20 +36,20 @@ case "${PLATFORM}" in
 	;;
 	* )
 		echo "Unsupported OS!"
-		exit -1
+		exit 255
 	;;
 esac
 
 # Sanity check...
 if [[ -z "${KOBO_MOUNTPOINT}" ]] ; then
 	echo "Couldn't find a Kobo eReader volume! Is one actually mounted?"
-	exit -1
+	exit 255
 fi
 
 KOBO_DIR="${KOBO_MOUNTPOINT}/.kobo"
 if [[ ! -d "${KOBO_DIR}" ]] ; then
 	echo "Can't find a .kobo directory, ${KOBO_MOUNTPOINT} doesn't appear to point to a Kobo eReader... Is one actually mounted?"
-	exit -1
+	exit 255
 fi
 
 # Ask the user what they want to install...
@@ -61,7 +61,7 @@ done
 # Sanity check...
 if [[ ${#AVAILABLE_PKGS[@]} -eq 0 ]] ; then
 	echo "No supported packages found in the current directory (${PWD})!"
-	exit -1
+	exit 255
 fi
 
 echo "* Here are the available packages:"
@@ -74,12 +74,12 @@ read -r -p "* Enter the number corresponding to the one you want to install: " j
 # Check if that was a sane reply...
 if ! [ "${j}" -eq "${j}" ] 2>/dev/null ; then
 	echo "That wasn't a number!"
-	exit -1
+	exit 255
 fi
 
 if [[ ${j} -lt 0 ]] || [[ ${j} -ge ${#AVAILABLE_PKGS[@]} ]] ; then
 	echo "That number was out of range!"
-	exit -1
+	exit 255
 fi
 
 # We've got a Kobo, we've got a package, let's go!
