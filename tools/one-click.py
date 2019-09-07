@@ -85,10 +85,10 @@ koreader_version = latest_koreader.tag_name
 koreader_url = None
 # Loop over assets until we find the Kobo package ;)
 for asset in latest_koreader.get_assets():
-	if asset.name == "koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_version):
+	if asset.name == "koreader-kobo-{}.zip".format(koreader_version):
 		koreader_url = asset.browser_download_url
 		break
-	elif asset.name == "koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(latest_ko_tag):
+	elif asset.name == "koreader-kobo-{}.zip".format(latest_ko_tag):
 		koreader_url = asset.browser_download_url
 		koreader_version = latest_ko_tag
 		break
@@ -124,7 +124,7 @@ for nightly in natsorted(ko_nightlies, key=lambda x: x.replace('.', '~'), revers
 	# And look for a Kobo build in there...
 	soup = BeautifulSoup(r.text, "lxml")
 	for link in soup.find_all("a"):
-		if "koreader-kobo-arm-kobo-linux-gnueabihf" in link.get("href"):
+		if "koreader-kobo" in link.get("href"):
 			koreader_nightly_version = nightly
 			break
 	# If we found a Kobo nightly, we're done!
@@ -134,7 +134,7 @@ if koreader_nightly_version is None:
 	raise SystemExit("Couldn't find the latest KOReader nightly!")
 soup = None
 # We can build the proper URL!
-koreader_nightly_url = "{}{}/koreader-kobo-arm-kobo-linux-gnueabihf-{}.zip".format(koreader_nightly_url, koreader_nightly_version, koreader_nightly_version)
+koreader_nightly_url = "{}{}/koreader-kobo-{}.zip".format(koreader_nightly_url, koreader_nightly_version, koreader_nightly_version)
 # We'll want to tame down the version...
 koreader_nightly_version = koreader_nightly_version.split("-g")[0]
 
