@@ -53,6 +53,10 @@
 #include <time.h>
 #include <unistd.h>
 
+// NOTE: This is pulled from SQLite's *internal* API, here be dragons!
+//       c.f., sqlite/src/main.c
+extern const char* sqlite3ErrName(int);
+
 // Fallback version tag...
 #ifndef KFMON_VERSION
 #	define KFMON_VERSION "v1.3.1"

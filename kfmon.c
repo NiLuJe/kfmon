@@ -2133,13 +2133,13 @@ static void
     sql_errorlogcb(void* pArg __attribute__((unused)), int iErrCode, const char* zMsg)
 {
 	if (daemonConfig.use_syslog) {
-		syslog(LOG_WARNING, "[*SQL*] %d (%s): %s\n", iErrCode, sqlite3_errstr(iErrCode), zMsg);
+		syslog(LOG_WARNING, "[*SQL*] %d (%s): %s\n", iErrCode, sqlite3ErrName(iErrCode), zMsg);
 	} else {
 		fprintf(stderr,
 			"[*SQL*] [%s] [WARN] %d (%s): %s\n",
 			get_current_time(),
 			iErrCode,
-			sqlite3_errstr(iErrCode),
+			sqlite3ErrName(iErrCode),
 			zMsg);
 	}
 }

@@ -255,7 +255,8 @@ sqlite.built:
 	-DSQLITE_OMIT_SHARED_CACHE \
 	-DSQLITE_USE_ALLOCA \
 	-DSQLITE_OMIT_AUTOINIT \
-	-DSQLITE_OMIT_UTF16" \
+	-DSQLITE_OMIT_UTF16 \
+	-DSQLITE_NEED_ERR_NAME" \
 	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
 	--disable-amalgamation \
 	--enable-static \
@@ -298,11 +299,11 @@ fbinkclean:
 
 sqliteclean:
 	cd sqlite && \
-	git reset --hard
+	git reset --hard && \
+	git clean -fxdq
 
 distclean: clean sqliteclean fbinkclean
 	rm -rf SQLiteBuild
-	rm -rf sqlite/autom4te.cache sqlite/config.h.in~
 	rm -rf sqlite.built
 	rm -rf fbink.built
 
