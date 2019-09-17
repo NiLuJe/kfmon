@@ -239,6 +239,7 @@ clean:
 sqlite.built:
 	mkdir -p SQLiteBuild
 	cd sqlite && \
+	sed -e '/^# undef  SQLITE_NEED_ERR_NAME$/ { s:^:/* :; s:$: */: }' -i src/sqliteInt.h && \
 	autoreconf -fi && \
 	cd ../SQLiteBuild && \
 	env CPPFLAGS="$(CPPFLAGS) \
