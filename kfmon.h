@@ -103,7 +103,7 @@ extern const char* sqlite3ErrName(int);
 #define LOG(prio, fmt, ...)                                                                                              \
 	({                                                                                                               \
 		if (daemonConfig.use_syslog) {                                                                           \
-			syslog(prio, fmt "\n", ##__VA_ARGS__);                                                           \
+			syslog(prio, fmt, ##__VA_ARGS__);                                                                \
 		} else {                                                                                                 \
 			fprintf(stderr,                                                                                  \
 				"[KFMon] [%s] [%s] " fmt "\n",                                                           \
@@ -117,7 +117,7 @@ extern const char* sqlite3ErrName(int);
 #define MTLOG(prio, fmt, ...)                                                                                            \
 	({                                                                                                               \
 		if (daemonConfig.use_syslog) {                                                                           \
-			syslog(prio, fmt "\n", ##__VA_ARGS__);                                                           \
+			syslog(prio, fmt, ##__VA_ARGS__);                                                                \
 		} else {                                                                                                 \
 			fprintf(stderr, "[KFMon] " fmt "\n", ##__VA_ARGS__);                                             \
 		}                                                                                                        \
