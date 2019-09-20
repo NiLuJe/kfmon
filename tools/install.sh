@@ -92,6 +92,7 @@ fi
 #       and save everything in the right place without leaving duplicates around.
 echo "* Preventing Nickel from scanning hidden directories . . ."
 cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-\EoM
+
 	[FeatureSettings]
 	ExcludeSyncFolders=\\.(?!kobo|adobe).*?
 EoM
