@@ -79,8 +79,10 @@ if ($j -lt 0 -OR $j -ge $AVAILABLE_PKGS.Length) {
 # Prevent Nickel from scanning hidden *nix directories (FW 4.17+)
 Write-Host("* Preventing Nickel from scanning hidden directories . . .")
 $KOBO_CONF=$KOBO_DIR + "\Kobo" + "\Kobo eReader.conf"
-"[FeatureSettings]" >> $KOBO_CONF
-"ExcludeSyncFolders=\\.(?!kobo|adobe).*?" >> $KOBO_CONF
+@'
+[FeatureSettings]
+ExcludeSyncFolders=\\.(?!kobo|adobe).*?
+'@ >> $KOBO_CONF
 
 # We've got a Kobo, we've got a package, let's go!
 if ($AVAILABLE_PKGS[$j] -eq "KFMon-Uninstaller.zip") {
