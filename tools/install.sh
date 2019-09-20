@@ -82,6 +82,20 @@ if [[ ${j} -lt 0 ]] || [[ ${j} -ge ${#AVAILABLE_PKGS[@]} ]] ; then
 	exit 255
 fi
 
+# NOTE: Since FW 4.17, Nickel will attempt to index content found in hidden directories.
+#       Since all of this stuff lives in *nix hidden directories, this won't do.
+#       Thankfully, FW 4.17.13694 introduced a hidden setting to control that behavior.
+#       We'll enforce the "legacy" behavior of basically ignoring non-default hidden directories.
+#       c.f., https://www.mobileread.com/forums/showpost.php?p=3892463&postcount=10
+# NOTE: We can simply push a (potentially) duplicate section + entry at the end of the file,
+#       QSettings will do the right thing, that is, pick up this new key, use it,
+#       and save everything in the right place without leaving duplicates around.
+echo "* Preventing Nickel from scanning hidden directories . . ."
+cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-EoM
+	[FeatureSettings]
+	ExcludeSyncFolders=\\.(?!kobo|adobe).*?
+EoM
+
 # We've got a Kobo, we've got a package, let's go!
 if [[ "${AVAILABLE_PKGS[${j}]}" == "KFMon-Uninstaller.zip" ]] ; then
 	echo "* Uninstalling KFMon . . ."
@@ -98,17 +112,3 @@ else
 	echo "* Installation FAILED! No cleanup will be done!"
 	exit ${ret}
 fi
-
-# NOTE: Since FW 4.17, Nickel will attempt to index content found in hidden directories.
-#       Since all of this stuff lives in *nix hidden directories, this won't do.
-#       Thankfully, FW 4.17.13694 introduced a hidden setting to control that behavior.
-#       We'll enforce the "legacy" behavior of basically ignoring non-default hidden directories.
-#       c.f., https://www.mobileread.com/forums/showpost.php?p=3892463&postcount=10
-# NOTE: We can simply push a (potentially) duplicate section + entry at the end of the file,
-#       QSettings will do the right thing, that is, pick up this new key, use it,
-#       and save everything in the right place without leaving duplicates around.
-echo "* Preventing Nickel from scanning hidden directories . . ."
-cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-EoM
-	[FeatureSettings]
-	ExcludeSyncFolders=\\.(?!kobo|adobe).*?
-EoM
