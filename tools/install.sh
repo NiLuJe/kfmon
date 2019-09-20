@@ -93,7 +93,7 @@ fi
 echo "* Preventing Nickel from scanning hidden directories . . ."
 cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-EoM
 	[FeatureSettings]
-	ExcludeSyncFolders=\\.(?!kobo|adobe).*?
+	ExcludeSyncFolders=\\\.(?!kobo|adobe).*?
 EoM
 
 # We've got a Kobo, we've got a package, let's go!
