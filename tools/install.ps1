@@ -36,7 +36,7 @@ if (-NOT (Test-Path $KOBO_DIR)) {
 }
 
 # Ask the user what they want to install...
-$VALID_GLOBS=@("KOReader-v*.zip", "Plato-*.zip", "KFMon-v*.zip", "KFMon-Uninstaller.zip")
+$VALID_GLOBS=@("KOReader-v*.zip", "Plato-*.zip", "KFMon-v*.zip", "KFMon-Uninstaller*.zip")
 $AVAILABLE_PKGS=@()
 foreach ($pat in $VALID_GLOBS) {
 	foreach ($file in Get-ChildItem -Name -File $pat) {
