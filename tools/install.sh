@@ -91,9 +91,9 @@ fi
 #       QSettings will do the right thing, that is, pick up this new key, use it,
 #       and save everything in the right place without leaving duplicates around.
 echo "* Preventing Nickel from scanning hidden directories . . ."
-cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-EoM
+cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-\EoM
 	[FeatureSettings]
-	ExcludeSyncFolders=\\\.(?!kobo|adobe).*?
+	ExcludeSyncFolders=\\.(?!kobo|adobe).*?
 EoM
 
 # We've got a Kobo, we've got a package, let's go!
