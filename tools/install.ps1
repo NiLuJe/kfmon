@@ -39,7 +39,7 @@ if (-NOT (Test-Path $KOBO_DIR)) {
 $VALID_GLOBS=@("KOReader-v*.zip", "Plato-*.zip", "KFMon-v*.zip", "KFMon-Uninstaller*.zip")
 $AVAILABLE_PKGS=@()
 foreach ($pat in $VALID_GLOBS) {
-	foreach ($file in Get-ChildItem -Name -File $pat) {
+	foreach ($file in Get-ChildItem -File -Name $pat) {
 		if (Test-Path $file) {
 			$AVAILABLE_PKGS+=$file
 		}
@@ -80,9 +80,12 @@ if ($j -lt 0 -OR $j -ge $AVAILABLE_PKGS.Length) {
 Write-Host("* Preventing Nickel from scanning hidden directories . . .")
 $KOBO_CONF=$KOBO_DIR + "\Kobo" + "\Kobo eReader.conf"
 @'
+
+
 [FeatureSettings]
 ExcludeSyncFolders=\\.(?!kobo|adobe).*?
-'@ >> $KOBO_CONF
+
+'@ | Add-Content -NoNewline -Path $KOBO_CONF
 
 # We've got a Kobo, we've got a package, let's go!
 if ($AVAILABLE_PKGS[$j] -eq "KFMon-Uninstaller.zip") {
