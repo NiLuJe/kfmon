@@ -161,6 +161,6 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
     Current versions of KOReader and Plato will have no issue with this new behavior.
     
 -   Since FW 4.17, Nickel *will* index content found in *nix hidden directories by default. Thankfully, this behavior is [configurable](https://www.mobileread.com/forums/showpost.php?p=3892463&postcount=10).  
-    Note that the "One Click Packages" [installers](https://github.com/NiLuJe/kfmon/blob/1b77bfff61fc26882a0d2b1b1de7025060949f9d/tools/install.sh#L85-L97) take care of handling that setting automatically ;).
+    Note that the "One Click Packages" [installers](https://github.com/NiLuJe/kfmon/blob/43f43c0d2570bab87d3e0736d297cb699c326178/tools/install.sh#L85-L97) take care of handling that setting automatically ;).
 
 <!-- kate: indent-mode cstyle; indent-width 4; replace-tabs on; remove-trailing-spaces none; -->
