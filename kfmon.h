@@ -72,12 +72,12 @@ extern const char* sqlite3ErrName(int);
 #endif
 // Use my debug paths on demand...
 #ifndef NILUJE
-#	define KOBO_DB_PATH KFMON_TARGET_MOUNTPOINT "/.kobo/KoboReader.sqlite"
-#	define KFMON_LOGFILE "/usr/local/kfmon/kfmon.log"
+#	define KOBO_DB_PATH     KFMON_TARGET_MOUNTPOINT "/.kobo/KoboReader.sqlite"
+#	define KFMON_LOGFILE    "/usr/local/kfmon/kfmon.log"
 #	define KFMON_CONFIGPATH KFMON_TARGET_MOUNTPOINT "/.adds/kfmon/config"
 #else
-#	define KOBO_DB_PATH "/home/niluje/Kindle/Staging/KoboReader.sqlite"
-#	define KFMON_LOGFILE "/home/niluje/Kindle/Staging/kfmon.log"
+#	define KOBO_DB_PATH     "/home/niluje/Kindle/Staging/KoboReader.sqlite"
+#	define KFMON_LOGFILE    "/home/niluje/Kindle/Staging/kfmon.log"
 #	define KFMON_CONFIGPATH "/home/niluje/Kindle/Staging/kfmon"
 #endif
 
