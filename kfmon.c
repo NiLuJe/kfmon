@@ -23,7 +23,7 @@
 static int
     daemonize(void)
 {
-	int fd;
+	int fd = -1;
 
 	switch (fork()) {
 		case -1:
