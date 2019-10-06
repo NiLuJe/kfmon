@@ -1463,6 +1463,10 @@ static void
 	fbinkConfig.is_padded   = true;
 	// NOTE: For now, we *want* fbink_init's status report logged, so we leave this disabled.
 	// fbinkConfig.is_quiet = false;
+	// If we log to syslog, tell FBInk to do the same
+	if (daemonConfig.use_syslog) {
+		fbinkConfig.to_syslog = true;
+	}
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
