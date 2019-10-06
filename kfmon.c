@@ -1818,6 +1818,9 @@ static bool
 		// Read some events.
 		ssize_t len = read(fd, buf, sizeof(buf));    // Flawfinder: ignore
 		if (len == -1 && errno != EAGAIN) {
+			if (errno == EINTR) {
+				continue;
+			}
 			perror("[KFMon] [ERR!] Aborting: read");
 			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
 			exit(EXIT_FAILURE);
