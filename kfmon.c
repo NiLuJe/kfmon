@@ -41,7 +41,9 @@ static int
 	// Double fork, for... reasons!
 	// In practical terms, this ensures we get re-parented to init *now*.
 	// Ignore SIGHUP while we're there, since we don't want to be killed by it.
-	signal(SIGHUP, SIG_IGN);
+	if (signal(SIGHUP, SIG_IGN) == SIG_ERR) {
+		return -1;
+	}
 	switch (fork()) {
 		case -1:
 			return -1;
