@@ -27,6 +27,7 @@ static int
 
 	switch (fork()) {
 		case -1:
+			LOG(LOG_CRIT, "initial fork: %m");
 			return -1;
 		case 0:
 			break;
@@ -35,6 +36,7 @@ static int
 	}
 
 	if (setsid() == -1) {
+		LOG(LOG_CRIT, "setsid: %m");
 		return -1;
 	}
 
@@ -42,10 +44,12 @@ static int
 	// In practical terms, this ensures we get re-parented to init *now*.
 	// Ignore SIGHUP while we're there, since we don't want to be killed by it.
 	if (signal(SIGHUP, SIG_IGN) == SIG_ERR) {
+		LOG(LOG_CRIT, "signal: %m");
 		return -1;
 	}
 	switch (fork()) {
 		case -1:
+			LOG(LOG_CRIT, "final fork: %m");
 			return -1;
 		case 0:
 			break;
@@ -54,6 +58,7 @@ static int
 	}
 
 	if (chdir("/") == -1) {
+		LOG(LOG_CRIT, "chdir: %m");
 		return -1;
 	}
 
@@ -74,7 +79,7 @@ static int
 			close(fd);
 		}
 	} else {
-		fprintf(stderr, "Failed to redirect stdin & stdout to /dev/null\n");
+		LOG(LOG_CRIT, "Failed to redirect stdin & stdout to /dev/null (open: %m)");
 		return -1;
 	}
 
@@ -96,7 +101,7 @@ static int
 			close(fd);
 		}
 	} else {
-		fprintf(stderr, "Failed to redirect stderr to logfile '%s'\n", KFMON_LOGFILE);
+		LOG(LOG_CRIT, "Failed to redirect stderr to logfile '%s' (open: %m)", KFMON_LOGFILE);
 		return -1;
 	}
 
@@ -2199,8 +2204,8 @@ int
 				close(fd);
 			}
 		} else {
-			fprintf(stderr, "Failed to redirect stderr to /dev/null\n");
-			return -1;
+			LOG(LOG_ERR, "Failed to redirect stderr to /dev/null (open: %m), aborting!");
+			exit(EXIT_FAILURE);
 		}
 
 		// And connect to the system logger...
