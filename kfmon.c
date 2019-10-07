@@ -251,7 +251,7 @@ static int
 	val   = strtoul(str, &endptr, 10);
 
 	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
-		perror("[KFMon] [WARN] strtoul");
+		LOG(LOG_WARNING, "strtoul: %m");
 		return -EINVAL;
 	}
 
@@ -686,7 +686,7 @@ static int
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
 	    NULL) {
-		perror("[KFMon] [CRIT] fts_open");
+		LOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
@@ -860,7 +860,7 @@ static int
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
 	    NULL) {
-		perror("[KFMon] [CRIT] fts_open");
+		LOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
@@ -1509,7 +1509,7 @@ static void*
 	} while (ret == -1 && errno == EINTR);
 	// Recap what happened to it
 	if (ret != cpid) {
-		perror("[KFMon] [CRIT] waitpid");
+		MTLOG(LOG_CRIT, "waitpid: %m");
 		free(ptr);
 		return (void*) NULL;
 	} else {
@@ -1602,7 +1602,7 @@ static pid_t
 
 	if (pid < 0) {
 		// Fork failed?
-		perror("[KFMon] [ERR!] Aborting: fork");
+		LOG(LOG_ERR, "Aborting: fork: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fork failed ?!", &fbinkConfig);
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
@@ -1688,12 +1688,12 @@ static pid_t
 			//       to make sure their resources will be released when they terminate.
 			pthread_attr_t attr;
 			if (pthread_attr_init(&attr) != 0) {
-				perror("[KFMon] [ERR!] Aborting: pthread_attr_init");
+				LOG(LOG_ERR, "Aborting: pthread_attr_init: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_init failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
-				perror("[KFMon] [ERR!] Aborting: pthread_attr_setdetachstate");
+				LOG(LOG_ERR, "Aborting: pthread_attr_setdetachstate: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setdetachstate failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1704,12 +1704,12 @@ static pid_t
 			//       In the grand scheme of things, this won't really change much ;).
 			if (pthread_attr_setstacksize(
 				&attr, MAX((1U * 1024U * 1024U) / 2U, (sizeof(void*) * 1024U * 1024U) / 8U)) != 0) {
-				perror("[KFMon] [ERR!] Aborting: pthread_attr_setstacksize");
+				LOG(LOG_ERR, "Aborting: pthread_attr_setstacksize: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setstacksize failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_create(&rthread, &attr, reaper_thread, arg) != 0) {
-				perror("[KFMon] [ERR!] Aborting: pthread_create");
+				LOG(LOG_ERR, "Aborting: pthread_create: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_create failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1718,13 +1718,13 @@ static pid_t
 			char thname[16];
 			snprintf(thname, sizeof(thname), "Reap:%ld", (long) pid);
 			if (pthread_setname_np(rthread, thname) != 0) {
-				perror("[KFMon] [ERR!] Aborting: pthread_setname_np");
+				LOG(LOG_ERR, "Aborting: pthread_setname_np: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_setname_np failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 
 			if (pthread_attr_destroy(&attr) != 0) {
-				perror("[KFMon] [ERR!] Aborting: pthread_attr_destroy");
+				LOG(LOG_ERR, "Aborting: pthread_attr_destroy: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_destroy failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1827,7 +1827,7 @@ static bool
 			if (errno == EINTR) {
 				continue;
 			}
-			perror("[KFMon] [ERR!] Aborting: read");
+			LOG(LOG_ERR, "Aborting: read: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
@@ -2070,7 +2070,7 @@ static bool
 				    watch_idx);
 				if (inotify_rm_watch(fd, watchConfig[watch_idx].inotify_wd) == -1) {
 					// That's too bad, but may not be fatal, so warn only...
-					perror("[KFMon] [WARN] inotify_rm_watch");
+					LOG(LOG_WARNING, "inotify_rm_watch: %m");
 				} else {
 					// Flag it as gone if rm was successful
 					watchConfig[watch_idx].inotify_wd = -1;
@@ -2116,7 +2116,7 @@ static bool
 							if (inotify_rm_watch(fd, watchConfig[watch_idx].inotify_wd) ==
 							    -1) {
 								// That's too bad, but may not be fatal, so warn only...
-								perror("[KFMon] [WARN] inotify_rm_watch");
+								LOG(LOG_WARNING, "inotify_rm_watch: %m");
 							} else {
 								// It's gone!
 								watchConfig[watch_idx].inotify_wd = -1;
@@ -2163,13 +2163,13 @@ int
 	// Make sure we're running at a neutral niceness
 	// (f.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
-		perror("[KFMon] [ERR!] Aborting: setpriority");
+		LOG(LOG_ERR, "Aborting: setpriority: %m");
 		exit(EXIT_FAILURE);
 	}
 
 	// Fly, little daemon!
 	if (daemonize() != 0) {
-		fprintf(stderr, "Failed to daemonize, aborting!\n");
+		LOG(LOG_ERR, "Failed to daemonize, aborting!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2273,7 +2273,7 @@ int
 		LOG(LOG_INFO, "Initializing inotify.");
 		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
-			perror("[KFMon] [ERR!] Aborting: inotify_init1");
+			LOG(LOG_ERR, "Aborting: inotify_init1: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
@@ -2304,7 +2304,7 @@ int
 			watchConfig[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watchConfig[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watchConfig[watch_idx].inotify_wd == -1) {
-				perror("[KFMon] [WARN] inotify_add_watch");
+				LOG(LOG_WARNING, "inotify_add_watch: %m");
 				LOG(LOG_WARNING, "Cannot watch '%s', discarding it!", watchConfig[watch_idx].filename);
 				fbink_printf(FBFD_AUTO,
 					     NULL,
@@ -2353,7 +2353,7 @@ int
 				if (errno == EINTR) {
 					continue;
 				}
-				perror("[KFMon] [ERR!] Aborting: poll");
+				LOG(LOG_ERR, "Aborting: poll: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
