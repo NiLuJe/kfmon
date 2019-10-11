@@ -86,6 +86,6 @@ else
 fi
 # Add a timestamp, and a dump of Nickel's version tag
 echo "**** Log dumped on $(date +'%Y-%m-%d @ %H:%M:%S') ****" >> "${KFMON_USER_LOG}"
-echo "**** FW $(awk '{print $3}' FS=',' /mnt/onboard/.kobo/version) on Linux $(uname -r) ($(uname -v)) ****" >> "${KFMON_USER_LOG}"
+echo "**** FW $(cut -f3 -d',' /mnt/onboard/.kobo/version) on Linux $(uname -r) ($(uname -v)) ****" >> "${KFMON_USER_LOG}"
 
 return 0
