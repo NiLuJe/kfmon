@@ -1251,7 +1251,7 @@ static bool
 
 			// Then we need the proper hashes Nickel devises...
 			// c.f., images_path @
-			// https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L2489
+			// https://github.com/kovidgoyal/calibre/blob/205754891e341e7f940e70057ac3a96a2443fdbd/src/calibre/devices/kobo/driver.py#L2584-L2600
 			unsigned int hash = qhash(image_id, len);
 			unsigned int dir1 = hash & (0xff * 1);
 			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
