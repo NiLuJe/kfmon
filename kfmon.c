@@ -1093,8 +1093,8 @@ static int
 	return 0;
 }
 
-// Implementation of Qt4's QtHash (c.f., qhash @
-// https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py#L37)
+// Implementation of Qt4's QtHash, c.f., qhash @
+// https://github.com/kovidgoyal/calibre/blob/205754891e341e7f940e70057ac3a96a2443fdbd/src/calibre/devices/kobo/driver.py#L41-L59
 static unsigned int
     qhash(const unsigned char* restrict bytes, size_t length)
 {
