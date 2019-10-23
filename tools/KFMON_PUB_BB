@@ -21,7 +21,7 @@ As mentioned earlier, the installation instructions are dead simple:
 
 [B]NOTE:[/B] Something that bears repeating from [url=https://github.com/NiLuJe/kfmon#things-to-watch-out-for]KFMon's FAQ[/url]: a FW update will [i]disable[/i] it, so you'll have to reinstall it after a FW update in order to be able to launch stuff again. You can either use these packages or the standalone [url=https://www.mobileread.com/forums/showthread.php?t=274231]KFMon[/url] package.
 [COLOR="Red"][B]NOTE:[/B][/COLOR] As it bears repeating, on FW 4.17+, you'll probably also want to [url=https://github.com/NiLuJe/kfmon/blob/812b7dc46eef92772c8a5f756a92a54e1c7f6c37/tools/install.sh#L85-L99]prevent Nickel from scanning *nix hidden folders[/url]. And you'll want to tweak your config [i]before[/i] unplugging your device (i.e., before installing this; or, if you've just upgraded your FW, during the first USB connection after the update).
-[B]NOTE:[/B] Please see the next post for an automated installation script, which I heartily recommend using instead of doing this manually!
+[B]NOTE:[/B] Please see the next post for an automated installation script, which I heartily recommend using instead of doing all this manually!
 
 The listing follows this format:
 [B]Description[/B]  |  [B]D/L Link[/B]  |  [B]Last Modified[/B]  |  [B]Size[/B]  |  [B]MD5 Checksum[/B]  |  [B]MR Thread[/B]
