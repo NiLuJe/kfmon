@@ -13,6 +13,7 @@ As mentioned earlier, the installation instructions are dead simple:
 [*] Plug your Kobo eReader to your computer over USB.
 [*] Directly extract the ZIP archive you've just downloaded to the [I]root[/I] directory of your device (i.e., not under [I]any[/I] subdirectory). [COLOR="DarkGrey"](That's the [B]"one click"[/B] bit ;p)[/COLOR]
    NOTE: Prefer the "Extract To" approach (and allow replacing existing content if it's asked of you) vs. manually copy/pasting or drag'n dropping bits of the ZIP content yourself, as preserving the integrity of the directory structure and its contents is of paramount importance!
+[*] [COLOR="Red"][B]NOTE:[/B][/COLOR] On FW 4.17+, you'll need to [url=https://github.com/NiLuJe/kfmon/blob/812b7dc46eef92772c8a5f756a92a54e1c7f6c37/tools/install.sh#L85-L99]prevent Nickel from scanning *nix hidden folders[/url].
 [*] Eject & unplug your device. The Kobo software should then appear to be processing a book, before restarting to process an update.
    NOTE: If it [I]doesn't[/I] attempt to reboot, that's a sure thing something went wrong in the previous step (hint: see the NOTE).
 [*] Once your device has finished rebooting, you should simply be able to tap on the KOReader or Plato icon in your Home or your Library to launch it!
