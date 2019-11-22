@@ -143,6 +143,8 @@ extern const char* sqlite3ErrName(int);
 //       On the other hand, _POSIX_PATH_MAX is always set to 256,
 //       and that happens to (roughly) match Windows's MAX_PATH, which, in turn,
 //       matches the FAT32 *filename* length limit.
+// NOTE: Possibly *very* roughly, as the FAT32 limit is 255 *Unicode* characters, not bytes ;).
+//       c.f., https://docs.microsoft.com/de-de/windows/win32/fileio/filesystem-functionality-comparison#limits
 //       Since we operate on a FAT32 partition, and we mostly work one or two folder deep into our target mountpoint,
 //       a target mountpoint which itself has a relatively short path,
 //       we can relatively safely assume that (_POSIX_PATH_MAX * 2) will do the job just fine for our purpose.
