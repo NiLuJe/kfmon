@@ -1,5 +1,5 @@
 #!/bin/bash
-set -puxo pipefail
+set -puo pipefail
 #
 # Quick'n dirty helper to pickup a Kobo's USBMS mountpoint...
 #
