@@ -98,6 +98,13 @@ cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-\EoM
 	ExcludeSyncFolders=\\.(?!kobo|adobe).*?
 EoM
 
+ret=$?
+if [ ${ret} -ne 0 ] ; then
+	echo "* Installation FAILED: Failed to update Nickel config!"
+	echo "* No permanent changes have been made."
+	exit ${ret}
+fi
+
 # We've got a Kobo, we've got a package, let's go!
 if [[ "${AVAILABLE_PKGS[${j}]}" == "KFMon-Uninstaller.zip" ]] ; then
 	echo "* Uninstalling KFMon . . ."
