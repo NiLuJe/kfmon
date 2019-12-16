@@ -1,4 +1,5 @@
-#!/bin/bash -ep
+#!/bin/bash
+set -Eeopu pipefail
 #
 # Quick'n dirty helper to pickup a Kobo's USBMS mountpoint...
 #
