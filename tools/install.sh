@@ -1,4 +1,4 @@
-#!/bin/bash -p
+#!/bin/bash -ep
 #
 # Quick'n dirty helper to pickup a Kobo's USBMS mountpoint...
 #
