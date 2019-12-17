@@ -136,6 +136,15 @@ fi
 # Double-check that we ended up with a KoboRoot in the right place...
 if [[ ! -f "${KOBO_DIR}/KoboRoot.tgz" ]] ; then
 	echo "* Installation FAILED: Unpacking was ineffective (no KoboRoot tarball) o_O !"
-	echo "* No permanent changes have been made."
+	echo "* No cleanup will be done!"
 	exit 255
+fi
+
+# In case it was an install, double-check that we ended up with KFMon's own icon in the right place...
+if [[ "${AVAILABLE_PKGS[${j}]}" != "KFMon-Uninstaller.zip" ]] ; then
+	if [[ ! -f "${KOBO_MOUNTPOINT}/kfmon.png" ]] ; then
+		echo "* Installation FAILED: Unpacking was ineffective (no KFMon icon) o_O !"
+		echo "* No cleanup will be done!"
+		exit 255
+	fi
 fi
