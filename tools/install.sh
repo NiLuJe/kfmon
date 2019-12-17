@@ -110,7 +110,7 @@ fi
 
 # Double-check that it was updated, in case of gremlins attack...
 if ! grep -Fq 'ExcludeSyncFolders=\\.(?!kobo|adobe).*?' "${KOBO_CONFIG}" ; then
-	echo "* Installation FAILED: Nickel config update was ineffective!"
+	echo "* Installation FAILED: Nickel config update was ineffective o_O !"
 	echo "* No permanent changes have been made."
 	exit 255
 fi
@@ -124,12 +124,18 @@ else
 	unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
 fi
 
-# Double-check that we ended up with a KoboRoot in the right place...
-
 ret=$?
 if [ ${ret} -eq 0 ] ; then
 	echo "* Installation successful!"
 else
-	echo "* Installation FAILED! No cleanup will be done!"
+	echo "* Installation FAILED: Failed to unpack archive!"
+	echo "* No cleanup will be done!"
 	exit ${ret}
+fi
+
+# Double-check that we ended up with a KoboRoot in the right place...
+if [[ ! -f "${KOBO_DIR}/KoboRoot.tgz" ]] ; then
+	echo "* Installation FAILED: Unpacking was ineffective (no KoboRoot tarball) o_O !"
+	echo "* No permanent changes have been made."
+	exit 255
 fi
