@@ -92,8 +92,9 @@ fi
 # NOTE: We can simply push a (potentially) duplicate section + entry at the end of the file,
 #       QSettings will do the right thing, that is, pick up this new key, use it,
 #       and save everything in the right place without leaving duplicates around.
+KOBO_CONFIG="${KOBO_DIR}/Kobo/Kobo eReader.conf"
 echo "* Preventing Nickel from scanning hidden directories . . ."
-cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-\EoM
+cat >> "${KOBO_CONFIG}" <<-\EoM
 
 	[FeatureSettings]
 	ExcludeSyncFolders=\\.(?!kobo|adobe).*?
@@ -108,7 +109,7 @@ if [ ${ret} -ne 0 ] ; then
 fi
 
 # Double-check that it was updated, in case of gremlins attack...
-if ! grep -Fq 'ExcludeSyncFolders=\\.(?!kobo|adobe).*?' ; then
+if ! grep -Fq 'ExcludeSyncFolders=\\.(?!kobo|adobe).*?' "${KOBO_CONFIG}" ; then
 	echo "* Installation FAILED: Nickel config update was ineffective!"
 	echo "* No permanent changes have been made."
 	exit 255
@@ -122,6 +123,8 @@ else
 	echo "* Installing ${AVAILABLE_PKGS[${j}]} . . ."
 	unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
 fi
+
+# Double-check that we ended up with a KoboRoot in the right place...
 
 ret=$?
 if [ ${ret} -eq 0 ] ; then
