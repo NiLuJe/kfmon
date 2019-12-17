@@ -167,7 +167,7 @@ if [[ ! -f "${KOBO_DIR}/KoboRoot.tgz" ]] ; then
 	exit 255
 fi
 
-# In case it was an install, double-check that we ended up with KFMon's own icon in the right place...
+# In case it was an install, double-check that we ended up with (at least) KFMon's own icon in the right place...
 if [[ "${SELECTED_PACKAGE}" != "KFMon-Uninstaller.zip" ]] ; then
 	echo "* More sanity checks . . ."
 	if [[ ! -f "${KOBO_MOUNTPOINT}/kfmon.png" ]] ; then
@@ -178,7 +178,7 @@ if [[ "${SELECTED_PACKAGE}" != "KFMon-Uninstaller.zip" ]] ; then
 fi
 
 # Flush to disk, for good measure...
-echo "* Flush to storage . . ."
+echo "* Flush to storage device . . ."
 sync
 
 # Double-check that sync did its magic...
