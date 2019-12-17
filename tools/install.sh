@@ -108,6 +108,9 @@ if [[ ${j} -lt 0 ]] || [[ ${j} -ge ${#AVAILABLE_PKGS[@]} ]] ; then
 	exit 255
 fi
 
+# We're good to go!
+SELECTED_PACKAGE="${AVAILABLE_PKGS[${j}]}"
+
 # NOTE: Since FW 4.17, Nickel will attempt to index content found in hidden directories.
 #       Since all of this stuff lives in *nix hidden directories, this won't do.
 #       Thankfully, FW 4.17.13694 introduced a hidden setting to control that behavior.
@@ -141,12 +144,12 @@ if ! grep -Fq 'ExcludeSyncFolders=\\.(?!kobo|adobe).*?' "${KOBO_CONFIG}" ; then
 fi
 
 # We've got a Kobo, we've got a package, let's go!
-if [[ "${AVAILABLE_PKGS[${j}]}" == "KFMon-Uninstaller.zip" ]] ; then
+if [[ "${SELECTED_PACKAGE}" == "KFMon-Uninstaller.zip" ]] ; then
 	echo "* Uninstalling KFMon . . ."
-	unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_DIR}"
+	unzip -o "${SELECTED_PACKAGE}" -d "${KOBO_DIR}"
 else
 	echo "* Installing ${AVAILABLE_PKGS[${j}]} . . ."
-	unzip -o "${AVAILABLE_PKGS[${j}]}" -d "${KOBO_MOUNTPOINT}"
+	unzip -o "${SELECTED_PACKAGE}" -d "${KOBO_MOUNTPOINT}"
 fi
 
 ret=$?
@@ -165,7 +168,7 @@ if [[ ! -f "${KOBO_DIR}/KoboRoot.tgz" ]] ; then
 fi
 
 # In case it was an install, double-check that we ended up with KFMon's own icon in the right place...
-if [[ "${AVAILABLE_PKGS[${j}]}" != "KFMon-Uninstaller.zip" ]] ; then
+if [[ "${SELECTED_PACKAGE}" != "KFMon-Uninstaller.zip" ]] ; then
 	echo "* More sanity checks . . ."
 	if [[ ! -f "${KOBO_MOUNTPOINT}/kfmon.png" ]] ; then
 		echo "* Installation FAILED: Unpacking was ineffective (no KFMon icon) o_O !"
