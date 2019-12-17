@@ -62,18 +62,18 @@ recap_failure() {
 	for kfm_folder in .adds/kfmon .adds/koreader .adds/plato ; do
 		local current_folder="${KOBO_MOUNTPOINT}/${kfm_folder}"
 		if [[ -d "${current_folder}" ]] ; then
-			echo -e "\t${current_folder}"
+			printf "\t%s\n" "${current_folder}"
 		else
-			echo -e "\t${current_folder}\t[OK: Already gone]"
+			printf "\t%-96s%32s\n" "${current_folder}" "[OK: Already gone]"
 		fi
 	done
 	echo "* As well as the following files:"
 	for kfm_file in .kobo/KoboRoot.tgz kfmon.png koreader.png icons/plato.png ; do
 		local current_file="${KOBO_MOUNTPOINT}/${kfm_file}"
 		if [[ -f "${current_file}" ]] ; then
-			echo -e "\t${current_file}"
+			printf "\t%s\n" "${current_file}"
 		else
-			echo -e "\t${current_file}\t[OK: Already gone]"
+			printf "\t%-96s%32s\n" "${current_file}" "[OK: Already gone]"
 		fi
 	done
 }
