@@ -53,6 +53,31 @@ if [[ ! -d "${KOBO_DIR}" ]] ; then
 	exit 255
 fi
 
+# Tiny DRY helper for the failure message...
+recap_failure() {
+	echo "* As a result, the device may have been left in an inconsistent state!"
+	echo "* Please note that NO automatic cleanup will be done!"
+	echo "* As such, before unplugging your device, consider removing:"
+	echo "* The following folders:"
+	for kfm_folder in .adds/kfmon .adds/koreader .adds/plato ; do
+		local current_folder="${KOBO_MOUNTPOINT}/${kfm_folder}"
+		if [[ -d "${current_folder}" ]] ; then
+			echo -e "\t${current_folder}"
+		else
+			echo -e "\t${current_folder}\t[OK: Already gone]"
+		fi
+	done
+	echo "* As well as the following files:"
+	for kfm_file in .kobo/KoboRoot.tgz kfmon.png koreader.png icons/plato.png ; do
+		local current_file="${KOBO_MOUNTPOINT}/${kfm_file}"
+		if [[ -f "${current_file}" ]] ; then
+			echo -e "\t${current_file}"
+		else
+			echo -e "\t${current_file}\t[OK: Already gone]"
+		fi
+	done
+}
+
 # Ask the user what they want to install...
 AVAILABLE_PKGS=()
 for file in KOReader-v*.zip Plato-*.zip KFMon-v*.zip KFMon-Uninstaller.zip ; do
@@ -127,7 +152,7 @@ fi
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
 	echo "* Installation FAILED: Failed to unpack archive!"
-	echo "* No cleanup will be done!"
+	recap_failure
 	exit ${ret}
 fi
 
@@ -135,7 +160,7 @@ fi
 echo "* Sanity check . . ."
 if [[ ! -f "${KOBO_DIR}/KoboRoot.tgz" ]] ; then
 	echo "* Installation FAILED: Unpacking was ineffective (no KoboRoot tarball) o_O !"
-	echo "* No cleanup will be done!"
+	recap_failure
 	exit 255
 fi
 
@@ -144,7 +169,7 @@ if [[ "${AVAILABLE_PKGS[${j}]}" != "KFMon-Uninstaller.zip" ]] ; then
 	echo "* More sanity checks . . ."
 	if [[ ! -f "${KOBO_MOUNTPOINT}/kfmon.png" ]] ; then
 		echo "* Installation FAILED: Unpacking was ineffective (no KFMon icon) o_O !"
-		echo "* No cleanup will be done!"
+		recap_failure
 		exit 255
 	fi
 fi
@@ -161,7 +186,7 @@ if [[ ${ret} -eq 0 ]] ; then
 	echo "* Installation successful!"
 else
 	echo "* Installation FAILED: I/O error when flushing to disk (failing storage?)!"
-	echo "* No cleanup will be done!"
+	recap_failure
 	exit ${ret}
 fi
 
