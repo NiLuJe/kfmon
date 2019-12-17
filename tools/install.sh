@@ -99,11 +99,19 @@ cat >> "${KOBO_DIR}/Kobo/Kobo eReader.conf" <<-\EoM
 	ExcludeSyncFolders=\\.(?!kobo|adobe).*?
 EoM
 
+# Check for a cat failure, as unlikely as it might be (permissions?)...
 ret=$?
 if [ ${ret} -ne 0 ] ; then
 	echo "* Installation FAILED: Failed to update Nickel config!"
 	echo "* No permanent changes have been made."
 	exit ${ret}
+fi
+
+# Double-check that it was updated, in case of gremlins attack...
+if ! grep -Fq 'ExcludeSyncFolders=\\.(?!kobo|adobe).*?' ; then
+	echo "* Installation FAILED: Nickel config update was ineffective!"
+	echo "* No permanent changes have been made."
+	exit 255
 fi
 
 # We've got a Kobo, we've got a package, let's go!
