@@ -188,7 +188,7 @@ ret=$?
 if [[ ${ret} -eq 0 ]] ; then
 	echo "* Installation successful!"
 else
-	echo "* Installation FAILED: I/O error when flushing to disk (failing storage?)!"
+	echo "* Installation FAILED: I/O error when flushing to disk (failing storage? check kernel logs)!"
 	recap_failure
 	exit ${ret}
 fi
