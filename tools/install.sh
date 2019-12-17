@@ -132,6 +132,7 @@ if [[ ${ret} -ne 0 ]] ; then
 fi
 
 # Double-check that we ended up with a KoboRoot in the right place...
+echo "* Sanity check . . ."
 if [[ ! -f "${KOBO_DIR}/KoboRoot.tgz" ]] ; then
 	echo "* Installation FAILED: Unpacking was ineffective (no KoboRoot tarball) o_O !"
 	echo "* No cleanup will be done!"
@@ -140,6 +141,7 @@ fi
 
 # In case it was an install, double-check that we ended up with KFMon's own icon in the right place...
 if [[ "${AVAILABLE_PKGS[${j}]}" != "KFMon-Uninstaller.zip" ]] ; then
+	echo "* More sanity checks . . ."
 	if [[ ! -f "${KOBO_MOUNTPOINT}/kfmon.png" ]] ; then
 		echo "* Installation FAILED: Unpacking was ineffective (no KFMon icon) o_O !"
 		echo "* No cleanup will be done!"
@@ -148,6 +150,7 @@ if [[ "${AVAILABLE_PKGS[${j}]}" != "KFMon-Uninstaller.zip" ]] ; then
 fi
 
 # Flush to disk, for good measure...
+echo "* Flush to storage . . ."
 sync
 
 # Double-check that sync did its magic...
