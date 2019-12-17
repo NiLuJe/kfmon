@@ -73,7 +73,7 @@ done
 read -r -p "* Enter the number corresponding to the one you want to install: " j
 
 # Check if that was a sane reply...
-if ! [ "${j}" -eq "${j}" ] 2>/dev/null ; then
+if ! [[ "${j}" -eq "${j}" ]] 2>/dev/null ; then
 	echo "That wasn't a number!"
 	exit 255
 fi
@@ -102,7 +102,7 @@ EoM
 
 # Check for a cat failure, as unlikely as it might be (permissions?)...
 ret=$?
-if [ ${ret} -ne 0 ] ; then
+if [[ ${ret} -ne 0 ]] ; then
 	echo "* Installation FAILED: Failed to update Nickel config!"
 	echo "* No permanent changes have been made."
 	exit ${ret}
@@ -125,7 +125,7 @@ else
 fi
 
 ret=$?
-if [ ${ret} -eq 0 ] ; then
+if [[ ${ret} -eq 0 ]] ; then
 	echo "* Installation successful!"
 else
 	echo "* Installation FAILED: Failed to unpack archive!"
