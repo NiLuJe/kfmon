@@ -149,5 +149,5 @@ if [[ "${AVAILABLE_PKGS[${j}]}" != "KFMon-Uninstaller.zip" ]] ; then
 	fi
 fi
 
-# Do a sync, for good measure...
-sync -f "${KOBO_DIR}/KoboRoot.tgz"
+# Flush to disk, for good measure...
+sync
