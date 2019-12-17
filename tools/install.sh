@@ -125,9 +125,7 @@ else
 fi
 
 ret=$?
-if [[ ${ret} -eq 0 ]] ; then
-	echo "* Installation successful!"
-else
+if [[ ${ret} -ne 0 ]] ; then
 	echo "* Installation FAILED: Failed to unpack archive!"
 	echo "* No cleanup will be done!"
 	exit ${ret}
@@ -151,3 +149,18 @@ fi
 
 # Flush to disk, for good measure...
 sync
+
+# Double-check that sync did its magic...
+# NOTE: sync may not actually ever be able to return an error, depending on the platform.
+#       If/when it does, it's usually with extremely bad news, so let's be overly pessimistic here...
+ret=$?
+if [[ ${ret} -eq 0 ]] ; then
+	echo "* Installation successful!"
+else
+	echo "* Installation FAILED: I/O error when flushing to disk (failing storage?)!"
+	echo "* No cleanup will be done!"
+	exit ${ret}
+fi
+
+# We're done!
+exit 0
