@@ -276,12 +276,12 @@ sqlite.built:
 ifdef NILUJE
 fbink.built:
 	cd FBInk && \
-	$(MAKE) strip MINIMAL=true LINUX=true DEBUG=$(DEBUG)
+	$(MAKE) strip LINUX=true MINIMAL=true DEBUG=$(DEBUG)
 	touch fbink.built
 else
 fbink.built:
 	cd FBInk && \
-	$(MAKE) strip MINIMAL=true
+	$(MAKE) strip KOBO=true MINIMAL=true
 	touch fbink.built
 endif
 
@@ -290,7 +290,7 @@ release: sqlite.built fbink.built shim
 
 debug: sqlite.built
 	cd FBInk && \
-	$(MAKE) debug MINIMAL=true
+	$(MAKE) debug KOBO=true MINIMAL=true
 	touch fbink.built
 	$(MAKE) all DEBUG=true SQLITE=true
 
