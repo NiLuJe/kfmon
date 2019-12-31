@@ -187,6 +187,7 @@ sync
 ret=$?
 if [[ ${ret} -eq 0 ]] ; then
 	echo "* Installation successful!"
+	echo "* Please make sure to eject & unplug your device safely!"
 else
 	echo "* Installation FAILED: I/O error when flushing to disk (failing storage? check kernel logs)!"
 	recap_failure

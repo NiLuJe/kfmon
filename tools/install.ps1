@@ -102,7 +102,9 @@ if ($AVAILABLE_PKGS[$j] -eq "KFMon-Uninstaller.zip") {
 
 # Much like in the error paths, draw a final prompt so that the window stays up...
 if ($?) {
-	Read-Host -Prompt "* Installation successful! Press Enter to exit"
+	Write-Host("* Installation successful!")
+	Write-Host("* Please make sure to unplug your device safely!")
+	Read-Host -Prompt "Press Enter to exit"
 } else {
 	Read-Host -Prompt "* Installation FAILED! No cleanup will be done! Press Enter to exit"
 }
