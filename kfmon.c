@@ -143,7 +143,7 @@ static char*
 }
 
 // And now the same, but with user supplied storage, thus potentially thread-safe:
-// f.g., we use the stack in reaper_thread().
+// e.g., we use the stack in reaper_thread().
 static char*
     get_current_time_r(struct tm* restrict local_tm, char* restrict sz_time, size_t len)
 {
@@ -260,7 +260,7 @@ static int
 		return -EINVAL;
 	}
 
-	// NOTE: It fact, always clamp to SHRT_MAX, since some of these may end up cast to an int (f.g., db_timeout)
+	// NOTE: It fact, always clamp to SHRT_MAX, since some of these may end up cast to an int (e.g., db_timeout)
 	if (val > SHRT_MAX) {
 		LOG(LOG_WARNING,
 		    "Encountered a value larger than SHRT_MAX assigned to a key, clamping it down to SHRT_MAX");
@@ -1756,7 +1756,7 @@ static bool
 	return false;
 }
 
-// Check if a watch flagged as a spawn blocker (f.g., KOReader or Plato) is already running
+// Check if a watch flagged as a spawn blocker (e.g., KOReader or Plato) is already running
 // NOTE: This is mainly to prevent spurious spawns that might be unwittingly caused by their file manager
 //       (be it through metadata reading, thumbnails creation, or whatever).
 //       Another workaround is of course to kill KFMon as part of their startup process...
@@ -2166,7 +2166,7 @@ int
 	struct pollfd pfd;
 
 	// Make sure we're running at a neutral niceness
-	// (f.g., being launched via udev would leave us with a negative nice value).
+	// (e.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
 		LOG(LOG_ERR, "Aborting: setpriority: %m");
 		exit(EXIT_FAILURE);

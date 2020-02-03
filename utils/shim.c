@@ -40,7 +40,7 @@ int
 	//       We'd just need to stick it here, before a standard execv() call, or in FBInk itself.
 	//       The least racy approach would probably be here,
 	//       because we probably don't want to make that behavior mandatory in FBInk, so we'd have to do it after getopt()...
-	//       f.g.,
+	//       e.g.,
 	//       char* const argv[] = { "/usr/local/kfmon/bin/fbink", "-Z", NULL };
 	//       execv(*argv, argv);
 	//       And finally, go back to a non-exec call in on-animator.sh ;).

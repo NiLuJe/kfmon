@@ -118,7 +118,7 @@ The file `/etc/udev/rules.d/99-kfmon.rules` (which may not exist anymore, depend
 
 And the folders `/usr/local/kfmon`, as well as `/mnt/onboard/.adds/kfmon` too, if you don't want to keep whatever custom things you might have written in there.
 
-Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-animator.sh` (f.g., [as found here](https://github.com/NiLuJe/kfmon/blob/master/scripts/uninstall/on-animator.sh)), although nothing untoward will happen if you don't (plus, it's one of the files being replaced during a FW update).
+Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-animator.sh` (e.g., [as found here](https://github.com/NiLuJe/kfmon/blob/master/scripts/uninstall/on-animator.sh)), although nothing untoward will happen if you don't (plus, it's one of the files being replaced during a FW update).
 
 ## Things to watch out for
 
@@ -131,7 +131,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
     -   Good news: If your FW version is recent enough to feature the new Homescreen, there's a good chance things will work in a more logical fashion (because the last few files added now automatically pop up on the Home page) ;).  
 
 -   Due to the way Nickel may be caching some operations, if you try to restore an icon that you had previously deleted *in the current boot cycle*, it will keep being flagged as *processing* until the next boot, because Nickel may be using in-memory instances of the thumbnails, while we check for them on-disk!
-    -   This has nothing to do with KFMon in particular, f.g., if you were to update some book covers/thumbnails via Calibre, you'd see the same behavior. A simple reboot will put things back in order :).  
+    -   This has nothing to do with KFMon in particular, e.g., if you were to update some book covers/thumbnails via Calibre, you'd see the same behavior. A simple reboot will put things back in order :).  
 
 -   KFMon only expects to watch for files in the internal storage of the device (i.e., *onboard*). On devices with an external sdcard, watching for files on that external storage is unsupported (it may work, but the code makes a number of assumptions which may not hold true in that case, which could lead to undefined behavior).  
 
@@ -156,7 +156,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 
 -   If, for some reason, you need to prevent KFMon from spawning *anything* for a while, just drop a blank *BLOCK* file in the *config* folder, i.e., *touch /mnt/onboard/.adds/kfmon/config/BLOCK*. Simply remove it when you want KFMon to do its thing again ;).
 
--   You can optionally replace the boot progress bar with a faster custom alternative, in order to shave a few seconds off of Nickel's boot time. This is not done by default, because it *might* break older FW versions (say, < 4.8), and it *will* break some custom apps (f.g., Sergey's launcher, KSM) *if* you bypass Nickel entirely.
+-   You can optionally replace the boot progress bar with a faster custom alternative, in order to shave a few seconds off of Nickel's boot time. This is not done by default, because it *might* break older FW versions (say, < 4.8), and it *will* break some custom apps (e.g., Sergey's launcher, KSM) *if* you bypass Nickel entirely.
     If you know you're safe (i.e., you're running a current FW release, and you always boot straight into Nickel), you can enable this by simply dropping a blank *BAR* file in the *config* folder, i.e., *touch /mnt/onboard/.adds/kfmon/config/BAR*.
     Current versions of KOReader and Plato will have no issue with this new behavior.
     
