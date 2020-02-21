@@ -27,7 +27,7 @@ Onwards!
 [SIZE="4"][b][u][COLOR="RoyalBlue"]macOS:[/COLOR][/u][/b][/SIZE]
 [LIST=1]
 [*] Check the previous message, and download the ZIP package that you're interested in, remembering the macOS/Safari quirks I mentioned above.
-[*] Download the [url=http://kfmon-pub.auth-2ac4bfee353948ec8ea7fd1710574097.storage.sbg1.cloud.ovh.net/kfm_mac_install.zip]macOS install script archive[/url], and [i]unzip it[/i] [b]in the same folder[/b].
+[*] Download the [url=https://storage.sbg.cloud.ovh.net/v1/AUTH_2ac4bfee353948ec8ea7fd1710574097/kfmon-pub/kfm_mac_install.zip]macOS install script archive[/url], and [i]unzip it[/i] [b]in the same folder[/b].
 [*] Run the install.command script ([i]Right Click[/i] > [i]Open[/i] > Then click [b]Open[/b] in the GateKeeper popup).
    That should look like this:
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168975][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168975&thumb=1[/img][/url]
@@ -39,7 +39,7 @@ Onwards!
 [SIZE="4"][b][u][COLOR="RoyalBlue"]Linux:[/COLOR][/u][/b][/SIZE]
 [LIST=1]
 [*] Check the previous message, and download the ZIP package that you're interested in.
-[*] Download the [url=http://kfmon-pub.auth-2ac4bfee353948ec8ea7fd1710574097.storage.sbg1.cloud.ovh.net/kfm_nix_install.zip]Linux install script archive[/url], and [i]unzip it[/i] [b]in the same folder[/b].
+[*] Download the [url=https://storage.sbg.cloud.ovh.net/v1/AUTH_2ac4bfee353948ec8ea7fd1710574097/kfmon-pub/kfm_nix_install.zip]Linux install script archive[/url], and [i]unzip it[/i] [b]in the same folder[/b].
 [*] Run the install.sh script with your favorite terminal emulator.
    Here's how it looks like on KDE:
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168968][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168968&thumb=1[/img][/url]
