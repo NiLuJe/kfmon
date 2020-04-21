@@ -44,10 +44,12 @@
 #include <string.h>
 #include <sys/inotify.h>
 #include <sys/resource.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <time.h>
@@ -80,6 +82,9 @@ extern const char* sqlite3ErrName(int);
 #	define KFMON_LOGFILE    "/home/niluje/Kindle/Staging/kfmon.log"
 #	define KFMON_CONFIGPATH "/home/niluje/Kindle/Staging/kfmon"
 #endif
+
+// Path to our IPC Unix socket
+#define KFMON_IPC_SOCKET "/tmp/kfmon-ipc.ctl"
 
 // MIN/MAX with no side-effects,
 // c.f., https://gcc.gnu.org/onlinedocs/cpp/Duplication-of-Side-Effects.html#Duplication-of-Side-Effects
@@ -260,6 +265,7 @@ static bool  are_spawns_blocked(void);
 static pid_t get_spawn_pid_for_watch(uint8_t);
 
 static bool handle_events(int);
+static void handle_ipc(int);
 
 static void sql_errorlogcb(void* __attribute__((unused)), int, const char*);
 

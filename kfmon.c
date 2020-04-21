@@ -2169,6 +2169,58 @@ static bool
 	return destroyed_wd;
 }
 
+// Handle a connection attempt on socket 'conn_fd'.
+static void
+    handle_ipc(int conn_fd)
+{
+	int data_fd = -1;
+	// NOTE: The data fd doesn't inherit the connection socket's flags on Linux.
+	//       Which is fine, since we want it *blocking* (unlike the connection socket), and CLOEXEC.
+	data_fd = accept4(conn_fd, NULL, NULL, SOCK_CLOEXEC);
+	if (data_fd == -1) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+			// Return early, and let the polling trigger a retry
+			return;
+		}
+		LOG(LOG_ERR, "Aborting: accept4: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] accept4 failed ?!", &fbinkConfig);
+		exit(EXIT_FAILURE);
+	}
+
+	// Eh, recycle PIPE_BUF, it should be more than enough for our needs.
+	char buf[PIPE_BUF] = { 0 };
+	// Loop while while we have data to read
+	for (;;) {
+		// Wait for & read input data.
+		// NOTE: This one is actually blocking, but is setup to handle a nonblocking data socket fd, too.
+		ssize_t len = read(data_fd, buf, sizeof(buf));    // Flawfinder: ignore
+		if (len == -1 && (errno != EAGAIN && errno != EWOULDBLOCK)) {
+			if (errno == EINTR) {
+				continue;
+			}
+			LOG(LOG_ERR, "Aborting: read: %m");
+			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
+			exit(EXIT_FAILURE);
+		}
+
+		// If a nonblocking read() found no data to read,
+		// then it returns -1 with errno set to EAGAIN.
+		// In that case, we exit the loop.
+		// We obviously also exit if read() returns 0 (EoF).
+		if (len <= 0) {
+			break;
+		}
+
+		// Ensure buffer is NUL-terminated before we start playing with it
+		buf[PIPE_BUF - 1] = '\0';
+
+		// TODO: Do actual KFMon stuff now :D
+	}
+
+	// We're done, close the data connection
+	close(data_fd);
+}
+
 // Handle SQLite logging on error
 static void
     sql_errorlogcb(void* pArg __attribute__((unused)), int iErrCode, const char* zMsg)
@@ -2188,9 +2240,10 @@ static void
 int
     main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
-	int           fd;
+	int           fd = -1;
 	int           poll_num;
-	struct pollfd pfd;
+	nfds_t nfds;
+	struct pollfd pfds[2] = { 0 };
 
 	// Make sure we're running at a neutral niceness
 	// (e.g., being launched via udev would leave us with a negative nice value).
@@ -2258,6 +2311,32 @@ int
 	}
 	if (sqlite3_initialize() != SQLITE_OK) {
 		LOG(LOG_ERR, "Failed to initialize SQLite, aborting!");
+		exit(EXIT_FAILURE);
+	}
+
+	// Setup the IPC socket
+	int conn_fd = -1;
+	// NOTE: We want it non-blocking because we handle incoming connections via poll,
+	//       and CLOEXEC not to pollute our spawns.
+	if ((conn_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
+		LOG(LOG_ERR, "Failed to create IPC socket (socket: %m), aborting!");
+		exit(EXIT_FAILURE);
+	}
+
+	struct sockaddr_un sock_name = { 0 };
+	sock_name.sun_family = AF_UNIX;
+	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
+
+	// Although we should never trip an existing socket, unlink it first, just to be safe
+	unlink(KFMON_IPC_SOCKET);
+	if (bind(conn_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {
+		LOG(LOG_ERR, "Failed to bind IPC socket (bind: %m), aborting!");
+		exit(EXIT_FAILURE);
+	}
+
+	// NOTE: We only accept a single client
+	if (listen(conn_fd, 1) == -1) {
+		LOG(LOG_ERR, "Failed to listen to IPC socket (listen: %m), aborting!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2373,14 +2452,18 @@ int
 			}
 		}
 
+		nfds = 2;
 		// Inotify input
-		pfd.fd     = fd;
-		pfd.events = POLLIN;
+		pfds[0].fd     = fd;
+		pfds[0].events = POLLIN;
+		// Connection socket
+		pfds[1].fd     = conn_fd;
+		pfds[1].events = POLLIN;
 
 		// Wait for events
 		LOG(LOG_INFO, "Listening for events.");
 		while (1) {
-			poll_num = poll(&pfd, 1, -1);
+			poll_num = poll(pfds, nfds, -1);
 			if (poll_num == -1) {
 				if (errno == EINTR) {
 					continue;
@@ -2391,13 +2474,18 @@ int
 			}
 
 			if (poll_num > 0) {
-				if (pfd.revents & POLLIN) {
+				if (pfds[0].revents & POLLIN) {
 					// Inotify events are available
 					if (handle_events(fd)) {
 						// Go back to the main loop if we exited early (because a watch was
 						// destroyed automatically after an unmount or an unlink, for instance)
 						break;
 					}
+				}
+
+				if (pfds[1].revents & POLLIN) {
+					// There was a new connection attempt
+					handle_ipc(conn_fd);
 				}
 			}
 		}
@@ -2407,6 +2495,9 @@ int
 		close(fd);
 	}
 
+	// Close the IPC connection socket. Unreachable.
+	close(conn_fd);
+	unlink(KFMON_IPC_SOCKET);
 	// Release SQLite resources. Also unreachable ;p.
 	sqlite3_shutdown();
 	// Why, yes, this is unreachable! Good thing it's also optional ;).
