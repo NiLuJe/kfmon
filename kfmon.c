@@ -435,6 +435,10 @@ static int
 			LOG(LOG_CRIT, "Passed an invalid value for action (too long?)!");
 			return 0;
 		}
+	} else if (MATCH("watch", "label")) {
+		if (str5cpy(pconfig->label, CFG_SZ_MAX, value, CFG_SZ_MAX, TRUNC) < 0) {
+			LOG(LOG_WARNING, "The value passed for label may have been truncated!");
+		}
 	} else if (MATCH("watch", "skip_db_checks")) {
 		if (strtobool(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
@@ -506,6 +510,8 @@ static bool
 		LOG(LOG_CRIT, "Mandatory key 'action' is missing or blank!");
 		sane = false;
 	}
+
+	// Don't warn about a missing/blank 'label', it's optional.
 
 	// If we asked for a database update, the next three keys become mandatory
 	if (pconfig->do_db_update) {
@@ -588,6 +594,16 @@ static bool
 			    watchConfig[target_idx].action,
 			    target_idx);
 		}
+	}
+
+	// Check if label was updated...
+	if (strcmp(pconfig->label, watchConfig[target_idx].label) != 0) {
+		str5cpy(watchConfig[target_idx].label, CFG_SZ_MAX, pconfig->label, CFG_SZ_MAX, TRUNC);
+		updated = true;
+		LOG(LOG_NOTICE,
+		    "Updated label to %s for watch config @ index %hhu",
+		    watchConfig[target_idx].label,
+		    target_idx);
 	}
 
 	// Check if do_db_update was updated...
@@ -770,11 +786,12 @@ static int
 						} else {
 							if (validate_watch_config(&watchConfig[watch_count])) {
 								LOG(LOG_NOTICE,
-								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, label=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 								    watch_count,
 								    p->fts_name,
 								    watchConfig[watch_count].filename,
 								    watchConfig[watch_count].action,
+								    watchConfig[watch_count].label,
 								    watchConfig[watch_count].block_spawns,
 								    watchConfig[watch_count].do_db_update,
 								    watchConfig[watch_count].db_title,
@@ -833,11 +850,12 @@ static int
 	       daemonConfig.with_notifications);
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, label=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
 		    watchConfig[watch_idx].is_active,
 		    watchConfig[watch_idx].filename,
 		    watchConfig[watch_idx].action,
+		    watchConfig[watch_idx].label,
 		    watchConfig[watch_idx].block_spawns,
 		    watchConfig[watch_idx].skip_db_checks,
 		    watchConfig[watch_idx].do_db_update,
@@ -955,11 +973,12 @@ static int
 									if (validate_watch_config(
 										&watchConfig[watch_idx])) {
 										LOG(LOG_NOTICE,
-										    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+										    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, label=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 										    watch_idx,
 										    p->fts_name,
 										    watchConfig[watch_idx].filename,
 										    watchConfig[watch_idx].action,
+										    watchConfig[watch_idx].label,
 										    watchConfig[watch_idx].block_spawns,
 										    watchConfig[watch_idx].do_db_update,
 										    watchConfig[watch_idx].db_title,
@@ -1083,11 +1102,12 @@ static int
 	// Let's recap (including failures)...
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, label=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
 		    watchConfig[watch_idx].is_active,
 		    watchConfig[watch_idx].filename,
 		    watchConfig[watch_idx].action,
+		    watchConfig[watch_idx].label,
 		    watchConfig[watch_idx].block_spawns,
 		    watchConfig[watch_idx].skip_db_checks,
 		    watchConfig[watch_idx].do_db_update,

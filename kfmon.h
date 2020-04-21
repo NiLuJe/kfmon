@@ -172,6 +172,7 @@ typedef struct
 	int    inotify_wd;
 	char   filename[CFG_SZ_MAX];
 	char   action[CFG_SZ_MAX];
+	char   label[CFG_SZ_MAX];
 	char   db_title[DB_SZ_MAX];
 	char   db_author[DB_SZ_MAX];
 	char   db_comment[DB_SZ_MAX];
