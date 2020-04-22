@@ -2214,7 +2214,27 @@ static void
 		// Ensure buffer is NUL-terminated before we start playing with it
 		buf[PIPE_BUF - 1] = '\0';
 
-		// TODO: Do actual KFMon stuff now :D
+		// Handle the supported commands
+		if (strncasecmp(buf, "list", 4) == 0) {
+			// Reply with a list of active watches, format is id:label (separated by a LF)
+			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				if (!watchConfig[watch_idx].is_active) {
+					continue;
+				}
+				// If it has a lebel, use it, otherwise, fallback to the trigger's basename
+				if (*watchConfig[watch_idx].label) {
+					snprintf(buf, sizeof(buf), "%hhu:%s\n", watch_idx, watchConfig[watch_idx].label);
+				} else {
+					snprintf(buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
+				}
+
+			}
+
+		} else if (strncasecmp(buf, "start", 5) == 0) {
+
+		} else {
+			LOG(LOG_WARNING, "Received an invalid/unsupported IPC command: %.*s", (int) len, buf);
+		}
 	}
 
 	// We're done, close the data connection
