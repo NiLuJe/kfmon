@@ -2225,13 +2225,15 @@ static void
 				if (*watchConfig[watch_idx].label) {
 					snprintf(buf, sizeof(buf), "%hhu:%s\n", watch_idx, watchConfig[watch_idx].label);
 				} else {
-					snprintf(buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
+					snprintf(buf,
+						 sizeof(buf),
+						 "%hhu:%s\n",
+						 watch_idx,
+						 basename(watchConfig[watch_idx].filename));
 				}
-
 			}
 
 		} else if (strncasecmp(buf, "start", 5) == 0) {
-
 		} else {
 			LOG(LOG_WARNING, "Received an invalid/unsupported IPC command: %.*s", (int) len, buf);
 		}
@@ -2262,7 +2264,7 @@ int
 {
 	int           fd = -1;
 	int           poll_num;
-	nfds_t nfds;
+	nfds_t        nfds;
 	struct pollfd pfds[2] = { 0 };
 
 	// Make sure we're running at a neutral niceness
@@ -2344,7 +2346,7 @@ int
 	}
 
 	struct sockaddr_un sock_name = { 0 };
-	sock_name.sun_family = AF_UNIX;
+	sock_name.sun_family         = AF_UNIX;
 	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
 
 	// Although we should never trip an existing socket, unlink it first, just to be safe

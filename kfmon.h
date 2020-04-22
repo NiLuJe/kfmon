@@ -26,6 +26,7 @@
 #endif
 
 #include "FBInk/fbink.h"
+#include "git/wrapper.h"
 #include "inih/ini.h"
 #include "str5/str5.h"
 #include <errno.h>

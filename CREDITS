@@ -15,3 +15,7 @@ This project makes use of a number of third-party libraries, which we'll acknowl
 	* str5 (Str5 functions), Copyright (C) 2016/05, Eric Sanchis <eric.sanchis@iut-rodez.fr>,
 		Released under the GNU Lesser General Public License (https://www.gnu.org/licenses/lgpl-3.0.html)
 		(http://aral.iut-rodez.fr/en/sanchis/miscellaneous/str5/str5.html)
+
+	* git/wrapper.c (Various trivial helper wrappers around standard functions, imported from the Git project), Copyright (C) Git contributors: http://www.openhub.net/p/git/contributors/summary,
+		Released under the GNU General Public License version 2 (https://github.com/git/git/blob/master/COPYING)
+		(https://git-scm.com/)

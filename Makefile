@@ -141,12 +141,15 @@ SRCS:=kfmon.c
 INIH_SRCS:=inih/ini.c
 # We only need str5cpy
 STR5_SRCS:=str5/str5cpy.c
+# We always need git's neat read/write wrappers
+GIT_SRCS:=git/wrapper.c
 
 default: vendored
 
 OBJS:=$(addprefix $(OUT_DIR)/, $(SRCS:.c=.o))
 INIH_OBJS:=$(addprefix $(OUT_DIR)/, $(INIH_SRCS:.c=.o))
 STR5_OBJS:=$(addprefix $(OUT_DIR)/, $(STR5_SRCS:.c=.o))
+GIT_OBJS:=$(addprefix $(OUT_DIR)/, $(GIT_SRCS:.c=.o))
 
 # And now we can silence a few inih-specific warnings
 $(INIH_OBJS): QUIET_CFLAGS := -Wno-cast-qual
@@ -155,13 +158,14 @@ $(OUT_DIR)/%.o: %.c
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(QUIET_CFLAGS) -o $@ -c $<
 
 outdir:
-	mkdir -p $(OUT_DIR)/inih $(OUT_DIR)/str5
+	mkdir -p $(OUT_DIR)/inih $(OUT_DIR)/str5 $(OUT_DIR)/git
 
 # Make absolutely sure we create our output directories first, even with unfortunate // timings!
 # c.f., https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html#Prerequisite-Types
 $(OBJS): | outdir
 $(INIH_OBJS): | outdir
 $(STR5_OBJS): | outdir
+$(GIT_OBJS): | outdir
 
 all: kfmon
 
@@ -169,7 +173,7 @@ vendored: sqlite.built fbink.built
 	$(MAKE) kfmon SQLITE=true
 
 kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(LIBS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(GIT_OBJS) $(LIBS)
 
 shim: | outdir
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/shim$(BINEXT) utils/shim.c
@@ -225,12 +229,14 @@ nilujed:
 clean:
 	rm -rf Release/inih/*.o
 	rm -rf Release/str5/*.o
+	rm -rf Release/git/*.o
 	rm -rf Release/*.o
 	rm -rf Release/kfmon
 	rm -rf Release/shim
 	rm -rf Release/KoboRoot.tgz
 	rm -rf Debug/inih/*.o
 	rm -rf Debug/str5/*.o
+	rm -rf Debug/git/*.o
 	rm -rf Debug/*.o
 	rm -rf Debug/kfmon
 	rm -rf Debug/shim
