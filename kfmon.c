@@ -2169,73 +2169,110 @@ static bool
 	return destroyed_wd;
 }
 
+// Handle input data from a successful IPC connection
+static bool
+    handle_ipc(int data_fd)
+{
+	// Eh, recycle PIPE_BUF, it should be more than enough for our needs.
+	char buf[PIPE_BUF] = { 0 };
+
+	// We don't actually know the size of the input data, so, best effort here.
+	ssize_t len = xread(data_fd, buf, sizeof(buf));
+	if (len < 0) {
+		// Only actual failures are left, xread handles the rest
+		LOG(LOG_ERR, "Aborting: read: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
+		// FIXME: Make non-fatal?
+		exit(EXIT_FAILURE);
+	}
+
+	// Ensure buffer is NUL-terminated before we start playing with it
+	buf[PIPE_BUF - 1] = '\0';
+
+	// Handle the supported commands
+	if (strncasecmp(buf, "list", 4) == 0) {
+		// Reply with a list of active watches, format is id:label (separated by a LF)
+		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+			if (!watchConfig[watch_idx].is_active) {
+				continue;
+			}
+			// If it has a label, use it, otherwise, fallback to the trigger's basename
+			int packet_len = 0;
+			if (*watchConfig[watch_idx].label) {
+				packet_len =
+				    snprintf(buf, sizeof(buf), "%hhu:%s\n", watch_idx, watchConfig[watch_idx].label);
+			} else {
+				packet_len = snprintf(
+				    buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
+			}
+			// Make sure we reply with that in full (w/ a NUL) to the client.
+			if (write_in_full(data_fd, buf, packet_len + 1) < 0) {
+				// Only actual failures are left, xread handles the rest
+				LOG(LOG_ERR, "Aborting: write: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+				// FIXME: Make non-fatal?
+				exit(EXIT_FAILURE);
+			}
+		}
+	} else if (strncasecmp(buf, "start", 5) == 0) {
+	} else {
+		LOG(LOG_WARNING, "Received an invalid/unsupported IPC command: %.*s", (int) len, buf);
+	}
+
+	if (len == 0) {
+		// EoF, we're done, signal our polling to close the connection
+		return true;
+	}
+	// Client still has something to say?
+	return false;
+}
+
 // Handle a connection attempt on socket 'conn_fd'.
 static void
-    handle_ipc(int conn_fd)
+    handle_connection(int conn_fd)
 {
 	int data_fd = -1;
 	// NOTE: The data fd doesn't inherit the connection socket's flags on Linux.
-	//       Which is fine, since we want it *blocking* (unlike the connection socket), and CLOEXEC.
-	data_fd = accept4(conn_fd, NULL, NULL, SOCK_CLOEXEC);
+	//       We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
+	data_fd = accept4(conn_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
 	if (data_fd == -1) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-			// Return early, and let the polling trigger a retry
+			// Return early, and let the socket polling trigger a retry
 			return;
 		}
 		LOG(LOG_ERR, "Aborting: accept4: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] accept4 failed ?!", &fbinkConfig);
+		// TODO: Make non-fatal?
 		exit(EXIT_FAILURE);
 	}
 
-	// Eh, recycle PIPE_BUF, it should be more than enough for our needs.
-	char buf[PIPE_BUF] = { 0 };
-	// Loop while while we have data to read
-	for (;;) {
-		// Wait for & read input data.
-		// NOTE: This one is actually blocking, but is setup to handle a nonblocking data socket fd, too.
-		ssize_t len = read(data_fd, buf, sizeof(buf));    // Flawfinder: ignore
-		if (len == -1 && (errno != EAGAIN && errno != EWOULDBLOCK)) {
+	int           poll_num;
+	struct pollfd pfd = { 0 };
+	// Data socket
+	pfd.fd     = data_fd;
+	pfd.events = POLLIN;
+
+	// Wait for data
+	while (1) {
+		poll_num = poll(&pfd, 1, -1);
+		if (poll_num == -1) {
 			if (errno == EINTR) {
 				continue;
 			}
-			LOG(LOG_ERR, "Aborting: read: %m");
-			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
+			LOG(LOG_ERR, "Aborting: poll: %m");
+			fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
 
-		// If a nonblocking read() found no data to read,
-		// then it returns -1 with errno set to EAGAIN.
-		// In that case, we exit the loop.
-		// We obviously also exit if read() returns 0 (EoF).
-		if (len <= 0) {
-			break;
-		}
-
-		// Ensure buffer is NUL-terminated before we start playing with it
-		buf[PIPE_BUF - 1] = '\0';
-
-		// Handle the supported commands
-		if (strncasecmp(buf, "list", 4) == 0) {
-			// Reply with a list of active watches, format is id:label (separated by a LF)
-			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
-				if (!watchConfig[watch_idx].is_active) {
-					continue;
-				}
-				// If it has a lebel, use it, otherwise, fallback to the trigger's basename
-				if (*watchConfig[watch_idx].label) {
-					snprintf(buf, sizeof(buf), "%hhu:%s\n", watch_idx, watchConfig[watch_idx].label);
-				} else {
-					snprintf(buf,
-						 sizeof(buf),
-						 "%hhu:%s\n",
-						 watch_idx,
-						 basename(watchConfig[watch_idx].filename));
+		if (poll_num > 0) {
+			if (pfd.revents & POLLIN) {
+				// There's data to be read!
+				if (handle_ipc(data_fd)) {
+					// We've successfully handled all input data, we're done!
+					break;
 				}
 			}
-
-		} else if (strncasecmp(buf, "start", 5) == 0) {
-		} else {
-			LOG(LOG_WARNING, "Received an invalid/unsupported IPC command: %.*s", (int) len, buf);
+			// NOTE: No need to handle POLLHUP, we want to read input until EoF!
 		}
 	}
 
@@ -2507,7 +2544,7 @@ int
 
 				if (pfds[1].revents & POLLIN) {
 					// There was a new connection attempt
-					handle_ipc(conn_fd);
+					handle_connection(conn_fd);
 				}
 			}
 		}
