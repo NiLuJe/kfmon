@@ -2218,10 +2218,10 @@ static bool
 	} else if (strncasecmp(buf, "start", 5) == 0) {
 		// Pull the actual id out of there. Could have went with strtok, too.
 		uint8_t watch_id = WATCH_MAX;
-		int n = sscanf(buf, "start:%hhu", &watch_id);
+		int     n        = sscanf(buf, "start:%hhu", &watch_id);
 		if (n == 1) {
 			// Got it! Now check if it's valid...
-			bool    found_watch_idx = false;
+			bool found_watch_idx = false;
 			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 				// Needs to be an active watch.
 				// As NMI can only honor the startup listing,
@@ -2237,11 +2237,72 @@ static bool
 			}
 			if (!found_watch_idx) {
 				// Invalid or inactive watch, can't do anything.
-				LOG(LOG_WARNING, "Received a request to start an invalid watch id: %hhu", watch_id);
+				LOG(LOG_WARNING, "Received a request to start an invalid watch idx: %hhu", watch_id);
 			} else {
 				// Go ahead, we thankfully have a few less sanity checks to deal with than handle_events,
 				// because no SQL ;).
-				LOG(LOG_INFO, "Processing IPC request to start watch id: %hhu", watch_id);
+				LOG(LOG_INFO, "Processing IPC request to start watch idx: %hhu", watch_id);
+
+				// See handle_events for the logic behind spawn blocking & co.
+				bool is_watch_spawned;
+				bool is_blocker_spawned;
+				pthread_mutex_lock(&ptlock);
+				is_watch_spawned   = is_watch_already_spawned(watch_id);
+				is_blocker_spawned = is_blocker_running();
+				pthread_mutex_unlock(&ptlock);
+				bool is_spawn_blocked = are_spawns_blocked();
+
+				if (!is_watch_spawned && !is_blocker_spawned && !is_spawn_blocked) {
+					// Skipping the SQL checks implies we don't need the "may still be processing"
+					// logic, either ;).
+					LOG(LOG_INFO,
+					    "Preparing to spawn %s for watch idx %hhu . . .",
+					    watchConfig[watch_id].action,
+					    watch_id);
+					if (watchConfig[watch_id].block_spawns) {
+						LOG(LOG_NOTICE,
+						    "%s is flagged as a spawn blocker, it will prevent *any* event from triggering a spawn while it is still running!",
+						    watchConfig[watch_id].action);
+					}
+					// We're using execvp()...
+					char* const cmd[] = { watchConfig[watch_id].action, NULL };
+					spawn(cmd, watch_id);
+				} else {
+					if (is_watch_spawned) {
+						pid_t spid;
+						pthread_mutex_lock(&ptlock);
+						spid = get_spawn_pid_for_watch(watch_id);
+						pthread_mutex_unlock(&ptlock);
+
+						LOG(LOG_INFO,
+						    "As watch idx %hhu (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!",
+						    watch_id,
+						    watchConfig[watch_id].filename,
+						    (long) spid,
+						    watchConfig[watch_id].action);
+						fbink_printf(FBFD_AUTO,
+							     NULL,
+							     &fbinkConfig,
+							     "[KFMon] Not spawning %s: still running!",
+							     basename(watchConfig[watch_id].action));
+					} else if (is_blocker_spawned) {
+						LOG(LOG_INFO,
+						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
+						fbink_printf(FBFD_AUTO,
+							     NULL,
+							     &fbinkConfig,
+							     "[KFMon] Not spawning %s: blocked!",
+							     basename(watchConfig[watch_id].action));
+					} else if (is_spawn_blocked) {
+						LOG(LOG_INFO,
+						    "As the global spawn inhibiter flag is present, we won't be spawning anything!");
+						fbink_printf(FBFD_AUTO,
+							     NULL,
+							     &fbinkConfig,
+							     "[KFMon] Not spawning %s: inhibited!",
+							     basename(watchConfig[watch_id].action));
+					}
+				}
 			}
 		} else if (errno != 0) {
 			LOG(LOG_ERR, "Aborting: sscanf: %m");
