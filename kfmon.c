@@ -1842,6 +1842,26 @@ static pid_t
 static bool
     handle_events(int fd)
 {
+	// NOTE: Because the framebuffer state is liable to have changed since our last init/reinit,
+	//       either expectedly (boot -> pickel -> nickel), or a bit more unpredictably (rotation, bitdepth change),
+	//       we'll ask FBInk to make sure it has an up-to-date fb state for each new batch of events,
+	//       so that messages will be printed properly, no matter what :).
+	//       Put everything behind our mutex to be super-safe,
+	//       since we're playing with library globals...
+	// NOTE: Even forgetting about rotation and bitdepth changes, which may not ever happen on most *vanilla* devices,
+	//       this is needed because processing is done very early by Nickel for "new" icons,
+	//       when they end up on the Home screen straight away,
+	//       (which is a given if you added at most 3 items, with the new Home screen).
+	//       Not doing a reinit would be problematic, because it's early enough that pickel is still running,
+	//       so we'd be inheriting its quirky fb setup and not Nickel's...
+	// NOTE: This was moved from inside the following loop to here, just outside of it, in order to limit locking,
+	//       but it will in fact change nothing if events aren't actually batched,
+	//       which appears to be the case in most of our use-cases...
+	pthread_mutex_lock(&ptlock);
+	// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+	fbink_reinit(FBFD_AUTO, &fbinkConfig);
+	pthread_mutex_unlock(&ptlock);
+
 	// Some systems cannot read integer variables if they are not properly aligned.
 	// On other systems, incorrect alignment may decrease performance.
 	// Hence, the buffer used for reading from the inotify file descriptor
@@ -1870,26 +1890,6 @@ static bool
 		if (len <= 0) {
 			break;
 		}
-
-		// NOTE: Because the framebuffer state is liable to have changed since our last init/reinit,
-		//       either expectedly (boot -> pickel -> nickel), or a bit more unpredictably (rotation, bitdepth change),
-		//       we'll ask FBInk to make sure it has an up-to-date fb state for each new batch of events,
-		//       so that messages will be printed properly, no matter what :).
-		//       Put everything behind our mutex to be super-safe,
-		//       since we're playing with library globals...
-		// NOTE: Even forgetting about rotation and bitdepth changes, which may not ever happen on most *vanilla* devices,
-		//       this is needed because processing is done very early by Nickel for "new" icons,
-		//       when they end up on the Home screen straight away,
-		//       (which is a given if you added at most 3 items, with the new Home screen).
-		//       Not doing a reinit would be problematic, because it's early enough that pickel is still running,
-		//       so we'd be inheriting its quirky fb setup and not Nickel's...
-		// NOTE: This was moved from inside the following loop to here, just outside of it, in order to limit locking,
-		//       but it will in fact change nothing if events aren't actually batched,
-		//       which appears to be the case in most of our use-cases...
-		pthread_mutex_lock(&ptlock);
-		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-		fbink_reinit(FBFD_AUTO, &fbinkConfig);
-		pthread_mutex_unlock(&ptlock);
 
 		// Loop over all events in the buffer
 		for (char* ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
@@ -2191,6 +2191,7 @@ static bool
 
 	// Handle the supported commands
 	if (strncasecmp(buf, "list", 4) == 0) {
+		LOG(LOG_INFO, "Processing IPC watch listing request");
 		// Reply with a list of active watches, format is id:label (separated by a LF)
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 			if (!watchConfig[watch_idx].is_active) {
@@ -2207,7 +2208,7 @@ static bool
 			}
 			// Make sure we reply with that in full (w/ a NUL) to the client.
 			if (write_in_full(data_fd, buf, packet_len + 1) < 0) {
-				// Only actual failures are left, xread handles the rest
+				// Only actual failures are left, xwrite handles the rest
 				LOG(LOG_ERR, "Aborting: write: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
 				// FIXME: Make non-fatal?
@@ -2215,6 +2216,41 @@ static bool
 			}
 		}
 	} else if (strncasecmp(buf, "start", 5) == 0) {
+		// Pull the actual id out of there. Could have went with strtok, too.
+		uint8_t watch_id = WATCH_MAX;
+		int n = sscanf(buf, "start:%hhu", &watch_id);
+		if (n == 1) {
+			// Got it! Now check if it's valid...
+			bool    found_watch_idx = false;
+			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				// Needs to be an active watch.
+				// As NMI can only honor the startup listing,
+				// we may genuinely be asked to start now inactive watches.
+				if (!watchConfig[watch_idx].is_active) {
+					continue;
+				}
+
+				if (watch_id == watch_idx) {
+					found_watch_idx = true;
+					break;
+				}
+			}
+			if (!found_watch_idx) {
+				// Invalid or inactive watch, can't do anything.
+				LOG(LOG_WARNING, "Received a request to start an invalid watch id: %hhu", watch_id);
+			} else {
+				// Go ahead, we thankfully have a few less sanity checks to deal with than handle_events,
+				// because no SQL ;).
+				LOG(LOG_INFO, "Processing IPC request to start watch id: %hhu", watch_id);
+			}
+		} else if (errno != 0) {
+			LOG(LOG_ERR, "Aborting: sscanf: %m");
+			fbink_print(FBFD_AUTO, "[KFMon] sscanf failed ?!", &fbinkConfig);
+			// FIXME: Make non-fatal?
+			exit(EXIT_FAILURE);
+		} else {
+			LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
+		}
 	} else {
 		LOG(LOG_WARNING, "Received an invalid/unsupported IPC command: %.*s", (int) len, buf);
 	}
@@ -2231,6 +2267,12 @@ static bool
 static void
     handle_connection(int conn_fd)
 {
+	// Much like handle_events, we need to ensure fb state is consistent...
+	pthread_mutex_lock(&ptlock);
+	// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+	fbink_reinit(FBFD_AUTO, &fbinkConfig);
+	pthread_mutex_unlock(&ptlock);
+
 	int data_fd = -1;
 	// NOTE: The data fd doesn't inherit the connection socket's flags on Linux.
 	//       We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
@@ -2245,6 +2287,7 @@ static void
 		// TODO: Make non-fatal?
 		exit(EXIT_FAILURE);
 	}
+	// TODO: Fancy logging w/ SO_PEERCRED
 
 	int           poll_num;
 	struct pollfd pfd = { 0 };
