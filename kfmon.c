@@ -2206,7 +2206,7 @@ static bool
 				packet_len = snprintf(
 				    buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
 			}
-			// Make sure we reply with that in full (w/o a NUL) to the client.
+			// Make sure we reply with that in full (w/o a NUL, we're not done yet) to the client.
 			if (write_in_full(data_fd, buf, (size_t)(packet_len)) < 0) {
 				// Only actual failures are left, xwrite handles the rest
 				LOG(LOG_ERR, "Aborting: write: %m");
@@ -2215,10 +2215,21 @@ static bool
 				exit(EXIT_FAILURE);
 			}
 		}
+		// Now that we're done, send a final NUL, just to be nice.
+		buf[0] = '\0';
+		if (write_in_full(data_fd, buf, 1U) < 0) {
+			// Only actual failures are left, xwrite handles the rest
+			LOG(LOG_ERR, "Aborting: write: %m");
+			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			// FIXME: Make non-fatal?
+			exit(EXIT_FAILURE);
+		}
 	} else if (strncasecmp(buf, "start", 5) == 0) {
 		// Pull the actual id out of there. Could have went with strtok, too.
 		uint8_t watch_id = WATCH_MAX;
 		int     n        = sscanf(buf, "start:%hhu", &watch_id);
+		// We'll add a courtesy reply with the status
+		int packet_len = 0;
 		if (n == 1) {
 			// Got it! Now check if it's valid...
 			bool found_watch_idx = false;
@@ -2238,6 +2249,7 @@ static bool
 			if (!found_watch_idx) {
 				// Invalid or inactive watch, can't do anything.
 				LOG(LOG_WARNING, "Received a request to start an invalid watch idx: %hhu", watch_id);
+				packet_len = snprintf(buf, sizeof(buf), "ERR_INVALID_ID\n");
 			} else {
 				// Go ahead, we thankfully have a few less sanity checks to deal with than handle_events,
 				// because no SQL ;).
@@ -2267,6 +2279,7 @@ static bool
 					// We're using execvp()...
 					char* const cmd[] = { watchConfig[watch_id].action, NULL };
 					spawn(cmd, watch_id);
+					packet_len = snprintf(buf, sizeof(buf), "OK\n");
 				} else {
 					if (is_watch_spawned) {
 						pid_t spid;
@@ -2285,6 +2298,7 @@ static bool
 							     &fbinkConfig,
 							     "[KFMon] Not spawning %s: still running!",
 							     basename(watchConfig[watch_id].action));
+						packet_len = snprintf(buf, sizeof(buf), "WARN_ALREADY_RUNNING\n");
 					} else if (is_blocker_spawned) {
 						LOG(LOG_INFO,
 						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
@@ -2293,6 +2307,7 @@ static bool
 							     &fbinkConfig,
 							     "[KFMon] Not spawning %s: blocked!",
 							     basename(watchConfig[watch_id].action));
+						packet_len = snprintf(buf, sizeof(buf), "WARN_SPAWN_BLOCKED\n");
 					} else if (is_spawn_blocked) {
 						LOG(LOG_INFO,
 						    "As the global spawn inhibiter flag is present, we won't be spawning anything!");
@@ -2301,21 +2316,39 @@ static bool
 							     &fbinkConfig,
 							     "[KFMon] Not spawning %s: inhibited!",
 							     basename(watchConfig[watch_id].action));
+						packet_len = snprintf(buf, sizeof(buf), "WARN_SPAWN_INHIBITED\n");
 					}
 				}
 			}
 		} else if (errno != 0) {
 			LOG(LOG_ERR, "Aborting: sscanf: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] sscanf failed ?!", &fbinkConfig);
-			// FIXME: Make non-fatal?
+			// FIXME: Make non-fatal? (don't forget status reply)
 			exit(EXIT_FAILURE);
 		} else {
 			LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
+			packet_len = snprintf(buf, sizeof(buf), "ERR_MALFORMED_CMD\n");
 		}
-		// TODO: Reply with status?
+		// Reply with the status
+		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Only actual failures are left, xwrite handles the rest
+			LOG(LOG_ERR, "Aborting: write: %m");
+			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			// FIXME: Make non-fatal?
+			exit(EXIT_FAILURE);
+		}
 	} else {
-		LOG(LOG_WARNING, "Received an invalid/unsupported IPC command: %.*s", (int) len, buf);
-		// TODO: Reply with a list of valid commands?
+		LOG(LOG_WARNING, "Received an invalid/unsupported IPC %zu bytes command: %.*s (%x)", len, (int) len, buf, buf[0]);
+		// Reply with a list of valid commands
+		int packet_len = snprintf(buf, sizeof(buf), "ERR_INVALID_CMD\nComma sperated list of valid commands: list, start\n");
+		// W/ NUL
+		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Only actual failures are left, xwrite handles the rest
+			LOG(LOG_ERR, "Aborting: write: %m");
+			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			// FIXME: Make non-fatal?
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (len == 0) {
