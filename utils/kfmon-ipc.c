@@ -26,6 +26,7 @@
 
 #include "../git/wrapper.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <linux/limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -88,60 +89,77 @@ int
 		exit(EXIT_FAILURE);
 	}
 
-	// Chat with hot sockets in your area!
-	char*   line = NULL;
-	size_t  len  = 0;
-	ssize_t nread;
+	// Cheap-ass prompt is cheap!
 	fprintf(stderr, ">>> ");
-	// Read stdin line by line...
-	while ((nread = getline(&line, &len, stdin)) != -1) {
-		// Send it (w/ NUL)
-		if (write_in_full(data_fd, line, (size_t)(nread + 1)) < 0) {
-			// Only actual failures are left, xwrite handles the rest
-			fprintf(stderr, "Aborting: write: %m!\n");
+	// We'll be polling both stdin and the socket...
+	int           poll_num;
+	nfds_t        nfds    = 2;
+	struct pollfd pfds[2] = { 0 };
+	// stdin
+	// We'll need to make it non-blocking, first...
+	int flflags = fcntl(fileno(stdin), F_GETFL, 0);
+	if (flflags == -1) {
+		fprintf(stderr, "Aborting: getfl fcntl: %m!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (fcntl(fileno(stdin), F_SETFL, flflags | O_NONBLOCK) == -1) {
+		fprintf(stderr, "Aborting: setfl fcntl: %m!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	pfds[0].fd     = fileno(stdin);
+	pfds[0].events = POLLIN;
+	// Data socket
+	pfds[1].fd     = data_fd;
+	pfds[1].events = POLLIN;
+
+	// Chat with hot sockets in your area!
+	while (1) {
+		poll_num = poll(pfds, nfds, -1);
+		if (poll_num == -1) {
+			if (errno == EINTR) {
+				continue;
+			}
+			fprintf(stderr, "Aborting: poll: %m!\n");
 			exit(EXIT_FAILURE);
 		}
 
-		// Wait a bit in case there's a reply
-		int           poll_num;
-		struct pollfd pfd = { 0 };
-		// Data socket
-		pfd.fd     = data_fd;
-		pfd.events = POLLIN;
-
-		// Wait for data for 500ms
-		while (1) {
-			poll_num = poll(&pfd, 1, 500);
-			if (poll_num == -1) {
-				if (errno == EINTR) {
-					continue;
-				}
-				fprintf(stderr, "Aborting: poll: %m!\n");
-				exit(EXIT_FAILURE);
-			}
-
-			if (poll_num > 0) {
-				if (pfd.revents & POLLIN) {
-					// There's data to be read!
-					if (handle_reply(data_fd)) {
-						// We've successfully handled all input data, we're done!
-						break;
+		if (poll_num > 0) {
+			if (pfds[0].revents & POLLIN) {
+				// Stuff to read on stdin, read it line by line
+				char*   line = NULL;
+				size_t  len  = 0;
+				ssize_t nread;
+				while ((nread = getline(&line, &len, stdin)) != -1) {
+					// Send it over the socket (w/ NUL)
+					if (write_in_full(data_fd, line, (size_t)(nread + 1)) < 0) {
+						// Only actual failures are left, xwrite handles the rest
+						fprintf(stderr, "Aborting: write: %m!\n");
+						exit(EXIT_FAILURE);
 					}
 				}
+				free(line);
 			}
 
-			if (poll_num == 0) {
-				// Timed out, we're done!
-				fprintf(stderr, "<<<!>>> No reply after 500ms\n");
-				break;
+			if (pfds[1].revents & POLLIN) {
+				// There was a reply from the socket
+				if (handle_reply(data_fd)) {
+					// We've successfully handled all input data, we're done!
+					//break;
+				}
+			}
+
+			if (pfds[1].revents & POLLHUP) {
+				fprintf(stderr, "Remote closed the connection!\n");
+				goto cleanup;
 			}
 		}
 
 		// Back to sending...
 		fprintf(stderr, ">>> ");
 	}
-	free(line);
 
+cleanup:
 	// Bye now!
 	close(data_fd);
 
