@@ -2235,7 +2235,7 @@ static bool
 			bool found_watch_idx = false;
 			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 				// Needs to be an active watch.
-				// As NMI can only honor the startup listing,
+				// As NickelMenu can only honor the startup listing,
 				// we may genuinely be asked to start now inactive watches.
 				if (!watchConfig[watch_idx].is_active) {
 					continue;
