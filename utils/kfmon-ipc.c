@@ -181,8 +181,13 @@ int
 			if (pfds[1].revents & POLLIN) {
 				// There was a reply from the socket
 				if (!handle_reply(data_fd)) {
-					// There wasn't actually any data!
-					fprintf(stderr, "Nothing more to read!\n");
+					// If the remote closed the connection, we get POLLIN|POLLHUP w/ EoF ;).
+					if (pfds[1].revents & POLLHUP) {
+						fprintf(stderr, "Remote closed the connection!\n");
+					} else {
+						// There wasn't actually any data!
+						fprintf(stderr, "Nothing more to read!\n");
+					}
 					goto cleanup;
 				}
 			}
