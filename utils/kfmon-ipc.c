@@ -31,12 +31,53 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
 // Path to our IPC Unix socket
 #define KFMON_IPC_SOCKET "/tmp/kfmon-ipc.ctl"
+
+// Drain stdin and send it to the IPC socket
+static bool
+    handle_stdin(int data_fd)
+{
+	// CHeck how many bytes we need to drain
+	int bytes = 0;
+	if (ioctl(fileno(stdin), FIONREAD, &bytes) == -1) {
+		fprintf(stderr, "Aborting: ioctl: %m!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// If there's nothing to read, abort early (given that we're after a POLLIN, that should never happen)
+	if (bytes == 0) {
+		return false;
+	}
+
+	// Eh, recycle PIPE_BUF, it should be more than enough for our needs.
+	char buf[PIPE_BUF] = { 0 };
+
+	// Now that we know how much to read, do it!
+	ssize_t len = read_in_full(fileno(stdin), buf, (size_t) bytes);
+	if (len < 0) {
+		// Only actual failures are left, xread handles the rest
+		fprintf(stderr, "Aborting: read: %m!\n");
+		// FIXME: Make non-fatal?
+		exit(EXIT_FAILURE);
+	}
+
+	// Send it over the socket (w/ NUL)
+	buf[bytes] = '\0';
+	if (write_in_full(data_fd, buf, (size_t)(bytes + 1)) < 0) {
+		// Only actual failures are left, xwrite handles the rest
+		fprintf(stderr, "Aborting: write: %m!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// Done
+	return true;
+}
 
 // Handle replies from the IPC socket
 static bool
@@ -126,19 +167,9 @@ int
 
 		if (poll_num > 0) {
 			if (pfds[0].revents & POLLIN) {
-				// Stuff to read on stdin, read it line by line
-				char*   line = NULL;
-				size_t  len  = 0;
-				ssize_t nread;
-				while ((nread = getline(&line, &len, stdin)) != -1) {
-					// Send it over the socket (w/ NUL)
-					if (write_in_full(data_fd, line, (size_t)(nread + 1)) < 0) {
-						// Only actual failures are left, xwrite handles the rest
-						fprintf(stderr, "Aborting: write: %m!\n");
-						exit(EXIT_FAILURE);
-					}
+				if (handle_stdin(data_fd)) {
+					//break;
 				}
-				free(line);
 			}
 
 			if (pfds[1].revents & POLLIN) {
