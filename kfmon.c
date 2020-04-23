@@ -2312,8 +2312,10 @@ static bool
 		} else {
 			LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
 		}
+		// TODO: Reply with status?
 	} else {
 		LOG(LOG_WARNING, "Received an invalid/unsupported IPC command: %.*s", (int) len, buf);
+		// TODO: Reply with a list of valid commands?
 	}
 
 	if (len == 0) {
