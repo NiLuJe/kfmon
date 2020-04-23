@@ -26,7 +26,6 @@
 
 #include "../git/wrapper.h"
 #include <errno.h>
-#include <fcntl.h>
 #include <linux/limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -146,19 +145,8 @@ int
 	int           poll_num;
 	nfds_t        nfds    = 2;
 	struct pollfd pfds[2] = { 0 };
-	// stdin
-	// We'll need to make it non-blocking, first...
-	// FIXME: Or do we, actually?
-	int flflags = fcntl(fileno(stdin), F_GETFL, 0);
-	if (flflags == -1) {
-		fprintf(stderr, "Aborting: getfl fcntl: %m!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (fcntl(fileno(stdin), F_SETFL, flflags | O_NONBLOCK) == -1) {
-		fprintf(stderr, "Aborting: setfl fcntl: %m!\n");
-		exit(EXIT_FAILURE);
-	}
 
+	// stdin
 	pfds[0].fd     = fileno(stdin);
 	pfds[0].events = POLLIN;
 	// Data socket
