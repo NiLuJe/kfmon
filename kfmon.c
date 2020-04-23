@@ -2351,6 +2351,7 @@ static void
 		exit(EXIT_FAILURE);
 	}
 	// TODO: Fancy logging w/ SO_PEERCRED
+	LOG(LOG_INFO, "Handling incoming IPC connection");
 
 	int           poll_num;
 	struct pollfd pfd = { 0 };
@@ -2384,6 +2385,7 @@ static void
 
 	// We're done, close the data connection
 	close(data_fd);
+	LOG(LOG_INFO, "Closed IPC connection");
 }
 
 // Handle SQLite logging on error
