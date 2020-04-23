@@ -174,6 +174,10 @@ int
 					fprintf(stderr, "No more data in stdin!\n");
 					goto cleanup;
 				}
+				// If it was also closed (i.e., it's a pipe), go back to poll to check for replies now.
+				if (pfds[0].revents & POLLHUP) {
+					continue;
+				}
 			}
 
 			if (pfds[1].revents & POLLIN) {
@@ -184,6 +188,12 @@ int
 				}
 			}
 
+			// stdin was closed,
+			if (pfds[0].revents & POLLHUP) {
+				fprintf(stderr, "stdin was closed!\n");
+				goto cleanup;
+			}
+			// Remote closed the connection
 			if (pfds[1].revents & POLLHUP) {
 				fprintf(stderr, "Remote closed the connection!\n");
 				goto cleanup;
