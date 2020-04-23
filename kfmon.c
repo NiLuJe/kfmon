@@ -2564,8 +2564,9 @@ int
 		exit(EXIT_FAILURE);
 	}
 
-	// NOTE: We only accept a single client
-	//       Be aware that, in practice, the kernel will round that up...
+	// NOTE: We only accept a single client, as we can only serve 'em one by one anyway.
+	//       Be aware that, in practice, the kernel will round that up, which means that you can successfully connect,
+	//       send a request, but only get a reply whenever we actually get to it...
 	if (listen(conn_fd, 1) == -1) {
 		LOG(LOG_ERR, "Failed to listen to IPC socket (listen: %m), aborting!");
 		exit(EXIT_FAILURE);
