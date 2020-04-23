@@ -2338,8 +2338,7 @@ static void
 
 	int data_fd = -1;
 	// NOTE: The data fd doesn't inherit the connection socket's flags on Linux.
-	//       We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
-	data_fd = accept4(conn_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
+	data_fd = accept(conn_fd, NULL, NULL);
 	if (data_fd == -1) {
 		if (errno == EAGAIN || errno == EINTR) {
 			// Return early, and let the socket polling trigger a retry
@@ -2347,6 +2346,34 @@ static void
 		}
 		LOG(LOG_ERR, "Aborting: accept4: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] accept4 failed ?!", &fbinkConfig);
+		// TODO: Make non-fatal?
+		exit(EXIT_FAILURE);
+	}
+	// We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
+	// NOTE: We have to do that manually, because despite what the man page says, accept4 isn't implemented on Mk. 5 kernels
+	int fdflags = fcntl(data_fd, F_GETFD, 0);
+	if (fdflags == -1) {
+		LOG(LOG_ERR, "Aborting: fcntl: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		// TODO: Make non-fatal?
+		exit(EXIT_FAILURE);
+	}
+	if (fcntl(data_fd, F_SETFD, fdflags | FD_CLOEXEC) == -1) {
+		LOG(LOG_ERR, "Aborting: fcntl: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		// TODO: Make non-fatal?
+		exit(EXIT_FAILURE);
+	}
+	int flflags = fcntl(data_fd, F_GETFL, 0);
+	if (flflags == -1) {
+		LOG(LOG_ERR, "Aborting: fcntl: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		// TODO: Make non-fatal?
+		exit(EXIT_FAILURE);
+	}
+	if (fcntl(data_fd, F_SETFL, flflags | O_NONBLOCK) == -1) {
+		LOG(LOG_ERR, "Aborting: fcntl: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
 		// TODO: Make non-fatal?
 		exit(EXIT_FAILURE);
 	}
