@@ -2186,6 +2186,11 @@ static bool
 		exit(EXIT_FAILURE);
 	}
 
+	if (len == 0) {
+		// EoF, we're done, signal our polling to close the connection
+		return true;
+	}
+
 	// Ensure buffer is NUL-terminated before we start playing with it
 	buf[PIPE_BUF - 1] = '\0';
 
@@ -2338,11 +2343,6 @@ static bool
 			// FIXME: Make non-fatal?
 			exit(EXIT_FAILURE);
 		}
-	}
-
-	if (len == 0) {
-		// EoF, we're done, signal our polling to close the connection
-		return true;
 	} else {
 		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
 		// Reply with a list of valid commands
@@ -2357,6 +2357,7 @@ static bool
 			exit(EXIT_FAILURE);
 		}
 	}
+
 	// Client still has something to say?
 	return false;
 }
