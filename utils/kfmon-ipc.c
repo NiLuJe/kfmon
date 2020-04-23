@@ -107,6 +107,9 @@ static bool
 	fprintf(stderr, "<<< Got a reply:\n");
 	fprintf(stdout, "%.*s", (int) len, buf);
 
+	// Back to sending...
+	fprintf(stderr, ">>> ");
+
 	// Done
 	return true;
 }
@@ -201,9 +204,6 @@ int
 				goto cleanup;
 			}
 		}
-
-		// Back to sending...
-		fprintf(stderr, ">>> ");
 	}
 
 cleanup:
