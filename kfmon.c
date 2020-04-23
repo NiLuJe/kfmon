@@ -2182,7 +2182,7 @@ static bool
 		// Only actual failures are left, xread handles the rest
 		LOG(LOG_ERR, "Aborting: read: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
-		// FIXME: Make non-fatal?
+		// FIXME: Make non-fatal? (especially if we ^C the remote, we get a connection reset by peer :s)
 		exit(EXIT_FAILURE);
 	}
 
