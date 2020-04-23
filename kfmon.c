@@ -2347,7 +2347,7 @@ static bool
 		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
 		// Reply with a list of valid commands
 		int packet_len =
-		    snprintf(buf, sizeof(buf), "ERR_INVALID_CMD\nComma sperated list of valid commands: list, start\n");
+		    snprintf(buf, sizeof(buf), "ERR_INVALID_CMD\nComma separated list of valid commands: list, start\n");
 		// W/ NUL
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
