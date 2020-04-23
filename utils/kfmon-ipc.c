@@ -96,18 +96,19 @@ static bool
 		exit(EXIT_FAILURE);
 	}
 
+	// If there's actually nothing to read (EoF), abort.
+	if (len == 0) {
+		return false;
+	}
+
 	// Ensure buffer is NUL-terminated before we start playing with it
 	buf[PIPE_BUF - 1] = '\0';
 	// Then print it!
 	fprintf(stderr, "<<< Got a reply:\n");
 	fprintf(stdout, "%.*s", (int) len, buf);
 
-	if (len == 0) {
-		// EoF, we're done, signal our polling to close the connection
-		return true;
-	}
-	// Remote still has something to say?
-	return false;
+	// Done
+	return true;
 }
 
 // Main entry point
@@ -182,13 +183,14 @@ int
 
 			if (pfds[1].revents & POLLIN) {
 				// There was a reply from the socket
-				if (handle_reply(data_fd)) {
-					// We've successfully handled all input data, we're done!
-					//break;
+				if (!handle_reply(data_fd)) {
+					// There wasn't actually any data!
+					fprintf(stderr, "Nothing more to read!\n");
+					goto cleanup;
 				}
 			}
 
-			// stdin was closed,
+			// stdin was closed
 			if (pfds[0].revents & POLLHUP) {
 				fprintf(stderr, "stdin was closed!\n");
 				goto cleanup;
