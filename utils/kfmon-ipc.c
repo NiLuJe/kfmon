@@ -51,7 +51,6 @@ static bool
 	}
 
 	// If there's nothing to read, abort.
-	// We can apparently happily end up with a POLLIN flag and yet FIONREAD returning 0 when sending a ^D, for instance...
 	if (bytes == 0) {
 		return false;
 	}
@@ -66,6 +65,11 @@ static bool
 		fprintf(stderr, "Aborting: read: %m!\n");
 		// FIXME: Make non-fatal?
 		exit(EXIT_FAILURE);
+	}
+
+	// If there's actually nothing to read (EoF), abort.
+	if (len == 0) {
+		return false;
 	}
 
 	// Send it over the socket (w/ NUL)
