@@ -50,7 +50,8 @@ static bool
 		exit(EXIT_FAILURE);
 	}
 
-	// If there's nothing to read, abort early (given that we're after a POLLIN, that should never happen)
+	// If there's nothing to read, abort.
+	// We can apparently happily end up with a POLLIN flag and yet FIONREAD returning 0 when sending a ^D, for instance...
 	if (bytes == 0) {
 		return false;
 	}
@@ -166,9 +167,12 @@ int
 		}
 
 		if (poll_num > 0) {
+			// There's potentially data to be read in stdin
 			if (pfds[0].revents & POLLIN) {
-				if (handle_stdin(data_fd)) {
-					//break;
+				if (!handle_stdin(data_fd)) {
+					// There wasn't actually any data left in stdin
+					fprintf(stderr, "No more data in stdin!\n");
+					goto cleanup;
 				}
 			}
 
