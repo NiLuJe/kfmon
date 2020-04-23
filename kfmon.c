@@ -2565,6 +2565,7 @@ int
 	}
 
 	// NOTE: We only accept a single client
+	//       Be aware that, in practice, the kernel will round that up...
 	if (listen(conn_fd, 1) == -1) {
 		LOG(LOG_ERR, "Failed to listen to IPC socket (listen: %m), aborting!");
 		exit(EXIT_FAILURE);
