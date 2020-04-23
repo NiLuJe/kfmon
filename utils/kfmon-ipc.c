@@ -51,6 +51,7 @@ static bool
 	}
 
 	// If there's nothing to read, abort.
+	// That includes a user-triggered End-of-Transmission (i.e., ^D), which flags stdin w/ POLLIN
 	if (bytes == 0) {
 		return false;
 	}
