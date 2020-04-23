@@ -2413,8 +2413,24 @@ static void
 		// TODO: Make non-fatal?
 		exit(EXIT_FAILURE);
 	}
-	// TODO: Fancy logging w/ SO_PEERCRED
-	LOG(LOG_INFO, "Handling incoming IPC connection");
+
+	// We'll want to log some information about the client
+	// c.f., https://github.com/troydhanson/network/tree/master/unixdomain/03.pass-pid
+	struct ucred ucred;
+	socklen_t    len = sizeof(ucred);
+	if (getsockopt(data_fd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) == -1) {
+		LOG(LOG_ERR, "Aborting: getsockopt: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] getsockopt failed ?!", &fbinkConfig);
+		// TODO: Make non-fatal?
+		exit(EXIT_FAILURE);
+	}
+
+	// NOTE: Probably not worth bothering looking up user & group names via getpwuid/getgrid ;).
+	LOG(LOG_INFO,
+	    "Handling incoming IPC connection from PID %ld by user %ld:%ld",
+	    (long) ucred.pid,
+	    (long) ucred.uid,
+	    (long) ucred.gid);
 
 	int           poll_num;
 	struct pollfd pfd = { 0 };
@@ -2448,7 +2464,11 @@ static void
 
 	// We're done, close the data connection
 	close(data_fd);
-	LOG(LOG_INFO, "Closed IPC connection");
+	LOG(LOG_INFO,
+	    "Closed IPC connection from PID %ld by user %ld:%ld",
+	    (long) ucred.pid,
+	    (long) ucred.uid,
+	    (long) ucred.gid);
 }
 
 // Handle SQLite logging on error
