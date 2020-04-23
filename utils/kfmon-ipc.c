@@ -96,7 +96,7 @@ int
 	// Read stdin line by line...
 	while ((nread = getline(&line, &len, stdin)) != -1) {
 		// Send it (w/ NUL)
-		if (write_in_full(data_fd, line, (size_t)(nread + 1U)) < 0) {
+		if (write_in_full(data_fd, line, (size_t)(nread + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
 			fprintf(stderr, "Aborting: write: %m!\n");
 			exit(EXIT_FAILURE);
