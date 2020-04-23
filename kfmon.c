@@ -2270,6 +2270,8 @@ static bool
 				pthread_mutex_unlock(&ptlock);
 				bool is_spawn_blocked = are_spawns_blocked();
 
+				// TODO: A "force-start" command that ignores is_blocker_spawned and is_spawn_blocked could be NTH,
+				//       at least for watches not marked as spawn blockers themselves...
 				if (!is_watch_spawned && !is_blocker_spawned && !is_spawn_blocked) {
 					// Skipping the SQL checks implies we don't need the "may still be processing"
 					// logic, either ;).
