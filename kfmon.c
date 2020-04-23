@@ -2463,9 +2463,10 @@ static void
 	pfd.fd     = data_fd;
 	pfd.events = POLLIN;
 
-	// Wait for data
+	// Wait for data, in a few burst of 15s windows, in order to drop inactive connections
+	size_t retries = 0U;
 	while (1) {
-		poll_num = poll(&pfd, 1, -1);
+		poll_num = poll(&pfd, 1, 15 * 1000);
 		if (poll_num == -1) {
 			if (errno == EINTR) {
 				continue;
@@ -2484,6 +2485,17 @@ static void
 				}
 			}
 			// NOTE: No need to handle POLLHUP, we want to read input until EoF!
+		}
+
+		if (poll_num == 0) {
+			// Timed out, increase the retry counter
+			retries++;
+		}
+
+		// Drop the axe after 90s. (FIXME: make that true!)
+		if (retries >= 1) {
+			LOG(LOG_WARNING, "Dropping inactive IPC connection");
+			break;
 		}
 	}
 
