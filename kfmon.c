@@ -2372,7 +2372,7 @@ static void
 	snprintf(procfile, sizeof(procfile), "/proc/%ld/comm", (long) pid);
 	FILE* f = fopen(procfile, "r");
 	if (f) {
-		size_t size = fread(name, sizeof(*name), sizeof(procfile), f);
+		size_t size = fread(name, sizeof(*procfile), sizeof(procfile), f);
 		if (size > 0) {
 			// NUL terminate
 			name[size - 1U] = '\0';
