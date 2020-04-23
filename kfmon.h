@@ -266,6 +266,7 @@ static bool  are_spawns_blocked(void);
 static pid_t get_spawn_pid_for_watch(uint8_t);
 
 static bool handle_events(int);
+static void get_process_name(const pid_t, char*);
 static void handle_connection(int);
 static bool handle_ipc(int);
 

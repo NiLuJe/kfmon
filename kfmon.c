@@ -2362,6 +2362,25 @@ static bool
 	return false;
 }
 
+// Dirty little helper to pull the command name for a specific PID from procfs
+// Inspired by https://gist.github.com/fclairamb/a16a4237c46440bdb172
+static void
+    get_process_name(const pid_t pid, char* name)
+{
+	char procfile[PATH_MAX];
+	// NOTE: comm is 16 bytes on Linux
+	snprintf(procfile, sizeof(procfile), "/proc/%ld/comm", (long) pid);
+	FILE* f = fopen(procfile, "r");
+	if (f) {
+		size_t size = fread(name, sizeof(*name), sizeof(procfile), f);
+		if (size > 0) {
+			// NUL terminate
+			name[size - 1U] = '\0';
+		}
+		fclose(f);
+	}
+}
+
 // Handle a connection attempt on socket 'conn_fd'.
 static void
     handle_connection(int conn_fd)
@@ -2424,11 +2443,15 @@ static void
 		// TODO: Make non-fatal?
 		exit(EXIT_FAILURE);
 	}
+	// Pull the command name from procfs
+	char pname[16] = { 0 };
+	get_process_name(ucred.pid, pname);
 
 	// NOTE: Probably not worth bothering looking up user & group names via getpwuid/getgrid ;).
 	LOG(LOG_INFO,
-	    "Handling incoming IPC connection from PID %ld by user %ld:%ld",
+	    "Handling incoming IPC connection from PID %ld (%s) by user %ld:%ld",
 	    (long) ucred.pid,
+	    pname,
 	    (long) ucred.uid,
 	    (long) ucred.gid);
 
@@ -2465,8 +2488,9 @@ static void
 	// We're done, close the data connection
 	close(data_fd);
 	LOG(LOG_INFO,
-	    "Closed IPC connection from PID %ld by user %ld:%ld",
+	    "Closed IPC connection from PID %ld (%s) by user %ld:%ld",
 	    (long) ucred.pid,
+	    pname,
 	    (long) ucred.uid,
 	    (long) ucred.gid);
 }
