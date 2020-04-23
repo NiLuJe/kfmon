@@ -43,7 +43,7 @@
 static bool
     handle_stdin(int data_fd)
 {
-	// CHeck how many bytes we need to drain
+	// Check how many bytes we need to drain
 	int bytes = 0;
 	if (ioctl(fileno(stdin), FIONREAD, &bytes) == -1) {
 		fprintf(stderr, "Aborting: ioctl: %m!\n");
