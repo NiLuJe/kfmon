@@ -2337,10 +2337,16 @@ static bool
 			// FIXME: Make non-fatal?
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	if (len == 0) {
+		// EoF, we're done, signal our polling to close the connection
+		return true;
 	} else {
-		LOG(LOG_WARNING, "Received an invalid/unsupported IPC %zd bytes command: %.*s (%x)", len, (int) len, buf, buf[0]);
+		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
 		// Reply with a list of valid commands
-		int packet_len = snprintf(buf, sizeof(buf), "ERR_INVALID_CMD\nComma sperated list of valid commands: list, start\n");
+		int packet_len =
+		    snprintf(buf, sizeof(buf), "ERR_INVALID_CMD\nComma sperated list of valid commands: list, start\n");
 		// W/ NUL
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
@@ -2349,11 +2355,6 @@ static bool
 			// FIXME: Make non-fatal?
 			exit(EXIT_FAILURE);
 		}
-	}
-
-	if (len == 0) {
-		// EoF, we're done, signal our polling to close the connection
-		return true;
 	}
 	// Client still has something to say?
 	return false;
