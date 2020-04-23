@@ -2206,8 +2206,8 @@ static bool
 				packet_len = snprintf(
 				    buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
 			}
-			// Make sure we reply with that in full (w/ a NUL) to the client.
-			if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Make sure we reply with that in full (w/o a NUL) to the client.
+			if (write_in_full(data_fd, buf, (size_t)(packet_len)) < 0) {
 				// Only actual failures are left, xwrite handles the rest
 				LOG(LOG_ERR, "Aborting: write: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
