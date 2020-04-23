@@ -2327,7 +2327,7 @@ static bool
 			exit(EXIT_FAILURE);
 		} else {
 			LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
-			packet_len = snprintf(buf, sizeof(buf), "ERR_MALFORMED_CMD\n");
+			packet_len = snprintf(buf, sizeof(buf), "ERR_MALFORMED_CMD\nExpected format is start:id\n");
 		}
 		// Reply with the status
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
@@ -2338,7 +2338,7 @@ static bool
 			exit(EXIT_FAILURE);
 		}
 	} else {
-		LOG(LOG_WARNING, "Received an invalid/unsupported IPC %zu bytes command: %.*s (%x)", len, (int) len, buf, buf[0]);
+		LOG(LOG_WARNING, "Received an invalid/unsupported IPC %zd bytes command: %.*s (%x)", len, (int) len, buf, buf[0]);
 		// Reply with a list of valid commands
 		int packet_len = snprintf(buf, sizeof(buf), "ERR_INVALID_CMD\nComma sperated list of valid commands: list, start\n");
 		// W/ NUL
