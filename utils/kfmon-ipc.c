@@ -56,8 +56,8 @@ static bool
 	// Ensure buffer is NUL-terminated before we start playing with it
 	buf[PIPE_BUF - 1] = '\0';
 	// Then print it!
-	puts("Got a reply:");
-	puts(buf);
+	fprintf(stderr, "<<< Got a reply:\n");
+	fprintf(stdout, "%.*s", (int) len, buf);
 
 	if (len == 0) {
 		// EoF, we're done, signal our polling to close the connection
@@ -92,7 +92,7 @@ int
 	char*   line = NULL;
 	size_t  len  = 0;
 	ssize_t nread;
-	printf(">>> ");
+	fprintf(stderr, ">>> ");
 	// Read stdin line by line...
 	while ((nread = getline(&line, &len, stdin)) != -1) {
 		// Send it
@@ -132,13 +132,13 @@ int
 
 			if (poll_num == 0) {
 				// Timed out, we're done!
-				fprintf(stderr, "No reply after 500ms\n");
+				fprintf(stderr, "<<<!>>> No reply after 500ms\n");
 				break;
 			}
 		}
 
 		// Back to sending...
-		printf(">>> ");
+		fprintf(stderr, ">>> ");
 	}
 	free(line);
 
