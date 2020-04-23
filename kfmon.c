@@ -2227,7 +2227,8 @@ static bool
 	} else if (strncasecmp(buf, "start", 5) == 0) {
 		// Pull the actual id out of there. Could have went with strtok, too.
 		uint8_t watch_id = WATCH_MAX;
-		int     n        = sscanf(buf, "start:%hhu", &watch_id);
+		errno            = 0;
+		int n            = sscanf(buf, "start:%hhu", &watch_id);
 		// We'll add a courtesy reply with the status
 		int packet_len = 0;
 		if (n == 1) {
