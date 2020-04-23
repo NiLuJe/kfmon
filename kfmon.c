@@ -2639,6 +2639,8 @@ int
 	while (1) {
 		LOG(LOG_INFO, "Beginning the main loop.");
 
+		// FIXME: Might need a reinit here to deal with Sergey's stuff...
+
 		// Make sure our target partition is mounted
 		if (!is_target_mounted()) {
 			LOG(LOG_INFO, "%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
