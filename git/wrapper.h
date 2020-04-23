@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 #ifndef _GIT_WRAPPERS_H
 #define _GIT_WRAPPERS_H
 

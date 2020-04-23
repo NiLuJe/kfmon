@@ -2,6 +2,7 @@
  * Various trivial helper wrappers around standard functions
  * Imported from the Git project, c.f.,
  * https://github.com/git/git/blob/master/wrapper.c
+ * SPDX-License-Identifier: GPL-2.0-only
  */
 #include "wrapper.h"
 

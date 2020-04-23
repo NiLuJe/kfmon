@@ -1,7 +1,7 @@
 /*	@(#)	str5cpy.c	*/
 /*
  *	v 2.0, 2016/05, Eric Sanchis <eric.sanchis@iut-rodez.fr>
- *	GNU LGPL
+ *	SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 #include "str5.h"
