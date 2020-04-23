@@ -33,7 +33,8 @@ static int
 {
 	struct pollfd pfd;
 
-	if (err != EAGAIN && err != EWOULDBLOCK)
+	// NOTE: EWOULDBLOCK is defined as EAGAIN on Linux, no need to check both.
+	if (err != EAGAIN)
 		return 0;
 
 	pfd.fd     = fd;
@@ -106,7 +107,7 @@ ssize_t
 			return -1;
 		if (loaded == 0)
 			return total;
-		count -= loaded;
+		count -= (size_t) loaded;
 		p += loaded;
 		total += loaded;
 	}
@@ -128,7 +129,7 @@ ssize_t
 			errno = ENOSPC;
 			return -1;
 		}
-		count -= written;
+		count -= (size_t) written;
 		p += written;
 		total += written;
 	}

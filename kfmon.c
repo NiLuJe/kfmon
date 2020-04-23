@@ -2207,7 +2207,7 @@ static bool
 				    buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
 			}
 			// Make sure we reply with that in full (w/ a NUL) to the client.
-			if (write_in_full(data_fd, buf, packet_len + 1) < 0) {
+			if (write_in_full(data_fd, buf, (size_t)(packet_len + 1U)) < 0) {
 				// Only actual failures are left, xwrite handles the rest
 				LOG(LOG_ERR, "Aborting: write: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
@@ -2341,7 +2341,7 @@ static void
 	//       We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
 	data_fd = accept4(conn_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
 	if (data_fd == -1) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+		if (errno == EAGAIN || errno == EINTR) {
 			// Return early, and let the socket polling trigger a retry
 			return;
 		}
