@@ -148,6 +148,7 @@ int
 	struct pollfd pfds[2] = { 0 };
 	// stdin
 	// We'll need to make it non-blocking, first...
+	// FIXME: Or do we, actually?
 	int flflags = fcntl(fileno(stdin), F_GETFL, 0);
 	if (flflags == -1) {
 		fprintf(stderr, "Aborting: getfl fcntl: %m!\n");
