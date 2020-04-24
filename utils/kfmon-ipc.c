@@ -117,10 +117,10 @@ static bool
 	}
 
 	// In the event len == sizeof(buf), truncate to ensure buf is NUL-terminated before we start playing with it.
-	// Otherwise, we zero init buf, so we're sure to end up with a NUL-terminated string.
+	// Otherwise, we zero init buf, so we're sure to end up with a NUL-terminated ASAP string.
 	// NOTE: Here, we only do a fixed-length printf, so this is technically unneeded/harmful,
 	//       as we effectively no longer need this to be NUL-terminated.
-	//buf[PIPE_BUF - 1] = '\0';
+	//buf[sizeof(buf) - 1] = '\0';
 
 	// Then print it!
 	fprintf(stderr, "<<< Got a reply:\n");

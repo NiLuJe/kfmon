@@ -2191,8 +2191,9 @@ static bool
 		return true;
 	}
 
-	// Ensure buffer is NUL-terminated before we start playing with it
-	buf[PIPE_BUF - 1] = '\0';
+	// In the event len == sizeof(buf), truncate to ensure buf is NUL-terminated before we start playing with it.
+	// Otherwise, we zero init buf, so we're sure to end up with a NUL-terminated ASAP string.
+	buf[sizeof(buf) - 1] = '\0';
 
 	// Handle the supported commands
 	if (strncasecmp(buf, "list", 4) == 0) {
