@@ -2180,10 +2180,10 @@ static bool
 	ssize_t len = xread(data_fd, buf, sizeof(buf));
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
-		LOG(LOG_ERR, "Aborting: read: %m");
+		LOG(LOG_WARNING, "read: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
-		// FIXME: Make non-fatal? (especially if we ^C the remote, we get a connection reset by peer :s)
-		exit(EXIT_FAILURE);
+		// Signal our polling to close the connection, don't retry, as we risk failing here again otherwise.
+		return true;
 	}
 
 	if (len == 0) {
@@ -2214,20 +2214,21 @@ static bool
 			// Make sure we reply with that in full (w/o a NUL, we're not done yet) to the client.
 			if (write_in_full(data_fd, buf, (size_t)(packet_len)) < 0) {
 				// Only actual failures are left, xwrite handles the rest
-				LOG(LOG_ERR, "Aborting: write: %m");
+				LOG(LOG_WARNING, "write: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
-				// FIXME: Make non-fatal?
-				exit(EXIT_FAILURE);
+				// We may attempt a retry
+				// (in practice, we're likely to hit a POLLHUP, or an EoF/failure on read on said retry)
+				return false;
 			}
 		}
 		// Now that we're done, send a final NUL, just to be nice.
 		buf[0] = '\0';
 		if (write_in_full(data_fd, buf, 1U) < 0) {
 			// Only actual failures are left, xwrite handles the rest
-			LOG(LOG_ERR, "Aborting: write: %m");
+			LOG(LOG_WARNING, "write: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
-			// FIXME: Make non-fatal?
-			exit(EXIT_FAILURE);
+			// We may attempt a retry
+			return false;
 		}
 	} else if (strncasecmp(buf, "start", 5) == 0) {
 		// Pull the actual id out of there. Could have went with strtok, too.
@@ -2329,34 +2330,34 @@ static bool
 				}
 			}
 		} else if (errno != 0) {
-			LOG(LOG_ERR, "Aborting: sscanf: %m");
+			LOG(LOG_WARNING, "sscanf: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] sscanf failed ?!", &fbinkConfig);
-			// FIXME: Make non-fatal? (don't forget status reply)
-			exit(EXIT_FAILURE);
+			packet_len =
+			    snprintf(buf, sizeof(buf), "ERR_REALLY_MALFORMED_CMD\nExpected format is start:id\n");
 		} else {
 			LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
 			packet_len = snprintf(buf, sizeof(buf), "ERR_MALFORMED_CMD\nExpected format is start:id\n");
 		}
-		// Reply with the status
+		// Reply with the status (w/ NUL)
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
-			LOG(LOG_ERR, "Aborting: write: %m");
+			LOG(LOG_WARNING, "write: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
-			// FIXME: Make non-fatal?
-			exit(EXIT_FAILURE);
+			// We may attempt a retry
+			return false;
 		}
 	} else {
 		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
 		// Reply with a list of valid commands
 		int packet_len =
 		    snprintf(buf, sizeof(buf), "ERR_INVALID_CMD\nComma separated list of valid commands: list, start\n");
-		// W/ NUL
+		// w/ NUL
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
-			LOG(LOG_ERR, "Aborting: write: %m");
+			LOG(LOG_WARNING, "write: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
-			// FIXME: Make non-fatal?
-			exit(EXIT_FAILURE);
+			// We may attempt a retry
+			return false;
 		}
 	}
 
@@ -2480,7 +2481,11 @@ static void
 					break;
 				}
 			}
-			// NOTE: No need to handle POLLHUP, we want to read input until EoF!
+			// While we generally try to read until EoF, at which point we break, let's cover our bases anyway...
+			if (pfd.revents & POLLHUP) {
+				LOG(LOG_NOTICE, "Remote end closed the IPC connection");
+				break;
+			}
 		}
 
 		if (poll_num == 0) {
