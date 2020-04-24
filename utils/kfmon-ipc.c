@@ -194,7 +194,8 @@ int
 				if (!handle_stdin(data_fd)) {
 					// There wasn't actually any data left in stdin
 					fprintf(stderr, "No more data in stdin!\n");
-					// Don't flag that as an error, sending an EoT is perfectly sane ;).
+					// Don't flag that as an error, sending an EoT is a perfectly sane way to, well,
+					// end the transmission ;).
 					goto cleanup;
 				}
 				// If it was also closed (i.e., it's a pipe), go back to poll to check for replies now.
