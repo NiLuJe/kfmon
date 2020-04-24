@@ -82,6 +82,8 @@ ifdef DEBUG
 	EXTRA_CFLAGS+=-Wpadded
 	EXTRA_CFLAGS+=-Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn -Wsuggest-attribute=format -Wmissing-format-attribute
 endif
+# And disable this, because it obviously doesn't play well with using goto to handle cleanup on error codepaths...
+EXTRA_CFLAGS+=-Wno-jump-misses-init
 # Spammy when linking SQLite statically
 ifndef NILUJE
 	EXTRA_CFLAGS+=-Wno-null-dereference
