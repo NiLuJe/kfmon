@@ -2398,7 +2398,6 @@ static void
     get_process_name(const pid_t pid, char* name)
 {
 	char procfile[PATH_MAX];
-	// NOTE: comm is 16 bytes on Linux
 	snprintf(procfile, sizeof(procfile), "/proc/%ld/comm", (long) pid);
 	FILE* f = fopen(procfile, "r");
 	if (f) {
@@ -2470,6 +2469,7 @@ static void
 		goto cleanup;
 	}
 	// Pull the command name from procfs
+	// NOTE: comm is 16 bytes on Linux
 	char pname[16] = { 0 };
 	get_process_name(ucred.pid, pname);
 
@@ -2508,7 +2508,7 @@ static void
 					break;
 				}
 			}
-			// While we generally try to read until EoF, at which point we break, let's cover our bases anyway...
+			// While we generally try to read until EoF, at which point we break, but let's cover our bases anyway...
 			if (pfd.revents & POLLHUP) {
 				LOG(LOG_NOTICE, "Remote end closed the IPC connection");
 				break;
