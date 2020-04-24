@@ -72,9 +72,16 @@ static bool
 		return false;
 	}
 
-	// Send it over the socket (w/ NUL)
+	// Send it over the socket (w/ NUL, and without an LF)
+	size_t packet_len = (size_t) bytes;
+	if (buf[bytes - 1] == '\n') {
+		buf[bytes - 1] = '\0';
+	} else {
+		buf[bytes] = '\0';
+		packet_len++;
+	}
 	buf[bytes] = '\0';
-	if (write_in_full(data_fd, buf, (size_t)(bytes + 1)) < 0) {
+	if (write_in_full(data_fd, buf, packet_len) < 0) {
 		// Only actual failures are left, xwrite handles the rest
 		fprintf(stderr, "Aborting: write: %m!\n");
 		exit(EXIT_FAILURE);
