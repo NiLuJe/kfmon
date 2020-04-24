@@ -2230,7 +2230,9 @@ static bool
 			// We may attempt a retry
 			return false;
 		}
-	} else if (strncasecmp(buf, "start", 5) == 0) {
+	} else if ((strncasecmp(buf, "start", 5) == 0) || (strncasecmp(buf, "force-start", 11) == 0)) {
+		// Discriminate force-start
+		bool force = (buf[0] == 'f' || buf[0] == 'F');
 		// Pull the actual id out of there. Could have went with strtok, too.
 		uint8_t watch_id = WATCH_MAX;
 		errno            = 0;
@@ -2255,12 +2257,18 @@ static bool
 			}
 			if (!found_watch_idx) {
 				// Invalid or inactive watch, can't do anything.
-				LOG(LOG_WARNING, "Received a request to start an invalid watch idx: %hhu", watch_id);
+				LOG(LOG_WARNING,
+				    "Received a request to %sstart an invalid watch idx: %hhu",
+				    force ? "force " : "",
+				    watch_id);
 				packet_len = snprintf(buf, sizeof(buf), "ERR_INVALID_ID\n");
 			} else {
 				// Go ahead, we thankfully have a few less sanity checks to deal with than handle_events,
 				// because no SQL ;).
-				LOG(LOG_INFO, "Processing IPC request to start watch idx: %hhu", watch_id);
+				LOG(LOG_INFO,
+				    "Processing IPC request to %sstart watch idx: %hhu",
+				    force ? "force " : "",
+				    watch_id);
 
 				// See handle_events for the logic behind spawn blocking & co.
 				bool is_watch_spawned;
@@ -2271,9 +2279,16 @@ static bool
 				pthread_mutex_unlock(&ptlock);
 				bool is_spawn_blocked = are_spawns_blocked();
 
-				// TODO: A "force-start" command that ignores is_blocker_spawned and is_spawn_blocked could be NTH,
-				//       at least for watches not marked as spawn blockers themselves...
-				if (!is_watch_spawned && !is_blocker_spawned && !is_spawn_blocked) {
+				// Can't force something that is itself a spawn blocker...
+				if (force && watchConfig[watch_id].block_spawns) {
+					LOG(LOG_NOTICE,
+					    "Dropping the force flag, as the requested watch is a spawn blocker");
+					force = false;
+				}
+
+				// NOTE: force ignores is_blocker_spawned and is_spawn_blocked
+				if ((force && !is_watch_spawned) ||
+				    (!force && !is_watch_spawned && !is_blocker_spawned && !is_spawn_blocked)) {
 					// Skipping the SQL checks implies we don't need the "may still be processing"
 					// logic, either ;).
 					LOG(LOG_INFO,
@@ -2308,7 +2323,7 @@ static bool
 							     "[KFMon] Not spawning %s: still running!",
 							     basename(watchConfig[watch_id].action));
 						packet_len = snprintf(buf, sizeof(buf), "WARN_ALREADY_RUNNING\n");
-					} else if (is_blocker_spawned) {
+					} else if (!force && is_blocker_spawned) {
 						LOG(LOG_INFO,
 						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
 						fbink_printf(FBFD_AUTO,
@@ -2317,7 +2332,7 @@ static bool
 							     "[KFMon] Not spawning %s: blocked!",
 							     basename(watchConfig[watch_id].action));
 						packet_len = snprintf(buf, sizeof(buf), "WARN_SPAWN_BLOCKED\n");
-					} else if (is_spawn_blocked) {
+					} else if (!force && is_spawn_blocked) {
 						LOG(LOG_INFO,
 						    "As the global spawn inhibiter flag is present, we won't be spawning anything!");
 						fbink_printf(FBFD_AUTO,
@@ -2332,11 +2347,16 @@ static bool
 		} else if (errno != 0) {
 			LOG(LOG_WARNING, "sscanf: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] sscanf failed ?!", &fbinkConfig);
-			packet_len =
-			    snprintf(buf, sizeof(buf), "ERR_REALLY_MALFORMED_CMD\nExpected format is start:id\n");
+			packet_len = snprintf(buf,
+					      sizeof(buf),
+					      "ERR_REALLY_MALFORMED_CMD\nExpected format is %sstart:id\n",
+					      force ? "force-" : "");
 		} else {
 			LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
-			packet_len = snprintf(buf, sizeof(buf), "ERR_MALFORMED_CMD\nExpected format is start:id\n");
+			packet_len = snprintf(buf,
+					      sizeof(buf),
+					      "ERR_MALFORMED_CMD\nExpected format is %sstart:id\n",
+					      force ? "force-" : "");
 		}
 		// Reply with the status (w/ NUL)
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
@@ -2350,7 +2370,9 @@ static bool
 		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
 		// Reply with a list of valid commands
 		int packet_len =
-		    snprintf(buf, sizeof(buf), "ERR_INVALID_CMD\nComma separated list of valid commands: list, start\n");
+		    snprintf(buf,
+			     sizeof(buf),
+			     "ERR_INVALID_CMD\nComma separated list of valid commands: list, start, force-start\n");
 		// w/ NUL
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
