@@ -38,6 +38,9 @@
 // Path to our IPC Unix socket
 #define KFMON_IPC_SOCKET "/tmp/kfmon-ipc.ctl"
 
+// We want to return negative values on failure, always
+#define ERRCODE(e) (-(e))
+
 // Drain stdin and send it to the IPC socket
 static bool
     handle_stdin(int data_fd)
@@ -126,6 +129,9 @@ static bool
 	fprintf(stderr, "<<< Got a reply:\n");
 	fprintf(stdout, "%.*s", (int) len, buf);
 
+	// NOTE: We *could* try to detect warning/error codes in the reply,
+	//       but that's arguably a job better left to whatever's using us ;).
+
 	// Back to sending...
 	fprintf(stderr, ">>> ");
 
@@ -168,6 +174,9 @@ int
 	pfds[1].fd     = data_fd;
 	pfds[1].events = POLLIN;
 
+	// Assume everything's peachy until shit happens...
+	int rc = EXIT_SUCCESS;
+
 	// Chat with hot sockets in your area!
 	while (1) {
 		poll_num = poll(pfds, nfds, -1);
@@ -185,6 +194,7 @@ int
 				if (!handle_stdin(data_fd)) {
 					// There wasn't actually any data left in stdin
 					fprintf(stderr, "No more data in stdin!\n");
+					// Don't flag that as an error, sending an EoT is perfectly sane ;).
 					goto cleanup;
 				}
 				// If it was also closed (i.e., it's a pipe), go back to poll to check for replies now.
@@ -199,9 +209,13 @@ int
 					// If the remote closed the connection, we get POLLIN|POLLHUP w/ EoF ;).
 					if (pfds[1].revents & POLLHUP) {
 						fprintf(stderr, "Remote closed the connection!\n");
+						// Flag that as an error
+						rc = ERRCODE(EPIPE);
 					} else {
 						// There wasn't actually any data!
 						fprintf(stderr, "Nothing more to read!\n");
+						// Flag that as an error
+						rc = ERRCODE(ENODATA);
 					}
 					goto cleanup;
 				}
@@ -210,11 +224,14 @@ int
 			// stdin was closed
 			if (pfds[0].revents & POLLHUP) {
 				fprintf(stderr, "stdin was closed!\n");
+				// Much like earlier, don't flag that as an error.
 				goto cleanup;
 			}
 			// Remote closed the connection
 			if (pfds[1].revents & POLLHUP) {
 				fprintf(stderr, "Remote closed the connection!\n");
+				// Flag that as an error
+				rc = ERRCODE(EPIPE);
 				goto cleanup;
 			}
 		}
@@ -224,5 +241,5 @@ cleanup:
 	// Bye now!
 	close(data_fd);
 
-	return EXIT_SUCCESS;
+	return rc;
 }
