@@ -2684,8 +2684,8 @@ int
 	while (1) {
 		LOG(LOG_INFO, "Beginning the main loop.");
 
-		// On subsequent iterations, we might be printing stuff *before* handle_events, here,
-		// (mainly in error-ish codepaths), so we need to check the fb state...
+		// Here, on subsequent iterations, we might be printing stuff *before* handle_events or handle_connection,
+		// (mainly in error-ish codepaths), so we need to check the fb state right now, too...
 		pthread_mutex_lock(&ptlock);
 		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
 		fbink_reinit(FBFD_AUTO, &fbinkConfig);
