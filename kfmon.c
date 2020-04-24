@@ -2399,40 +2399,37 @@ static void
 	if (data_fd == -1) {
 		if (errno == EAGAIN || errno == EINTR) {
 			// Return early, and let the socket polling trigger a retry
+			// FIXME: May want to do that in a few other cases (ECONNABORTED?)?
+			//        For now, abort on other errors, just to be safe.
 			return;
 		}
 		LOG(LOG_ERR, "Aborting: accept: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] accept failed ?!", &fbinkConfig);
-		// TODO: Make non-fatal?
 		exit(EXIT_FAILURE);
 	}
 	// We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
 	// NOTE: We have to do that manually, because despite what the man page says, accept4 isn't implemented on Mk. 5 kernels
 	int fdflags = fcntl(data_fd, F_GETFD, 0);
 	if (fdflags == -1) {
-		LOG(LOG_ERR, "Aborting: getfd fcntl: %m");
+		LOG(LOG_WARNING, "getfd fcntl: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
-		// TODO: Make non-fatal?
-		exit(EXIT_FAILURE);
+		goto cleanup;
 	}
 	if (fcntl(data_fd, F_SETFD, fdflags | FD_CLOEXEC) == -1) {
-		LOG(LOG_ERR, "Aborting: setfd fcntl: %m");
+		LOG(LOG_WARNING, "setfd fcntl: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
-		// TODO: Make non-fatal?
-		exit(EXIT_FAILURE);
+		goto cleanup;
 	}
 	int flflags = fcntl(data_fd, F_GETFL, 0);
 	if (flflags == -1) {
-		LOG(LOG_ERR, "Aborting: getfl fcntl: %m");
+		LOG(LOG_WARNING, "getfl fcntl: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
-		// TODO: Make non-fatal?
-		exit(EXIT_FAILURE);
+		goto cleanup;
 	}
 	if (fcntl(data_fd, F_SETFL, flflags | O_NONBLOCK) == -1) {
-		LOG(LOG_ERR, "Aborting: setfl fcntl: %m");
+		LOG(LOG_WARNING, "setfl fcntl: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
-		// TODO: Make non-fatal?
-		exit(EXIT_FAILURE);
+		goto cleanup;
 	}
 
 	// We'll want to log some information about the client
@@ -2440,10 +2437,9 @@ static void
 	struct ucred ucred;
 	socklen_t    len = sizeof(ucred);
 	if (getsockopt(data_fd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) == -1) {
-		LOG(LOG_ERR, "Aborting: getsockopt: %m");
+		LOG(LOG_WARNING, "getsockopt: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] getsockopt failed ?!", &fbinkConfig);
-		// TODO: Make non-fatal?
-		exit(EXIT_FAILURE);
+		goto cleanup;
 	}
 	// Pull the command name from procfs
 	char pname[16] = { 0 };
@@ -2463,7 +2459,7 @@ static void
 	pfd.fd     = data_fd;
 	pfd.events = POLLIN;
 
-	// Wait for data, in a few burst of 15s windows, in order to drop inactive connections
+	// Wait for data, for a few 15s windows, in order to drop inactive connections after a while
 	size_t retries = 0U;
 	while (1) {
 		poll_num = poll(&pfd, 1, 15 * 1000);
@@ -2471,9 +2467,9 @@ static void
 			if (errno == EINTR) {
 				continue;
 			}
-			LOG(LOG_ERR, "Aborting: poll: %m");
+			LOG(LOG_WARNING, "poll: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
-			exit(EXIT_FAILURE);
+			goto early_close;
 		}
 
 		if (poll_num > 0) {
@@ -2492,21 +2488,24 @@ static void
 			retries++;
 		}
 
-		// Drop the axe after 90s. (FIXME: make that true!)
-		if (retries >= 1) {
-			LOG(LOG_WARNING, "Dropping inactive IPC connection");
+		// Drop the axe after 60s.
+		if (retries >= 4) {
+			LOG(LOG_NOTICE, "Dropping inactive IPC connection");
 			break;
 		}
 	}
 
+early_close:
 	// We're done, close the data connection
-	close(data_fd);
 	LOG(LOG_INFO,
 	    "Closed IPC connection from PID %ld (%s) by user %ld:%ld",
 	    (long) ucred.pid,
 	    pname,
 	    (long) ucred.uid,
 	    (long) ucred.gid);
+
+cleanup:
+	close(data_fd);
 }
 
 // Handle SQLite logging on error
