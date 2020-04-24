@@ -63,7 +63,6 @@ static bool
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		fprintf(stderr, "Aborting: read: %m!\n");
-		// FIXME: Make non-fatal?
 		exit(EXIT_FAILURE);
 	}
 
@@ -102,7 +101,6 @@ static bool
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		fprintf(stderr, "Aborting: read: %m!\n");
-		// FIXME: Make non-fatal?
 		exit(EXIT_FAILURE);
 	}
 
