@@ -2397,10 +2397,10 @@ static void
 	// NOTE: The data fd doesn't inherit the connection socket's flags on Linux.
 	data_fd = accept(conn_fd, NULL, NULL);
 	if (data_fd == -1) {
-		if (errno == EAGAIN || errno == EINTR) {
-			// Return early, and let the socket polling trigger a retry
-			// FIXME: May want to do that in a few other cases (ECONNABORTED?)?
-			//        For now, abort on other errors, just to be safe.
+		if (errno == EAGAIN || errno == EINTR || errno == ECONNABORTED) {
+			// Return early, and let the socket polling trigger a retry or wait for the next connection.
+			// NOTE: That seems to be the right call for ECONNABORTED, too.
+			//       c.f., Go's Accept() wrapper in src/internal/poll/fd_unix.go
 			return;
 		}
 		LOG(LOG_ERR, "Aborting: accept: %m");
