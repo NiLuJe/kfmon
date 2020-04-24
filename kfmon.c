@@ -2230,13 +2230,18 @@ static bool
 			// We may attempt a retry
 			return false;
 		}
-	} else if ((strncasecmp(buf, "start", 5) == 0) || (strncasecmp(buf, "force-start", 11) == 0)) {
+	} else if ((strncmp(buf, "start", 5) == 0) || (strncmp(buf, "force-start", 11) == 0)) {
 		// Discriminate force-start
-		bool force = (buf[0] == 'f' || buf[0] == 'F');
+		bool force = (buf[0] == 'f');
 		// Pull the actual id out of there. Could have went with strtok, too.
 		uint8_t watch_id = WATCH_MAX;
 		errno            = 0;
-		int n            = sscanf(buf, "start:%hhu", &watch_id);
+		int n            = 0;
+		if (force) {
+			n = sscanf(buf, "force-start:%hhu", &watch_id);
+		} else {
+			n = sscanf(buf, "start:%hhu", &watch_id);
+		}
 		// We'll add a courtesy reply with the status
 		int packet_len = 0;
 		if (n == 1) {
