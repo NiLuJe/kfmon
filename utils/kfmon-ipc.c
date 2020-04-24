@@ -76,8 +76,15 @@ static bool
 	if (buf[bytes - 1] == '\n') {
 		buf[bytes - 1] = '\0';
 	} else {
-		buf[bytes] = '\0';
-		packet_len++;
+		// Don't blow past the buffer in case bytes == sizeof(buf).
+		if (bytes < sizeof(buf)) {
+			// buf is zero-initialized, we're good, just send one byte more, it's going to be NUL already.
+			//buf[bytes] = '\0';
+			packet_len++;
+		} else {
+			// Otherwise, just truncate to NUL-terminate
+			buf[bytes - 1] = '\0';
+		}
 	}
 	if (write_in_full(data_fd, buf, packet_len) < 0) {
 		// Only actual failures are left, xwrite handles the rest
@@ -109,8 +116,12 @@ static bool
 		return false;
 	}
 
-	// Ensure buffer is NUL-terminated before we start playing with it
-	buf[PIPE_BUF - 1] = '\0';
+	// In the event len == sizeof(buf), truncate to ensure buf is NUL-terminated before we start playing with it.
+	// Otherwise, we zero init buf, so we're sure to end up with a NUL-terminated string.
+	// NOTE: Here, we only do a fixed-length printf, so this is technically unneeded/harmful,
+	//       as we effectively no longer need this to be NUL-terminated.
+	//buf[PIPE_BUF - 1] = '\0';
+
 	// Then print it!
 	fprintf(stderr, "<<< Got a reply:\n");
 	fprintf(stdout, "%.*s", (int) len, buf);
