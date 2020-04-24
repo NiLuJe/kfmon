@@ -2684,7 +2684,12 @@ int
 	while (1) {
 		LOG(LOG_INFO, "Beginning the main loop.");
 
-		// FIXME: Might need a reinit here to deal with Sergey's stuff...
+		// On subsequent iterations, we might be printing stuff *before* handle_events, here,
+		// (mainly in error-ish codepaths), so we need to check the fb state...
+		pthread_mutex_lock(&ptlock);
+		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+		fbink_reinit(FBFD_AUTO, &fbinkConfig);
+		pthread_mutex_unlock(&ptlock);
 
 		// Make sure our target partition is mounted
 		if (!is_target_mounted()) {
