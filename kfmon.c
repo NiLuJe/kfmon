@@ -1536,6 +1536,7 @@ static void*
 	pid_t ret;
 	int   wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
+	// NOTE: This is quite likely overkill on Linux (https://stackoverflow.com/a/59795677)
 	do {
 		ret = waitpid(cpid, &wstatus, 0);
 	} while (ret == -1 && errno == EINTR);
@@ -2423,9 +2424,11 @@ static void
 
 	int data_fd = -1;
 	// NOTE: The data fd doesn't inherit the connection socket's flags on Linux.
-	data_fd = accept(conn_fd, NULL, NULL);
+	do {
+		data_fd = accept(conn_fd, NULL, NULL);
+	} while (data_fd == -1 && errno == EINTR);
 	if (data_fd == -1) {
-		if (errno == EAGAIN || errno == EINTR || errno == ECONNABORTED) {
+		if (errno == EAGAIN || errno == ECONNABORTED) {
 			// Return early, and let the socket polling trigger a retry or wait for the next connection.
 			// NOTE: That seems to be the right call for ECONNABORTED, too.
 			//       c.f., Go's Accept() wrapper in src/internal/poll/fd_unix.go
