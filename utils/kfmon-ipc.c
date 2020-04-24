@@ -80,7 +80,6 @@ static bool
 		buf[bytes] = '\0';
 		packet_len++;
 	}
-	buf[bytes] = '\0';
 	if (write_in_full(data_fd, buf, packet_len) < 0) {
 		// Only actual failures are left, xwrite handles the rest
 		fprintf(stderr, "Aborting: write: %m!\n");
