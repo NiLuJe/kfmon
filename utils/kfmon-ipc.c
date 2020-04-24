@@ -80,7 +80,7 @@ static bool
 		buf[bytes - 1] = '\0';
 	} else {
 		// Don't blow past the buffer in case bytes == sizeof(buf).
-		if (bytes < sizeof(buf)) {
+		if ((size_t) bytes < sizeof(buf)) {
 			// buf is zero-initialized, we're good, just send one byte more, it's going to be NUL already.
 			//buf[bytes] = '\0';
 			packet_len++;
