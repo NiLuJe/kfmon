@@ -2263,7 +2263,7 @@ static bool
 			if (!found_watch_idx) {
 				// Invalid or inactive watch, can't do anything.
 				LOG(LOG_WARNING,
-				    "Received a request to %sstart an invalid watch idx: %hhu",
+				    "Received a request to %sstart an invalid watch idx %hhu",
 				    force ? "force " : "",
 				    watch_id);
 				packet_len = snprintf(buf, sizeof(buf), "ERR_INVALID_ID\n");
@@ -2271,7 +2271,7 @@ static bool
 				// Go ahead, we thankfully have a few less sanity checks to deal with than handle_events,
 				// because no SQL ;).
 				LOG(LOG_INFO,
-				    "Processing IPC request to %sstart watch idx: %hhu",
+				    "Processing IPC request to %sstart watch idx %hhu",
 				    force ? "force " : "",
 				    watch_id);
 
