@@ -1536,7 +1536,7 @@ static void*
 	pid_t ret;
 	int   wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
-	// NOTE: This is quite likely overkill on Linux (https://stackoverflow.com/a/59795677)
+	// NOTE: This is quite likely overkill on Linux (c.f., https://stackoverflow.com/a/59795677)
 	do {
 		ret = waitpid(cpid, &wstatus, 0);
 	} while (ret == -1 && errno == EINTR);
