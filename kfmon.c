@@ -444,6 +444,11 @@ static int
 			LOG(LOG_CRIT, "Passed an invalid value for hidden!");
 			return 0;
 		}
+	} else if (MATCH("watch", "block_spawns")) {
+		if (strtobool(value, &pconfig->block_spawns) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
+			return 0;
+		}
 	} else if (MATCH("watch", "skip_db_checks")) {
 		if (strtobool(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
@@ -466,11 +471,6 @@ static int
 	} else if (MATCH("watch", "db_comment")) {
 		if (str5cpy(pconfig->db_comment, DB_SZ_MAX, value, DB_SZ_MAX, TRUNC) != 0) {
 			LOG(LOG_WARNING, "The value passed for db_comment may have been truncated!");
-		}
-	} else if (MATCH("watch", "block_spawns")) {
-		if (strtobool(value, &pconfig->block_spawns) < 0) {
-			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
-			return 0;
 		}
 	} else if (MATCH("watch", "reboot_on_exit")) {
 		;
@@ -618,6 +618,26 @@ static bool
 		LOG(LOG_NOTICE,
 		    "Updated hidden to %d for watch config @ index %hhu",
 		    watchConfig[target_idx].hidden,
+		    target_idx);
+	}
+
+	// Check if block_spawns was updated...
+	if (pconfig->block_spawns != watchConfig[target_idx].block_spawns) {
+		watchConfig[target_idx].block_spawns = pconfig->block_spawns;
+		updated                              = true;
+		LOG(LOG_NOTICE,
+		    "Updated block_spawns to %d for watch config @ index %hhu",
+		    watchConfig[target_idx].block_spawns,
+		    target_idx);
+	}
+
+	// Check if skip_db_checks was updated...
+	if (pconfig->skip_db_checks != watchConfig[target_idx].skip_db_checks) {
+		watchConfig[target_idx].skip_db_checks = pconfig->skip_db_checks;
+		updated                                = true;
+		LOG(LOG_NOTICE,
+		    "Updated skip_db_checks to %d for watch config @ index %hhu",
+		    watchConfig[target_idx].skip_db_checks,
 		    target_idx);
 	}
 
