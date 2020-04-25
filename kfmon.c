@@ -2238,16 +2238,21 @@ static bool
 	// Handle the supported commands
 	if (strncasecmp(buf, "list", 4) == 0) {
 		LOG(LOG_INFO, "Processing IPC watch listing request");
-		// Reply with a list of active watches, format is id:label (separated by a LF)
+		// Reply with a list of active watches, format is id:basename(filename):label (separated by a LF)
+		//                                             or id:basename(filename) if the watch has no label set.
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 			if (!watchConfig[watch_idx].is_active) {
 				continue;
 			}
-			// If it has a label, use it, otherwise, fallback to the trigger's basename
+			// If it has a label, add it in a third field, otherwise, don't even print the extra field separator.
 			int packet_len = 0;
 			if (*watchConfig[watch_idx].label) {
-				packet_len =
-				    snprintf(buf, sizeof(buf), "%hhu:%s\n", watch_idx, watchConfig[watch_idx].label);
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "%hhu:%s:%s\n",
+						      watch_idx,
+						      basename(watchConfig[watch_idx].filename),
+						      watchConfig[watch_idx].label);
 			} else {
 				packet_len = snprintf(
 				    buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
