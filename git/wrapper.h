@@ -5,7 +5,6 @@
 
 #include <errno.h>
 #include <poll.h>
-#include <signal.h>
 #include <unistd.h>
 
 ssize_t xread(int fd, void* buf, size_t len);
