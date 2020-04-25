@@ -194,7 +194,7 @@ ifeq (,$(findstring arm-,$(CC)))
 endif
 
 kobo: armcheck release
-	mkdir -p Kobo/usr/local/kfmon/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
+	mkdir -p Kobo/usr/local/kfmon/bin Kobo/usr/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
 	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
 	ln -sf $(CURDIR)/scripts/uninstall/kfmon-uninstall.sh Kobo/usr/local/kfmon/bin/kfmon-update.sh
 	ln -sf $(CURDIR)/scripts/uninstall/on-animator.sh Kobo/etc/init.d/on-animator.sh
@@ -203,20 +203,21 @@ kobo: armcheck release
 	rm -f Release/KoboRoot.tgz
 	rm -rf Kobo/usr/local/kfmon/bin Kobo/etc/udev/rules.d Kobo/etc/init.d
 	mkdir -p Kobo/usr/local/kfmon/bin Kobo/mnt/onboard/.kobo Kobo/etc/udev/rules.d Kobo/etc/init.d Kobo/mnt/onboard/.adds/kfmon/config Kobo/mnt/onboard/.adds/kfmon/bin Kobo/mnt/onboard/.adds/kfmon/log Kobo/mnt/onboard/icons
-	ln -sf $(CURDIR)/resources/koreader.png Kobo/mnt/onboard/koreader.png
-	ln -sf $(CURDIR)/resources/plato.png Kobo/mnt/onboard/icons/plato.png
-	ln -sf $(CURDIR)/resources/kfmon.png Kobo/mnt/onboard/kfmon.png
-	ln -sf $(CURDIR)/Release/kfmon Kobo/usr/local/kfmon/bin/kfmon
-	ln -sf $(CURDIR)/Release/shim Kobo/usr/local/kfmon/bin/shim
-	ln -sf $(CURDIR)/Release/kfmon-ipc Kobo/usr/local/kfmon/bin/kfmon-ipc
-	ln -sf $(CURDIR)/FBInk/Release/fbink Kobo/usr/local/kfmon/bin/fbink
-	ln -sf $(CURDIR)/README.md Kobo/usr/local/kfmon/README.md
-	ln -sf $(CURDIR)/LICENSE Kobo/usr/local/kfmon/LICENSE
-	ln -sf $(CURDIR)/CREDITS Kobo/usr/local/kfmon/CREDITS
-	ln -sf $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
-	ln -sf $(CURDIR)/scripts/kfmon-update.sh Kobo/usr/local/kfmon/bin/kfmon-update.sh
-	ln -sf $(CURDIR)/scripts/on-animator.sh Kobo/etc/init.d/on-animator.sh
-	tar --exclude="./mnt" --exclude="KFMon-*.zip" --owner=root --group=root -cvzhf Release/KoboRoot.tgz -C Kobo .
+	ln -f $(CURDIR)/resources/koreader.png Kobo/mnt/onboard/koreader.png
+	ln -f $(CURDIR)/resources/plato.png Kobo/mnt/onboard/icons/plato.png
+	ln -f $(CURDIR)/resources/kfmon.png Kobo/mnt/onboard/kfmon.png
+	ln -f $(CURDIR)/Release/kfmon Kobo/usr/local/kfmon/bin/kfmon
+	ln -f $(CURDIR)/Release/shim Kobo/usr/local/kfmon/bin/shim
+	ln -f $(CURDIR)/Release/kfmon-ipc Kobo/usr/local/kfmon/bin/kfmon-ipc
+	ln -sf /usr/local/kfmon/bin/kfmon-ipc Kobo/usr/bin/kfmon-ipc
+	ln -f $(CURDIR)/FBInk/Release/fbink Kobo/usr/local/kfmon/bin/fbink
+	ln -f $(CURDIR)/README.md Kobo/usr/local/kfmon/README.md
+	ln -f $(CURDIR)/LICENSE Kobo/usr/local/kfmon/LICENSE
+	ln -f $(CURDIR)/CREDITS Kobo/usr/local/kfmon/CREDITS
+	ln -f $(CURDIR)/scripts/99-kfmon.rules Kobo/etc/udev/rules.d/99-kfmon.rules
+	ln -f $(CURDIR)/scripts/kfmon-update.sh Kobo/usr/local/kfmon/bin/kfmon-update.sh
+	ln -f $(CURDIR)/scripts/on-animator.sh Kobo/etc/init.d/on-animator.sh
+	tar --exclude="./mnt" --exclude="KFMon-*.zip" --owner=root --group=root --hard-dereference -cvzf Release/KoboRoot.tgz -C Kobo .
 	ln -sf $(CURDIR)/Release/KoboRoot.tgz Kobo/mnt/onboard/.kobo/KoboRoot.tgz
 	ln -sf $(CURDIR)/config/kfmon.ini Kobo/mnt/onboard/.adds/kfmon/config/kfmon.ini
 	ln -sf $(CURDIR)/config/koreader.ini Kobo/mnt/onboard/.adds/kfmon/config/koreader.ini
