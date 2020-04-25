@@ -2236,14 +2236,22 @@ static bool
 	buf[sizeof(buf) - 1] = '\0';
 
 	// Handle the supported commands
-	if (strncasecmp(buf, "list", 4) == 0) {
+	if ((strncasecmp(buf, "list", 4) == 0) || (strncasecmp(buf, "gui-list", 8) == 0)) {
 		LOG(LOG_INFO, "Processing IPC watch listing request");
+		// Discriminate gui-list
+		bool gui = (buf[0] == 'g' || buf[0] == 'G');
 		// Reply with a list of active watches, format is id:basename(filename):label (separated by a LF)
 		//                                             or id:basename(filename) if the watch has no label set.
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 			if (!watchConfig[watch_idx].is_active) {
 				continue;
 			}
+
+			// If it's a gui listing, skip hidden watches
+			if (gui && watchConfig[watch_idx].hidden) {
+				continue;
+			}
+
 			// If it has a label, add it in a third field, otherwise, don't even print the extra field separator.
 			int packet_len = 0;
 			if (*watchConfig[watch_idx].label) {
@@ -2420,10 +2428,10 @@ static bool
 	} else {
 		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
 		// Reply with a list of valid commands
-		int packet_len =
-		    snprintf(buf,
-			     sizeof(buf),
-			     "ERR_INVALID_CMD\nComma separated list of valid commands: list, start, force-start\n");
+		int packet_len = snprintf(
+		    buf,
+		    sizeof(buf),
+		    "ERR_INVALID_CMD\nComma separated list of valid commands: list, gui-list, start, force-start\n");
 		// w/ NUL
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
