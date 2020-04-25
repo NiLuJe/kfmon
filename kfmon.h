@@ -182,6 +182,7 @@ typedef struct
 	char   db_title[DB_SZ_MAX];
 	char   db_author[DB_SZ_MAX];
 	char   db_comment[DB_SZ_MAX];
+	bool   hidden;
 	bool   skip_db_checks;
 	bool   do_db_update;
 	bool   block_spawns;
