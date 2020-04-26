@@ -192,17 +192,17 @@ int
 		}
 
 		if (poll_num > 0) {
-			if (pfd.revents & POLLOUT) {
-				// KFMon is ready for us, let's proceed.
-				break;
-			}
-
-			// Remote closed the connection
+			// Remote closed the connection, we obviously can't write to it (even if POLLOUT|POLLHUP).
 			if (pfd.revents & POLLHUP) {
 				fprintf(stderr, "Remote closed the connection!\n");
 				// That's obviously not good ;p
 				rc = EPIPE;
 				goto cleanup;
+			}
+
+			if (pfd.revents & POLLOUT) {
+				// KFMon is ready for us, let's proceed.
+				break;
 			}
 		}
 
