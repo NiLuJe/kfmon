@@ -2649,9 +2649,10 @@ static void
 		}
 
 		if (poll_num > 0) {
-			// Don't even try to deal with a closed connection, we won't be able to reply in handle_ipc.
+			// Don't even *try* to deal with a connection that was closed by the client,
+			// as we wouldn't be able to reply to it in handle_ipc (write on closed socket -> SIGPIPE).
 			// NOTE: Said client should already have reported a timeout waiting for our reply,
-			//       so don't even try to drain its command, just forget about it.
+			//       so we don't even try to drain its command, and just forget about it.
 			//       On the upside, that prevents said command from being triggered after a random delay...
 			// TODO: We *probably* still want to check for POLLHUP before writes in handle_ipc,
 			//       in order to avoid sneakier potential SIGPIPEs...
