@@ -2240,6 +2240,24 @@ static bool
 		LOG(LOG_INFO, "Processing IPC watch listing request");
 		// Discriminate gui-list
 		bool gui = (buf[0] == 'g' || buf[0] == 'G');
+
+		// Check that we still have a client to talk to...
+		int status = can_write_to_socket(data_fd, 250, 4);
+		if (status != EXIT_SUCCESS) {
+			if (status == EPIPE) {
+				LOG(LOG_WARNING, "Client closed the connection (handle_ipc)");
+				// Signal our polling to close the connection
+				return true;
+			} else if (status == ETIMEDOUT) {
+				LOG(LOG_WARNING, "Timed out waiting for client");
+				return true;
+			} else {
+				LOG(LOG_WARNING, "poll: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
+				return true;
+			}
+		}
+
 		// Reply with a list of active watches, format is id:basename(filename):label (separated by a LF)
 		//                                             or id:basename(filename) if the watch has no label set.
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
@@ -2470,43 +2488,20 @@ static bool
 		}
 
 		// Check that we still have a client to talk to...
-		// TODO: Move to a function, add a small timeout.
-		struct pollfd pfd = { 0 };
-		// Data socket
-		pfd.fd     = data_fd;
-		pfd.events = POLLOUT;
-		int status = EXIT_SUCCESS;
-		while (1) {
-			int poll_num = poll(&pfd, 1, -1);
-			if (poll_num == -1) {
-				if (errno == EINTR) {
-					continue;
-				}
+		int status = can_write_to_socket(data_fd, 250, 4);
+		if (status != EXIT_SUCCESS) {
+			if (status == EPIPE) {
+				LOG(LOG_WARNING, "Client closed the connection (handle_ipc)");
+				// Signal our polling to close the connection
+				return true;
+			} else if (status == ETIMEDOUT) {
+				LOG(LOG_WARNING, "Timed out waiting for client");
+				return true;
+			} else {
 				LOG(LOG_WARNING, "poll: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
-				status = EXIT_FAILURE;
-				break;
+				return true;
 			}
-
-			if (poll_num > 0) {
-				// Remote closed the connection, can't reply to it (even if POLLOUT|POLLHUP).
-				if (pfd.revents & POLLHUP) {
-					LOG(LOG_WARNING, "Client closed the connection (handle_ipc)");
-					// That's obviously not good ;p
-					status = EPIPE;
-					break;
-				}
-
-				if (pfd.revents & POLLOUT) {
-					// Our client is ready for us, let's proceed.
-					status = EXIT_SUCCESS;
-					break;
-				}
-			}
-		}
-		if (status != EXIT_SUCCESS) {
-			// SIGPIPE, we're done
-			return true;
 		}
 
 		// Reply with the status (w/ NUL)
@@ -2524,6 +2519,24 @@ static bool
 		    buf,
 		    sizeof(buf),
 		    "ERR_INVALID_CMD\nComma separated list of valid commands: list, gui-list, start, force-start, trigger, force-trigger\n");
+
+		// Check that we still have a client to talk to...
+		int status = can_write_to_socket(data_fd, 250, 4);
+		if (status != EXIT_SUCCESS) {
+			if (status == EPIPE) {
+				LOG(LOG_WARNING, "Client closed the connection (handle_ipc)");
+				// Signal our polling to close the connection
+				return true;
+			} else if (status == ETIMEDOUT) {
+				LOG(LOG_WARNING, "Timed out waiting for client");
+				return true;
+			} else {
+				LOG(LOG_WARNING, "poll: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
+				return true;
+			}
+		}
+
 		// w/ NUL
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
