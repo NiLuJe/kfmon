@@ -2468,6 +2468,47 @@ static bool
 						      force ? "force-" : "");
 			}
 		}
+
+		// Check that we still have a client to talk to...
+		// TODO: Move to a function, add a small timeout.
+		struct pollfd pfd = { 0 };
+		// Data socket
+		pfd.fd     = data_fd;
+		pfd.events = POLLOUT;
+		int status = EXIT_SUCCESS;
+		while (1) {
+			int poll_num = poll(&pfd, 1, -1);
+			if (poll_num == -1) {
+				if (errno == EINTR) {
+					continue;
+				}
+				LOG(LOG_WARNING, "poll: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
+				status = EXIT_FAILURE;
+				break;
+			}
+
+			if (poll_num > 0) {
+				// Remote closed the connection, can't reply to it (even if POLLOUT|POLLHUP).
+				if (pfd.revents & POLLHUP) {
+					LOG(LOG_WARNING, "Client closed the connection (handle_ipc)");
+					// That's obviously not good ;p
+					status = EPIPE;
+					break;
+				}
+
+				if (pfd.revents & POLLOUT) {
+					// Our client is ready for us, let's proceed.
+					status = EXIT_SUCCESS;
+					break;
+				}
+			}
+		}
+		if (status != EXIT_SUCCESS) {
+			// SIGPIPE, we're done
+			return true;
+		}
+
 		// Reply with the status (w/ NUL)
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
@@ -2608,17 +2649,23 @@ static void
 		}
 
 		if (poll_num > 0) {
+			// Don't even try to deal with a closed connection, we won't be able to reply in handle_ipc.
+			// NOTE: Said client should already have reported a timeout waiting for our reply,
+			//       so don't even try to drain its command, just forget about it.
+			//       On the upside, that prevents said command from being triggered after a random delay...
+			// TODO: We *probably* still want to check for POLLHUP before writes in handle_ipc,
+			//       in order to avoid sneakier potential SIGPIPEs...
+			if (pfd.revents & POLLHUP) {
+				LOG(LOG_NOTICE, "Remote end closed the IPC connection (handle_connection)");
+				goto early_close;
+			}
+
+			// There's data to be read!
 			if (pfd.revents & POLLIN) {
-				// There's data to be read!
 				if (handle_ipc(data_fd)) {
 					// We've successfully handled all input data, we're done!
 					break;
 				}
-			}
-			// While we generally try to read until EoF, at which point we break, let's cover our bases anyway...
-			if (pfd.revents & POLLHUP) {
-				LOG(LOG_NOTICE, "Remote end closed the IPC connection");
-				break;
 			}
 		}
 
@@ -2630,7 +2677,7 @@ static void
 		// Drop the axe after 60s.
 		if (retries >= 4) {
 			LOG(LOG_NOTICE, "Dropping inactive IPC connection");
-			break;
+			goto early_close;
 		}
 	}
 
@@ -2918,7 +2965,8 @@ int
 					}
 				}
 
-				if (pfds[1].revents & POLLIN) {
+				// If the connection was already closed, don't even try to deal with it
+				if (pfds[1].revents & POLLIN && !(pfds[1].revents & POLLHUP)) {
 					// There was a new connection attempt
 					handle_connection(conn_fd);
 				}
