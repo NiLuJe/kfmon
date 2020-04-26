@@ -142,7 +142,7 @@ int
 {
 	// Setup the local socket
 	int data_fd = -1;
-	if ((data_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
+	if ((data_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0)) == -1) {
 		fprintf(stderr, "Failed to create local IPC socket (socket: %m), aborting!\n");
 		exit(EXIT_FAILURE);
 	}
@@ -150,6 +150,18 @@ int
 	struct sockaddr_un sock_name = { 0 };
 	sock_name.sun_family         = AF_UNIX;
 	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
+
+	// Set a timeout
+	struct timeval tout = { .tv_sec = 30, .tv_usec = 0 };
+	socklen_t      len  = sizeof(tout);
+	if (setsockopt(data_fd, SOL_SOCKET, SO_RCVTIMEO, &tout, len) == -1) {
+		fprintf(stderr, "setsockopt: %m!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (setsockopt(data_fd, SOL_SOCKET, SO_SNDTIMEO, &tout, len) == -1) {
+		fprintf(stderr, "setsockopt: %m!\n");
+		exit(EXIT_FAILURE);
+	}
 
 	// Connect to IPC socket
 	if (connect(data_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {

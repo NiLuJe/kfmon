@@ -2615,7 +2615,7 @@ static void
 					break;
 				}
 			}
-			// While we generally try to read until EoF, at which point we break, but let's cover our bases anyway...
+			// While we generally try to read until EoF, at which point we break, let's cover our bases anyway...
 			if (pfd.revents & POLLHUP) {
 				LOG(LOG_NOTICE, "Remote end closed the IPC connection");
 				break;
