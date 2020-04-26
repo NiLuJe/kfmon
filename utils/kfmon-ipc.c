@@ -152,6 +152,7 @@ int
 	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
 
 	// Set a timeout
+	// NOTE: On a non-blocking socket, the kernel will enforce no timeout behind our backs.
 	struct timeval tout = { .tv_sec = 30, .tv_usec = 0 };
 	socklen_t      len  = sizeof(tout);
 	if (setsockopt(data_fd, SOL_SOCKET, SO_RCVTIMEO, &tout, len) == -1) {
