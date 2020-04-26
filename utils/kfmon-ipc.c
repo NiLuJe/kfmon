@@ -181,41 +181,16 @@ int
 	pfd.events = POLLOUT;
 
 	// Here goes... We'll want to timeout after a while (30s, half of KFMon's own timeout)
-	size_t retry = 0U;
-	while (1) {
-		int poll_num = poll(&pfd, 1, 5 * 1000);
-		if (poll_num == -1) {
-			if (errno == EINTR) {
-				continue;
-			}
-			rc = EXIT_FAILURE;
+	rc = can_write_to_socket(data_fd, 1000, 30);
+	if (rc != EXIT_SUCCESS) {
+		if (rc == EPIPE) {
+			fprintf(stderr, "KFMon closed the connection!\n");
 			goto cleanup;
-		}
-
-		if (poll_num > 0) {
-			// Remote closed the connection, we obviously can't write to it (even if POLLOUT|POLLHUP).
-			if (pfd.revents & POLLHUP) {
-				fprintf(stderr, "Remote closed the connection!\n");
-				// That's obviously not good ;p
-				rc = EPIPE;
-				goto cleanup;
-			}
-
-			if (pfd.revents & POLLOUT) {
-				// KFMon is ready for us, let's proceed.
-				break;
-			}
-		}
-
-		if (poll_num == 0) {
-			// Timed out, increase the retry counter
-			retry++;
-		}
-
-		// Drop the axe after the final timeout
-		if (retry >= 6) {
-			// Flag that as an error
-			rc = ETIMEDOUT;
+		} else if (rc == ETIMEDOUT) {
+			fprintf(stderr, "Timed out waiting for KFMon to be ready for us!\n");
+			goto cleanup;
+		} else {
+			fprintf(stderr, "Aborting: poll: %m!\n");
 			goto cleanup;
 		}
 	}
@@ -267,7 +242,7 @@ int
 				if (!handle_reply(data_fd)) {
 					// If the remote closed the connection, we get POLLIN|POLLHUP w/ EoF ;).
 					if (pfds[1].revents & POLLHUP) {
-						fprintf(stderr, "Remote closed the connection!\n");
+						fprintf(stderr, "KFMon closed the connection!\n");
 						// Flag that as an error
 						rc = EPIPE;
 					} else {
@@ -288,7 +263,7 @@ int
 			}
 			// Remote closed the connection
 			if (pfds[1].revents & POLLHUP) {
-				fprintf(stderr, "Remote closed the connection!\n");
+				fprintf(stderr, "KFMon closed the connection!\n");
 				// Flag that as an error
 				rc = EPIPE;
 				goto cleanup;
