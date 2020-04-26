@@ -2284,17 +2284,29 @@ static bool
 			// We may attempt a retry
 			return false;
 		}
-	} else if ((strncmp(buf, "start", 5) == 0) || (strncmp(buf, "force-start", 11) == 0)) {
-		// Discriminate force-start
+	} else if ((strncmp(buf, "start", 5) == 0) || (strncmp(buf, "force-start", 11) == 0) ||
+		   (strncmp(buf, "trigger", 7) == 0) || (strncmp(buf, "force-trigger", 13) == 0)) {
+		// Discriminate force-*
 		bool force = (buf[0] == 'f');
+		// Discriminate trigger from start
+		bool trigger = (force ? buf[6] == 't' : buf[0] == 't');
 		// Pull the actual id out of there. Could have went with strtok, too.
-		uint8_t watch_id = WATCH_MAX;
-		errno            = 0;
-		int n            = 0;
+		uint8_t watch_id                       = WATCH_MAX;
+		char    watch_basename[CFG_SZ_MAX + 1] = { 0 };
+		errno                                  = 0;
+		int n                                  = 0;
 		if (force) {
-			n = sscanf(buf, "force-start:%hhu", &watch_id);
+			if (trigger) {
+				n = sscanf(buf, "force-trigger:%" CFG_SZ_MAX_STR "s", watch_basename);
+			} else {
+				n = sscanf(buf, "force-start:%hhu", &watch_id);
+			}
 		} else {
-			n = sscanf(buf, "start:%hhu", &watch_id);
+			if (trigger) {
+				n = sscanf(buf, "trigger:%" CFG_SZ_MAX_STR "s", watch_basename);
+			} else {
+				n = sscanf(buf, "start:%hhu", &watch_id);
+			}
 		}
 		// We'll add a courtesy reply with the status
 		int packet_len = 0;
@@ -2309,25 +2321,49 @@ static bool
 					continue;
 				}
 
-				if (watch_id == watch_idx) {
-					found_watch_idx = true;
-					break;
+				if (trigger) {
+					// trigger looks up by basename(filename)
+					if (strcmp(basename(watchConfig[watch_idx].filename), watch_basename) == 0) {
+						found_watch_idx = true;
+						watch_id        = watch_idx;
+						break;
+					}
+				} else {
+					// start looks up by watch_idx
+					if (watch_id == watch_idx) {
+						found_watch_idx = true;
+						break;
+					}
 				}
 			}
 			if (!found_watch_idx) {
 				// Invalid or inactive watch, can't do anything.
-				LOG(LOG_WARNING,
-				    "Received a request to %sstart an invalid watch idx %hhu",
-				    force ? "force " : "",
-				    watch_id);
+				if (trigger) {
+					LOG(LOG_WARNING,
+					    "Received a request to %strigger an invalid watch '%s'",
+					    force ? "force " : "",
+					    watch_basename);
+				} else {
+					LOG(LOG_WARNING,
+					    "Received a request to %sstart an invalid watch idx %hhu",
+					    force ? "force " : "",
+					    watch_id);
+				}
 				packet_len = snprintf(buf, sizeof(buf), "ERR_INVALID_ID\n");
 			} else {
 				// Go ahead, we thankfully have a few less sanity checks to deal with than handle_events,
 				// because no SQL ;).
-				LOG(LOG_INFO,
-				    "Processing IPC request to %sstart watch idx %hhu",
-				    force ? "force " : "",
-				    watch_id);
+				if (trigger) {
+					LOG(LOG_INFO,
+					    "Processing IPC request to %strigger watch '%s'",
+					    force ? "force " : "",
+					    watch_basename);
+				} else {
+					LOG(LOG_INFO,
+					    "Processing IPC request to %sstart watch idx %hhu",
+					    force ? "force " : "",
+					    watch_id);
+				}
 
 				// See handle_events for the logic behind spawn blocking & co.
 				bool is_watch_spawned;
@@ -2406,16 +2442,31 @@ static bool
 		} else if (errno != 0) {
 			LOG(LOG_WARNING, "sscanf: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] sscanf failed ?!", &fbinkConfig);
-			packet_len = snprintf(buf,
-					      sizeof(buf),
-					      "ERR_REALLY_MALFORMED_CMD\nExpected format is %sstart:id\n",
-					      force ? "force-" : "");
+			if (trigger) {
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "ERR_REALLY_MALFORMED_CMD\nExpected format is %strigger:name\n",
+						      force ? "force-" : "");
+			} else {
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "ERR_REALLY_MALFORMED_CMD\nExpected format is %sstart:id\n",
+						      force ? "force-" : "");
+			}
 		} else {
-			LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
-			packet_len = snprintf(buf,
-					      sizeof(buf),
-					      "ERR_MALFORMED_CMD\nExpected format is %sstart:id\n",
-					      force ? "force-" : "");
+			if (trigger) {
+				LOG(LOG_WARNING, "Malformed trigger command: %.*s", (int) len, buf);
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "ERR_MALFORMED_CMD\nExpected format is %strigger:name\n",
+						      force ? "force-" : "");
+			} else {
+				LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "ERR_MALFORMED_CMD\nExpected format is %sstart:id\n",
+						      force ? "force-" : "");
+			}
 		}
 		// Reply with the status (w/ NUL)
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
@@ -2431,7 +2482,7 @@ static bool
 		int packet_len = snprintf(
 		    buf,
 		    sizeof(buf),
-		    "ERR_INVALID_CMD\nComma separated list of valid commands: list, gui-list, start, force-start\n");
+		    "ERR_INVALID_CMD\nComma separated list of valid commands: list, gui-list, start, force-start, trigger, force-trigger\n");
 		// w/ NUL
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest

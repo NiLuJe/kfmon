@@ -162,6 +162,8 @@ extern const char* sqlite3ErrName(int);
 //       that would actually leave us somewhere around 186 bytes.
 //       Just chop that down to 128 for symmetry, and we'll warn in case user input doesn't fit.
 #define CFG_SZ_MAX 128
+// For sscanf
+#define CFG_SZ_MAX_STR "128"
 
 // What the daemon config should look like
 typedef struct
