@@ -25,6 +25,7 @@
 #endif
 
 #include "../git/wrapper.h"
+#include "../utils/sock_utils.h"
 #include <errno.h>
 #include <linux/limits.h>
 #include <stdbool.h>
@@ -183,7 +184,7 @@ int
 	// Here goes... We'll want to timeout after a while (30s, half of KFMon's own timeout)
 	size_t retry = 0U;
 	while (1) {
-		poll_num     = poll(&pfd, 1, 5 * 1000);
+		poll_num = poll(&pfd, 1, 5 * 1000);
 		if (poll_num == -1) {
 			if (errno == EINTR) {
 				continue;
