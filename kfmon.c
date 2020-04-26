@@ -2965,8 +2965,7 @@ int
 					}
 				}
 
-				// If the connection was already closed, don't even try to deal with it
-				if (pfds[1].revents & POLLIN && !(pfds[1].revents & POLLHUP)) {
+				if (pfds[1].revents & POLLIN) {
 					// There was a new connection attempt
 					handle_connection(conn_fd);
 				}
