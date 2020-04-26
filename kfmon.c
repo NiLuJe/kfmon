@@ -2666,8 +2666,6 @@ static void
 			// NOTE: Said client should already have reported a timeout waiting for our reply,
 			//       so we don't even try to drain its command, and just forget about it.
 			//       On the upside, that prevents said command from being triggered after a random delay...
-			// TODO: We *probably* still want to check for POLLHUP before writes in handle_ipc,
-			//       in order to avoid sneakier potential SIGPIPEs...
 			if (pfd.revents & POLLHUP) {
 				LOG(LOG_NOTICE, "Remote end closed the IPC connection (handle_connection)");
 				goto early_close;
