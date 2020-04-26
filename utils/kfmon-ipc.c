@@ -38,9 +38,6 @@
 // Path to our IPC Unix socket
 #define KFMON_IPC_SOCKET "/tmp/kfmon-ipc.ctl"
 
-// We want to return negative values on failure, always
-#define ERRCODE(e) (-(e))
-
 // Drain stdin and send it to the IPC socket
 static bool
     handle_stdin(int data_fd)
@@ -49,7 +46,7 @@ static bool
 	int bytes = 0;
 	if (ioctl(fileno(stdin), FIONREAD, &bytes) == -1) {
 		fprintf(stderr, "Aborting: ioctl: %m!\n");
-		exit(ERRCODE(EXIT_FAILURE));
+		exit(EXIT_FAILURE);
 	}
 
 	// If there's nothing to read, abort.
@@ -66,7 +63,7 @@ static bool
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		fprintf(stderr, "Aborting: read: %m!\n");
-		exit(ERRCODE(EXIT_FAILURE));
+		exit(EXIT_FAILURE);
 	}
 
 	// If there's actually nothing to read (EoF), abort.
@@ -92,7 +89,7 @@ static bool
 	if (write_in_full(data_fd, buf, packet_len) < 0) {
 		// Only actual failures are left, xwrite handles the rest
 		fprintf(stderr, "Aborting: write: %m!\n");
-		exit(ERRCODE(EXIT_FAILURE));
+		exit(EXIT_FAILURE);
 	}
 
 	// Done
@@ -111,7 +108,7 @@ static bool
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		fprintf(stderr, "Aborting: read: %m!\n");
-		exit(ERRCODE(EXIT_FAILURE));
+		exit(EXIT_FAILURE);
 	}
 
 	// If there's actually nothing to read (EoF), abort.
@@ -147,7 +144,7 @@ int
 	int data_fd = -1;
 	if ((data_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
 		fprintf(stderr, "Failed to create local IPC socket (socket: %m), aborting!\n");
-		exit(ERRCODE(EXIT_FAILURE));
+		exit(EXIT_FAILURE);
 	}
 
 	struct sockaddr_un sock_name = { 0 };
@@ -157,7 +154,7 @@ int
 	// Connect to IPC socket
 	if (connect(data_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {
 		fprintf(stderr, "IPC is down (connect: %m), aborting!\n");
-		exit(ERRCODE(EXIT_FAILURE));
+		exit(EXIT_FAILURE);
 	}
 
 	// Assume everything's peachy until shit happens...
@@ -179,7 +176,7 @@ int
 			if (errno == EINTR) {
 				continue;
 			}
-			rc = ERRCODE(EXIT_FAILURE);
+			rc = EXIT_FAILURE;
 			goto cleanup;
 		}
 
@@ -193,7 +190,7 @@ int
 			if (pfd.revents & POLLHUP) {
 				fprintf(stderr, "Remote closed the connection!\n");
 				// That's obviously not good ;p
-				rc = ERRCODE(EPIPE);
+				rc = EPIPE;
 				goto cleanup;
 			}
 		}
@@ -206,7 +203,7 @@ int
 		// Drop the axe after the final timeout
 		if (retry >= 6) {
 			// Flag that as an error
-			rc = ERRCODE(ETIMEDOUT);
+			rc = ETIMEDOUT;
 			goto cleanup;
 		}
 	}
@@ -233,7 +230,7 @@ int
 				continue;
 			}
 			fprintf(stderr, "Aborting: poll: %m!\n");
-			rc = ERRCODE(EXIT_FAILURE);
+			rc = EXIT_FAILURE;
 			goto cleanup;
 		}
 
@@ -260,12 +257,12 @@ int
 					if (pfds[1].revents & POLLHUP) {
 						fprintf(stderr, "Remote closed the connection!\n");
 						// Flag that as an error
-						rc = ERRCODE(EPIPE);
+						rc = EPIPE;
 					} else {
 						// There wasn't actually any data!
 						fprintf(stderr, "Nothing more to read!\n");
 						// Flag that as an error
-						rc = ERRCODE(ENODATA);
+						rc = ENODATA;
 					}
 					goto cleanup;
 				}
@@ -281,7 +278,7 @@ int
 			if (pfds[1].revents & POLLHUP) {
 				fprintf(stderr, "Remote closed the connection!\n");
 				// Flag that as an error
-				rc = ERRCODE(EPIPE);
+				rc = EPIPE;
 				goto cleanup;
 			}
 		}
