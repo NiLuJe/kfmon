@@ -49,7 +49,7 @@ static bool
 	int bytes = 0;
 	if (ioctl(fileno(stdin), FIONREAD, &bytes) == -1) {
 		fprintf(stderr, "Aborting: ioctl: %m!\n");
-		exit(EXIT_FAILURE);
+		exit(ERRCODE(EXIT_FAILURE));
 	}
 
 	// If there's nothing to read, abort.
@@ -66,7 +66,7 @@ static bool
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		fprintf(stderr, "Aborting: read: %m!\n");
-		exit(EXIT_FAILURE);
+		exit(ERRCODE(EXIT_FAILURE));
 	}
 
 	// If there's actually nothing to read (EoF), abort.
@@ -92,7 +92,7 @@ static bool
 	if (write_in_full(data_fd, buf, packet_len) < 0) {
 		// Only actual failures are left, xwrite handles the rest
 		fprintf(stderr, "Aborting: write: %m!\n");
-		exit(EXIT_FAILURE);
+		exit(ERRCODE(EXIT_FAILURE));
 	}
 
 	// Done
@@ -111,7 +111,7 @@ static bool
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		fprintf(stderr, "Aborting: read: %m!\n");
-		exit(EXIT_FAILURE);
+		exit(ERRCODE(EXIT_FAILURE));
 	}
 
 	// If there's actually nothing to read (EoF), abort.
@@ -147,7 +147,7 @@ int
 	int data_fd = -1;
 	if ((data_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
 		fprintf(stderr, "Failed to create local IPC socket (socket: %m), aborting!\n");
-		exit(EXIT_FAILURE);
+		exit(ERRCODE(EXIT_FAILURE));
 	}
 
 	struct sockaddr_un sock_name = { 0 };
@@ -157,13 +157,64 @@ int
 	// Connect to IPC socket
 	if (connect(data_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {
 		fprintf(stderr, "IPC is down (connect: %m), aborting!\n");
-		exit(EXIT_FAILURE);
+		exit(ERRCODE(EXIT_FAILURE));
 	}
 
-	// Cheap-ass prompt is cheap!
-	fprintf(stderr, ">>> ");
-	// We'll be polling both stdin and the socket...
+	// Assume everything's peachy until shit happens...
+	int rc = EXIT_SUCCESS;
+
+	// We'll first check if the socket is ready to talk to us...
 	int           poll_num;
+	struct pollfd pfd = { 0 };
+	// Data socket
+	pfd.fd     = data_fd;
+	pfd.events = POLLOUT;
+
+	// Here goes...
+	while (1) {
+		// We'll want to timeout after a while (30s, half of KFMon's own timeout)
+		size_t retry = 0U;
+		poll_num     = poll(&pfd, 1, 5 * 1000);
+		if (poll_num == -1) {
+			if (errno == EINTR) {
+				continue;
+			}
+			rc = ERRCODE(EXIT_FAILURE);
+			goto cleanup;
+		}
+
+		if (poll_num > 0) {
+			if (pfd.revents & POLLOUT) {
+				// KFMon is ready for us, let's proceed.
+				break;
+			}
+
+			// Remote closed the connection
+			if (pfd.revents & POLLHUP) {
+				fprintf(stderr, "Remote closed the connection!\n");
+				// That's obviously not good ;p
+				rc = ERRCODE(EPIPE);
+				goto cleanup;
+			}
+		}
+
+		if (poll_num == 0) {
+			// Timed out, increase the retry counter
+			retry++;
+		}
+
+		// Drop the axe after the final timeout
+		if (retry >= 6) {
+			// Flag that as an error
+			rc = ERRCODE(ETIMEDOUT);
+			goto cleanup;
+		}
+	}
+
+	// Now that KFMon is ready for us, cheap-ass prompt is cheap!
+	fprintf(stderr, ">>> ");
+
+	// We'll be polling both stdin and the socket...
 	nfds_t        nfds    = 2;
 	struct pollfd pfds[2] = { 0 };
 
@@ -174,9 +225,6 @@ int
 	pfds[1].fd     = data_fd;
 	pfds[1].events = POLLIN;
 
-	// Assume everything's peachy until shit happens...
-	int rc = EXIT_SUCCESS;
-
 	// Chat with hot sockets in your area!
 	while (1) {
 		poll_num = poll(pfds, nfds, -1);
@@ -185,7 +233,8 @@ int
 				continue;
 			}
 			fprintf(stderr, "Aborting: poll: %m!\n");
-			exit(EXIT_FAILURE);
+			rc = ERRCODE(EXIT_FAILURE);
+			goto cleanup;
 		}
 
 		if (poll_num > 0) {
