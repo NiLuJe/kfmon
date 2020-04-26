@@ -18,6 +18,11 @@
 #	define MAX_IO_SIZE MAX_IO_SIZE_DEFAULT
 #endif
 
+// NOTE: This effectively restores blocking behavior for the duration of the read/write call.
+//       If you need a timeout, make sure to wrap this in an appropriate polling mechanism.
+//       (A crappier and non thread safe workaround would be a different handler,
+//       with a static retry counter, a poll that can timeout, and that on the final timeout,
+//       would clear the retry counter, set errno to ETIMEDOUT and return failure).
 static int
     handle_nonblock(int fd, short poll_events, int err)
 {
