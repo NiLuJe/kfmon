@@ -179,10 +179,9 @@ int
 	pfd.fd     = data_fd;
 	pfd.events = POLLOUT;
 
-	// Here goes...
+	// Here goes... We'll want to timeout after a while (30s, half of KFMon's own timeout)
+	size_t retry = 0U;
 	while (1) {
-		// We'll want to timeout after a while (30s, half of KFMon's own timeout)
-		size_t retry = 0U;
 		poll_num     = poll(&pfd, 1, 5 * 1000);
 		if (poll_num == -1) {
 			if (errno == EINTR) {
