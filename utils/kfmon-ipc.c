@@ -174,12 +174,6 @@ int
 	// Assume everything's peachy until shit happens...
 	int rc = EXIT_SUCCESS;
 
-	// We'll first check if the socket is ready to talk to us...
-	struct pollfd pfd = { 0 };
-	// Data socket
-	pfd.fd     = data_fd;
-	pfd.events = POLLOUT;
-
 	// Here goes... We'll want to timeout after a while (30s, half of KFMon's own timeout)
 	rc = can_write_to_socket(data_fd, 1000, 30);
 	if (rc != EXIT_SUCCESS) {
