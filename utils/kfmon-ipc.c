@@ -87,6 +87,23 @@ static bool
 			buf[bytes - 1] = '\0';
 		}
 	}
+
+	// Check if actually can, first
+	int status = can_write_to_socket(data_fd, 250, 4);
+	if (status != EXIT_SUCCESS) {
+		if (status == EPIPE) {
+			fprintf(stderr, "KFMon closed the connection!\n");
+			return false;
+		} else if (status == ETIMEDOUT) {
+			fprintf(stderr, "Timed out waiting for KFMon to be ready for us!\n");
+			return false;
+		} else {
+			fprintf(stderr, "Aborting: poll: %m!\n");
+			return false;
+		}
+	}
+
+	// Then do it
 	if (write_in_full(data_fd, buf, packet_len) < 0) {
 		// Only actual failures are left, xwrite handles the rest
 		fprintf(stderr, "Aborting: write: %m!\n");
