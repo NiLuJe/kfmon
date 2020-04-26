@@ -175,7 +175,6 @@ int
 	int rc = EXIT_SUCCESS;
 
 	// We'll first check if the socket is ready to talk to us...
-	int           poll_num;
 	struct pollfd pfd = { 0 };
 	// Data socket
 	pfd.fd     = data_fd;
@@ -184,7 +183,7 @@ int
 	// Here goes... We'll want to timeout after a while (30s, half of KFMon's own timeout)
 	size_t retry = 0U;
 	while (1) {
-		poll_num = poll(&pfd, 1, 5 * 1000);
+		int poll_num = poll(&pfd, 1, 5 * 1000);
 		if (poll_num == -1) {
 			if (errno == EINTR) {
 				continue;
@@ -237,7 +236,7 @@ int
 
 	// Chat with hot sockets in your area!
 	while (1) {
-		poll_num = poll(pfds, nfds, -1);
+		int poll_num = poll(pfds, nfds, -1);
 		if (poll_num == -1) {
 			if (errno == EINTR) {
 				continue;

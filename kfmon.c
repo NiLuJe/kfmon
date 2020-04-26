@@ -2629,16 +2629,15 @@ static void
 	    (long) ucred.uid,
 	    (long) ucred.gid);
 
-	int           poll_num;
 	struct pollfd pfd = { 0 };
 	// Data socket
 	pfd.fd     = data_fd;
 	pfd.events = POLLIN;
 
 	// Wait for data, for a few 15s windows, in order to drop inactive connections after a while
-	size_t retries = 0U;
+	size_t retry = 0U;
 	while (1) {
-		poll_num = poll(&pfd, 1, 15 * 1000);
+		int poll_num = poll(&pfd, 1, 15 * 1000);
 		if (poll_num == -1) {
 			if (errno == EINTR) {
 				continue;
@@ -2672,11 +2671,11 @@ static void
 
 		if (poll_num == 0) {
 			// Timed out, increase the retry counter
-			retries++;
+			retry++;
 		}
 
 		// Drop the axe after 60s.
-		if (retries >= 4) {
+		if (retry >= 4) {
 			LOG(LOG_NOTICE, "Dropping inactive IPC connection");
 			goto early_close;
 		}
@@ -2714,10 +2713,7 @@ static void
 int
     main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
-	int           fd = -1;
-	int           poll_num;
-	nfds_t        nfds;
-	struct pollfd pfds[2] = { 0 };
+	int fd = -1;
 
 	// Make sure we're running at a neutral niceness
 	// (e.g., being launched via udev would leave us with a negative nice value).
@@ -2935,7 +2931,8 @@ int
 			}
 		}
 
-		nfds = 2;
+		struct pollfd pfds[2] = { 0 };
+		nfds_t        nfds    = 2;
 		// Inotify input
 		pfds[0].fd     = fd;
 		pfds[0].events = POLLIN;
@@ -2946,7 +2943,7 @@ int
 		// Wait for events
 		LOG(LOG_INFO, "Listening for events.");
 		while (1) {
-			poll_num = poll(pfds, nfds, -1);
+			int poll_num = poll(pfds, nfds, -1);
 			if (poll_num == -1) {
 				if (errno == EINTR) {
 					continue;
