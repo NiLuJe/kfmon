@@ -155,12 +155,19 @@ static bool
 }
 
 // Main entry point
+// NOTE: While I'd ideally want to be able to detect early if KFMon is already busy handling another IPC connection,
+//       the socket's listen backlog is inflated by the kernel, so connect() won't fail w/ EAGAIN any time soon.
+//       As for the initial POLLOUT check on the connected socket, it'll also happily go through immediately.
+//       So, I'm left with detecting delays in KFMon's *reply*, and making sure everybody handles connections
+//       dropped early sanely (i.e., don't write to a closed socket to avoid getting killed w/ a SIGPIPE),
+//       and that without actually dealing with signals, because, ugh.
+// NOTE: This means, that, yes, KFMon replying to a command is a mandatory part of the "protocol" ;).
 int
     main(void)
 {
 	// Setup the local socket
 	int data_fd = -1;
-	if ((data_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0)) == -1) {
+	if ((data_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
 		fprintf(stderr, "Failed to create local IPC socket (socket: %m), aborting!\n");
 		exit(EXIT_FAILURE);
 	}
@@ -168,19 +175,6 @@ int
 	struct sockaddr_un sock_name = { 0 };
 	sock_name.sun_family         = AF_UNIX;
 	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
-
-	// Set a timeout
-	// NOTE: On a non-blocking socket, the kernel will enforce no timeout behind our backs.
-	struct timeval tout = { .tv_sec = 30, .tv_usec = 0 };
-	socklen_t      len  = sizeof(tout);
-	if (setsockopt(data_fd, SOL_SOCKET, SO_RCVTIMEO, &tout, len) == -1) {
-		fprintf(stderr, "setsockopt: %m!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (setsockopt(data_fd, SOL_SOCKET, SO_SNDTIMEO, &tout, len) == -1) {
-		fprintf(stderr, "setsockopt: %m!\n");
-		exit(EXIT_FAILURE);
-	}
 
 	// Connect to IPC socket
 	if (connect(data_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {
@@ -191,7 +185,9 @@ int
 	// Assume everything's peachy until shit happens...
 	int rc = EXIT_SUCCESS;
 
-	// Here goes... We'll want to timeout after a while (30s, half of KFMon's own timeout)
+	// First, check that KFMon is ready to listen to us...
+	// We'll want to timeout after a while (30s, half of KFMon's own timeout).
+	// NOTE: As stated above, this is unlikely to ever trip a timeout ;).
 	rc = can_write_to_socket(data_fd, 1000, 30);
 	if (rc != EXIT_SUCCESS) {
 		if (rc == EPIPE) {
