@@ -87,25 +87,14 @@ static bool
 		}
 	}
 
-	// Check if we actually can, first
-	int status = can_write_to_socket(data_fd, 250, 4);
-	if (status != EXIT_SUCCESS) {
-		if (status == EPIPE) {
+	// Do it, being careful to handle EPIPE sanely
+	if (send_in_full(data_fd, buf, packet_len) < 0) {
+		// Only actual failures are left, so we're pretty much done
+		if (errno == EPIPE) {
 			fprintf(stderr, "KFMon closed the connection!\n");
-			return false;
-		} else if (status == ETIMEDOUT) {
-			fprintf(stderr, "Timed out waiting for KFMon to be ready for us!\n");
-			return false;
 		} else {
-			fprintf(stderr, "[%s] Aborting: poll: %m!\n", __PRETTY_FUNCTION__);
-			return false;
+			fprintf(stderr, "[%s] Aborting: send: %m!\n", __PRETTY_FUNCTION__);
 		}
-	}
-
-	// Then do it
-	if (write_in_full(data_fd, buf, packet_len) < 0) {
-		// Only actual failures are left, xwrite handles the rest
-		fprintf(stderr, "[%s] Aborting: write: %m!\n", __PRETTY_FUNCTION__);
 		exit(EXIT_FAILURE);
 	}
 
@@ -156,10 +145,10 @@ static bool
 // Main entry point
 // NOTE: While I'd ideally want to be able to detect early if KFMon is already busy handling another IPC connection,
 //       the socket's listen backlog is inflated by the kernel, so connect() won't fail w/ EAGAIN any time soon.
-//       As for the initial POLLOUT check on the connected socket, it'll also happily go through immediately.
+//       As for an initial POLLOUT check on the connected socket, it'll would happily go through immediately.
 //       So, I'm left with detecting delays in KFMon's *reply*, and making sure everybody handles connections
-//       dropped early sanely (i.e., don't write to a closed socket to avoid getting killed w/ a SIGPIPE),
-//       and that without actually dealing with signals, because, ugh.
+//       dropped early sanely (i.e., send w/ MSG_NOSIGNAL, and a sane handling of EPIPE).
+//       c.f., utils/sock_utils.h for more details about that conundrum.
 // NOTE: This means, that, yes, KFMon replying to a command is a mandatory part of the "protocol" ;).
 int
     main(void)
@@ -183,23 +172,6 @@ int
 
 	// Assume everything's peachy until shit happens...
 	int rc = EXIT_SUCCESS;
-
-	// First, check that KFMon is ready to listen to us...
-	// We'll want to timeout after a while (30s, half of KFMon's own timeout).
-	// NOTE: As stated above, this is unlikely to ever trip a timeout ;).
-	rc = can_write_to_socket(data_fd, 1000, 30);
-	if (rc != EXIT_SUCCESS) {
-		if (rc == EPIPE) {
-			fprintf(stderr, "KFMon closed the connection!\n");
-			goto cleanup;
-		} else if (rc == ETIMEDOUT) {
-			fprintf(stderr, "Timed out waiting for KFMon to be ready for us!\n");
-			goto cleanup;
-		} else {
-			fprintf(stderr, "[%s] Aborting: poll: %m!\n", __PRETTY_FUNCTION__);
-			goto cleanup;
-		}
-	}
 
 	// Now that KFMon is ready for us, cheap-ass prompt is cheap!
 	fprintf(stderr, ">>> ");
