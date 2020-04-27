@@ -34,14 +34,63 @@
 //             https://git.savannah.gnu.org/cgit/gnulib.git/tree/lib/full-write.c
 //             https://git.busybox.net/busybox/tree/libbb/read.c?h=1_31_stable
 
-#include <sys/param.h>
-
-#include <errno.h>
-#include <limits.h>
-#include <poll.h>
-#include <unistd.h>
-
 #include "atomicio.h"
+
+// read() with retries on recoverable errors (via polling on EAGAIN).
+// Not guaranteed to return len bytes, even on success (like read() itself).
+// Always returns read()'s return value as-is.
+ssize_t
+    xread(int fd, void* buf, size_t len)
+{
+	// Save a trip to EINVAL if len is large enough to make read() fail.
+	if (len > MAX_IO_BUFSIZ) {
+		len = MAX_IO_BUFSIZ;
+	}
+	while (1) {
+		ssize_t nr = read(fd, buf, len);
+		if (nr < 0) {
+			if (errno == EINTR) {
+				continue;
+			} else if (errno == EAGAIN) {
+				struct pollfd pfd = { 0 };
+				pfd.fd            = fd;
+				pfd.events        = POLLIN;
+
+				poll(&pfd, 1, -1);
+				continue;
+			}
+		}
+		return nr;
+	}
+}
+
+// write() with retries on recoverable errors (via polling on EAGAIN).
+// Not guaranteed to write len bytes, even on success (like write() itself).
+// Always returns write()'s return value as-is.
+ssize_t
+    xwrite(int fd, const void* buf, size_t len)
+{
+	// Save a trip to EINVAL if len is large enough to make write() fail.
+	if (len > MAX_IO_BUFSIZ) {
+		len = MAX_IO_BUFSIZ;
+	}
+	while (1) {
+		ssize_t nw = write(fd, buf, len);
+		if (nw < 0) {
+			if (errno == EINTR) {
+				continue;
+			} else if (errno == EAGAIN) {
+				struct pollfd pfd = { 0 };
+				pfd.fd            = fd;
+				pfd.events        = POLLOUT;
+
+				poll(&pfd, 1, -1);
+				continue;
+			}
+		}
+		return nw;
+	}
+}
 
 /*
  * ensure all of data on socket comes through. f==read || f==vwrite
@@ -54,7 +103,7 @@ size_t
 	ssize_t       res;
 	struct pollfd pfd;
 
-	pfd.fd = fd;
+	pfd.fd     = fd;
 	pfd.events = f == read ? POLLIN : POLLOUT;
 	while (n > pos) {
 		res = (f)(fd, s + pos, n - pos);

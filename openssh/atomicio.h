@@ -31,6 +31,26 @@
 #ifndef _ATOMICIO_H
 #define _ATOMICIO_H
 
+#include <errno.h>
+#include <limits.h>
+#include <poll.h>
+#include <unistd.h>
+
+// Clamp IO chunks to the smallest of 8 MiB and SSIZE_MAX,
+// to deal with various implementation quirks on really old Linux,
+// macOS, or AIX/IRIX.
+// c.f., git, gnulib & busybox for similar stories.
+// Since we ourselves are 32 bit Linux-bound, 8 MiB suits us just fine.
+#define MAX_IO_BUFSIZ (8 * 1024 * 1024)
+#if defined(SSIZE_MAX) && (SSIZE_MAX < MAX_IO_BUFSIZ)
+#	undef MAX_IO_BUFSIZ
+#	define MAX_IO_BUFSIZ SSIZE_MAX
+#endif
+
+// Simple read/write wrappers with retries on recoverable errors
+ssize_t xread(int fd, void* buf, size_t len);
+ssize_t xwrite(int fd, const void* buf, size_t len);
+
 /*
  * Ensure all of data on socket comes through. f==read || f==vwrite
  */
