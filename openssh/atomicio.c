@@ -92,11 +92,13 @@ ssize_t
 	}
 }
 
+// Based on OpenSSH's atomicio6, except we keep the return value/data type of the original call.
+// Ensure all of data on socket comes through.
 /*
  * ensure all of data on socket comes through. f==read || f==vwrite
  */
-size_t
-    atomicio6(ssize_t (*f)(int, void*, size_t), int fd, void* _s, size_t n, int (*cb)(void*, size_t), void* cb_arg)
+ssize_t
+    atomicio6(ssize_t (*f)(int, void*, size_t), int fd, void* _s, size_t n)
 {
 	char*         s   = _s;
 	size_t        pos = 0;
@@ -110,33 +112,18 @@ size_t
 		switch (res) {
 			case -1:
 				if (errno == EINTR) {
-					/* possible SIGALARM, update callback */
-					if (cb != NULL && cb(cb_arg, 0) == -1) {
-						errno = EINTR;
-						return pos;
-					}
 					continue;
 				} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
 					(void) poll(&pfd, 1, -1);
 					continue;
 				}
-				return 0;
+				return res;
 			case 0:
 				errno = EPIPE;
 				return pos;
 			default:
 				pos += (size_t) res;
-				if (cb != NULL && cb(cb_arg, (size_t) res) == -1) {
-					errno = EINTR;
-					return pos;
-				}
 		}
 	}
 	return pos;
-}
-
-size_t
-    atomicio(ssize_t (*f)(int, void*, size_t), int fd, void* _s, size_t n)
-{
-	return atomicio6(f, fd, _s, n, NULL, NULL);
 }
