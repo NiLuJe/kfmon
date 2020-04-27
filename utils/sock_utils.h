@@ -23,6 +23,10 @@
 #include <poll.h>
 #include <stdlib.h>
 
+// NOTE: See https://riptutorial.com/posix/example/17424/handle-sigpipe-generated-by-write---in-a-thread-safe-manner
+//       for a great recap of the issue at hand.
+//       Not that we ourselves have since moved to using send w/ MSG_NOPIPE ;).
+
 // Check that we still have a remote to talk to over the socket.
 // Returns ETIMEDOUT if it's not ready after <attempts> * <timeout>ms
 //   Set timeout to -1 and attempts to > 0 to wait indefinitely.
