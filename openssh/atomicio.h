@@ -31,8 +31,6 @@
 #ifndef _ATOMICIO_H
 #define _ATOMICIO_H
 
-struct iovec;
-
 /*
  * Ensure all of data on socket comes through. f==read || f==vwrite
  */
@@ -41,15 +39,7 @@ atomicio6(ssize_t (*f) (int, void *, size_t), int fd, void *_s, size_t n,
     int (*cb)(void *, size_t), void *);
 size_t	atomicio(ssize_t (*)(int, void *, size_t), int, void *, size_t);
 
+// Drop the const to get a signature matching read
 #define vwrite (ssize_t (*)(int, void *, size_t))write
-
-/*
- * ensure all of data on socket comes through. f==readv || f==writev
- */
-size_t
-atomiciov6(ssize_t (*f) (int, const struct iovec *, int), int fd,
-    const struct iovec *_iov, int iovcnt, int (*cb)(void *, size_t), void *);
-size_t	atomiciov(ssize_t (*)(int, const struct iovec *, int),
-    int, const struct iovec *, int);
 
 #endif /* _ATOMICIO_H */
