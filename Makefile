@@ -145,7 +145,7 @@ INIH_SRCS:=inih/ini.c
 STR5_SRCS:=str5/str5cpy.c
 # We always need OpenSSH's neat io wrappers
 SSH_SRCS:=openssh/atomicio.c
-# As well as our own helpers for socket handling
+# Keep our old helpers for socket handling around, even if we don't actually use them anymore
 SOCK_SRCS:=utils/sock_utils.c
 
 default: vendored
@@ -178,15 +178,15 @@ all: kfmon
 vendored: sqlite.built fbink.built
 	$(MAKE) kfmon SQLITE=true
 
-kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS) $(SOCK_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS) $(SOCK_OBJS) $(LIBS)
+kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS) $(LIBS)
 
 shim: | outdir
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/shim$(BINEXT) utils/shim.c
 	$(STRIP) --strip-unneeded $(OUT_DIR)/shim
 
-kfmon-ipc: | outdir $(SSH_OBJS) $(SOCK_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/kfmon-ipc$(BINEXT) utils/kfmon-ipc.c $(SSH_OBJS) $(SOCK_OBJS)
+kfmon-ipc: | outdir $(SSH_OBJS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/kfmon-ipc$(BINEXT) utils/kfmon-ipc.c $(SSH_OBJS)
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon-ipc
 
 strip: all

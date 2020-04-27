@@ -24,8 +24,7 @@
 #	define _GNU_SOURCE
 #endif
 
-#include "../git/wrapper.h"
-#include "../utils/sock_utils.h"
+#include "../openssh/atomicio.h"
 #include <errno.h>
 #include <linux/limits.h>
 #include <stdbool.h>

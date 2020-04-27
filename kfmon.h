@@ -26,10 +26,9 @@
 #endif
 
 #include "FBInk/fbink.h"
-#include "git/wrapper.h"
 #include "inih/ini.h"
+#include "openssh/atomicio.h"
 #include "str5/str5.h"
-#include "utils/sock_utils.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>
