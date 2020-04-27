@@ -100,13 +100,13 @@ ssize_t
 ssize_t
     read_in_full(int fd, void* buf, size_t len)
 {
-	// Save a trip to EINVAL if len is large enough to make write() fail.
+	// Save a trip to EINVAL if len is large enough to make read() fail.
 	if (len > MAX_IO_BUFSIZ) {
 		len = MAX_IO_BUFSIZ;
 	}
 
 	char*  s   = buf;
-	size_t pos = 0;
+	size_t pos = 0U;
 	while (len > pos) {
 		ssize_t nr = read(fd, s + pos, len - pos);
 		switch (nr) {
@@ -142,7 +142,7 @@ ssize_t
 	}
 
 	const char* s   = buf;
-	size_t      pos = 0;
+	size_t      pos = 0U;
 	while (len > pos) {
 		ssize_t nw = write(fd, s + pos, len - pos);
 		switch (nw) {
@@ -175,13 +175,13 @@ ssize_t
 ssize_t
     send_in_full(int sockfd, const void* buf, size_t len)
 {
-	// Save a trip to EINVAL if len is large enough to make write() fail.
+	// Save a trip to EINVAL if len is large enough to make send() fail.
 	if (len > MAX_IO_BUFSIZ) {
 		len = MAX_IO_BUFSIZ;
 	}
 
 	const char* s   = buf;
-	size_t      pos = 0;
+	size_t      pos = 0U;
 	while (len > pos) {
 		ssize_t nw = send(sockfd, s + pos, len - pos, MSG_NOSIGNAL);
 		switch (nw) {
