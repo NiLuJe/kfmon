@@ -22,11 +22,6 @@
 #include "sock_utils.h"
 
 // Check that we can still write to the socket (i.e., that the remote hasn't closed the socket early).
-// Returns ETIMEDOUT if it's not ready after <attempts> * <timeout>ms
-//   Set timeout to -1 and attempts to > 0 to wait indefinitely.
-// Returns EPIPE if remote has closed the connection
-// Returns EXIT_SUCCESS if remote is ready for us
-// Anything else is poll's errno
 int
     can_write_to_socket(int data_fd, int timeout, size_t attempts)
 {

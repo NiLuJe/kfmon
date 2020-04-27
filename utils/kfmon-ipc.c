@@ -88,7 +88,7 @@ static bool
 		}
 	}
 
-	// Check if actually can, first
+	// Check if we actually can, first
 	int status = can_write_to_socket(data_fd, 250, 4);
 	if (status != EXIT_SUCCESS) {
 		if (status == EPIPE) {

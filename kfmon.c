@@ -2662,10 +2662,11 @@ static void
 
 		if (poll_num > 0) {
 			// Don't even *try* to deal with a connection that was closed by the client,
-			// as we wouldn't be able to reply to it in handle_ipc (write on closed socket -> SIGPIPE).
+			// as we wouldn't be able to reply to it in handle_ipc (write on closed socket -> SIGPIPE),
+			// just close it on our end, too, and move on.
 			// NOTE: Said client should already have reported a timeout waiting for our reply,
 			//       so we don't even try to drain its command, and just forget about it.
-			//       On the upside, that prevents said command from being triggered after a random delay...
+			//       On the upside, that prevents said command from being triggered after a random delay.
 			if (pfd.revents & POLLHUP) {
 				LOG(LOG_NOTICE, "Remote end closed the IPC connection (handle_connection)");
 				goto early_close;
