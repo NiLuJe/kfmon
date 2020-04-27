@@ -27,13 +27,19 @@
  */
 
 // NOTE: Originally imported from https://github.com/openssh/openssh-portable/blob/master/atomicio.c
+//       Rejigged for my own use, with inspiration from git's own read/write wrappers,
+//       as well as gnulib's and busybox's
+//       c.f., https://github.com/git/git/blob/master/wrapper.c
+//             https://git.savannah.gnu.org/cgit/gnulib.git/tree/lib/safe-read.c
+//             https://git.savannah.gnu.org/cgit/gnulib.git/tree/lib/full-write.c
+//             https://git.busybox.net/busybox/tree/libbb/read.c?h=1_31_stable
 
 #include <sys/param.h>
 
 #include <errno.h>
+#include <limits.h>
 #include <poll.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "atomicio.h"
 
@@ -41,52 +47,47 @@
  * ensure all of data on socket comes through. f==read || f==vwrite
  */
 size_t
-atomicio6(ssize_t (*f) (int, void *, size_t), int fd, void *_s, size_t n,
-    int (*cb)(void *, size_t), void *cb_arg)
+    atomicio6(ssize_t (*f)(int, void*, size_t), int fd, void* _s, size_t n, int (*cb)(void*, size_t), void* cb_arg)
 {
-	char *s = _s;
-	size_t pos = 0;
-	ssize_t res;
+	char*         s   = _s;
+	size_t        pos = 0;
+	ssize_t       res;
 	struct pollfd pfd;
 
 	pfd.fd = fd;
-#ifndef BROKEN_READ_COMPARISON
 	pfd.events = f == read ? POLLIN : POLLOUT;
-#else
-	pfd.events = POLLIN|POLLOUT;
-#endif
 	while (n > pos) {
-		res = (f) (fd, s + pos, n - pos);
+		res = (f)(fd, s + pos, n - pos);
 		switch (res) {
-		case -1:
-			if (errno == EINTR) {
-				/* possible SIGALARM, update callback */
-				if (cb != NULL && cb(cb_arg, 0) == -1) {
+			case -1:
+				if (errno == EINTR) {
+					/* possible SIGALARM, update callback */
+					if (cb != NULL && cb(cb_arg, 0) == -1) {
+						errno = EINTR;
+						return pos;
+					}
+					continue;
+				} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+					(void) poll(&pfd, 1, -1);
+					continue;
+				}
+				return 0;
+			case 0:
+				errno = EPIPE;
+				return pos;
+			default:
+				pos += (size_t) res;
+				if (cb != NULL && cb(cb_arg, (size_t) res) == -1) {
 					errno = EINTR;
 					return pos;
 				}
-				continue;
-			} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				(void)poll(&pfd, 1, -1);
-				continue;
-			}
-			return 0;
-		case 0:
-			errno = EPIPE;
-			return pos;
-		default:
-			pos += (size_t)res;
-			if (cb != NULL && cb(cb_arg, (size_t)res) == -1) {
-				errno = EINTR;
-				return pos;
-			}
 		}
 	}
 	return pos;
 }
 
 size_t
-atomicio(ssize_t (*f) (int, void *, size_t), int fd, void *_s, size_t n)
+    atomicio(ssize_t (*f)(int, void*, size_t), int fd, void* _s, size_t n)
 {
 	return atomicio6(f, fd, _s, n, NULL, NULL);
 }
