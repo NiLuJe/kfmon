@@ -1880,7 +1880,7 @@ static pid_t
 	return -1;
 }
 
-// Read all available inotify events from the file descriptor 'fd'.
+// Read all available inotify events from the file descriptor 'fd' (caller breaks on true).
 static bool
     handle_events(int fd)
 {
@@ -2211,7 +2211,7 @@ static bool
 	return destroyed_wd;
 }
 
-// Handle input data from a successful IPC connection
+// Handle input data from a successful IPC connection (caller breaks on true).
 static bool
     handle_ipc(int data_fd)
 {

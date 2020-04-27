@@ -38,7 +38,7 @@
 // Path to our IPC Unix socket
 #define KFMON_IPC_SOCKET "/tmp/kfmon-ipc.ctl"
 
-// Drain stdin and send it to the IPC socket
+// Drain stdin and send it to the IPC socket (caller aborts on false)
 static bool
     handle_stdin(int data_fd)
 {
@@ -102,7 +102,7 @@ static bool
 	return true;
 }
 
-// Handle replies from the IPC socket
+// Handle replies from the IPC socket (caller aborts on false)
 static bool
     handle_reply(int data_fd)
 {

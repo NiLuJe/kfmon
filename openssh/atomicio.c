@@ -33,7 +33,7 @@
 //       c.f., https://github.com/git/git/blob/master/wrapper.c
 //             https://git.savannah.gnu.org/cgit/gnulib.git/tree/lib/safe-read.c
 //             https://git.savannah.gnu.org/cgit/gnulib.git/tree/lib/full-write.c
-//             https://git.busybox.net/busybox/tree/libbb/read.c?h=1_31_stable
+//             https://git.busybox.net/busybox/tree/libbb/read.c
 
 #include "atomicio.h"
 
