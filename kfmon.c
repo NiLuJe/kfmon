@@ -2245,11 +2245,11 @@ static bool
 		int status = can_write_to_socket(data_fd, 250, 4);
 		if (status != EXIT_SUCCESS) {
 			if (status == EPIPE) {
-				LOG(LOG_WARNING, "Client closed the connection (handle_ipc)");
+				PFLOG(LOG_WARNING, "Client closed the connection");
 				// Signal our polling to close the connection
 				return true;
 			} else if (status == ETIMEDOUT) {
-				LOG(LOG_WARNING, "Timed out waiting for client");
+				PFLOG(LOG_WARNING, "Timed out waiting for client");
 				return true;
 			} else {
 				PFLOG(LOG_WARNING, "poll: %m");
@@ -2491,11 +2491,11 @@ static bool
 		int status = can_write_to_socket(data_fd, 250, 4);
 		if (status != EXIT_SUCCESS) {
 			if (status == EPIPE) {
-				LOG(LOG_WARNING, "Client closed the connection (handle_ipc)");
+				PFLOG(LOG_WARNING, "Client closed the connection");
 				// Signal our polling to close the connection
 				return true;
 			} else if (status == ETIMEDOUT) {
-				LOG(LOG_WARNING, "Timed out waiting for client");
+				PFLOG(LOG_WARNING, "Timed out waiting for client");
 				return true;
 			} else {
 				PFLOG(LOG_WARNING, "poll: %m");
@@ -2524,11 +2524,11 @@ static bool
 		int status = can_write_to_socket(data_fd, 250, 4);
 		if (status != EXIT_SUCCESS) {
 			if (status == EPIPE) {
-				LOG(LOG_WARNING, "Client closed the connection (handle_ipc)");
+				PFLOG(LOG_WARNING, "Client closed the connection");
 				// Signal our polling to close the connection
 				return true;
 			} else if (status == ETIMEDOUT) {
-				LOG(LOG_WARNING, "Timed out waiting for client");
+				PFLOG(LOG_WARNING, "Timed out waiting for client");
 				return true;
 			} else {
 				PFLOG(LOG_WARNING, "poll: %m");
@@ -2668,7 +2668,7 @@ static void
 			//       so we don't even try to drain its command, and just forget about it.
 			//       On the upside, that prevents said command from being triggered after a random delay.
 			if (pfd.revents & POLLHUP) {
-				LOG(LOG_NOTICE, "Remote end closed the IPC connection (handle_connection)");
+				PFLOG(LOG_NOTICE, "Remote end closed the IPC connection");
 				goto early_close;
 			}
 
