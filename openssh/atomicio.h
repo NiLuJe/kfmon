@@ -34,6 +34,8 @@
 #include <errno.h>
 #include <limits.h>
 #include <poll.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 // Clamp IO chunks to the smallest of 8 MiB and SSIZE_MAX,
@@ -52,7 +54,9 @@ ssize_t xread(int fd, void* buf, size_t len);
 ssize_t xwrite(int fd, const void* buf, size_t len);
 
 // Ensure all of data on socket comes through.
-ssize_t read_in_full(int fd, void* buf, size_t n);
-ssize_t write_in_full(int fd, const void* buf, size_t n);
+ssize_t read_in_full(int fd, void* buf, size_t len);
+ssize_t write_in_full(int fd, const void* buf, size_t len);
+// This sets MSG_NOSIGNAL, so you *must* handle EPIPE!
+ssize_t send_in_full(int sockfd, const void* buf, size_t len);
 
 #endif /* _ATOMICIO_H */

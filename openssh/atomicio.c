@@ -46,6 +46,7 @@ ssize_t
 	if (len > MAX_IO_BUFSIZ) {
 		len = MAX_IO_BUFSIZ;
 	}
+
 	while (1) {
 		ssize_t nr = read(fd, buf, len);
 		if (nr < 0) {
@@ -74,6 +75,7 @@ ssize_t
 	if (len > MAX_IO_BUFSIZ) {
 		len = MAX_IO_BUFSIZ;
 	}
+
 	while (1) {
 		ssize_t nw = write(fd, buf, len);
 		if (nw < 0) {
@@ -95,12 +97,17 @@ ssize_t
 // Based on OpenSSH's atomicio6, except we keep the return value/data type of the original call.
 // Ensure all of data on socket comes through.
 ssize_t
-    read_in_full(int fd, void* buf, size_t n)
+    read_in_full(int fd, void* buf, size_t len)
 {
+	// Save a trip to EINVAL if len is large enough to make write() fail.
+	if (len > MAX_IO_BUFSIZ) {
+		len = MAX_IO_BUFSIZ;
+	}
+
 	char*  s   = buf;
 	size_t pos = 0;
-	while (n > pos) {
-		ssize_t nr = read(fd, s + pos, n - pos);
+	while (len > pos) {
+		ssize_t nr = read(fd, s + pos, len - pos);
 		switch (nr) {
 			case -1:
 				if (errno == EINTR) {
@@ -126,12 +133,17 @@ ssize_t
 }
 
 ssize_t
-    write_in_full(int fd, const void* buf, size_t n)
+    write_in_full(int fd, const void* buf, size_t len)
 {
+	// Save a trip to EINVAL if len is large enough to make write() fail.
+	if (len > MAX_IO_BUFSIZ) {
+		len = MAX_IO_BUFSIZ;
+	}
+
 	const char* s   = buf;
 	size_t      pos = 0;
-	while (n > pos) {
-		ssize_t nw = write(fd, s + pos, n - pos);
+	while (len > pos) {
+		ssize_t nw = write(fd, s + pos, len - pos);
 		switch (nw) {
 			case -1:
 				if (errno == EINTR) {
@@ -149,6 +161,40 @@ ssize_t
 				// That only makes sense for regular files.
 				// On the other hand, write() returning 0 on !regular files is UB.
 				errno = ENOSPC;
+				return -1;
+			default:
+				pos += (size_t) nw;
+		}
+	}
+	return pos;
+}
+
+// Exactly like write_in_full, but using send w/ flags set to MSG_NOSIGNAL,
+// so we can handle EPIPE without having to deal with signals.
+ssize_t
+    send_in_full(int sockfd, const void* buf, size_t len)
+{
+	// Save a trip to EINVAL if len is large enough to make write() fail.
+	if (len > MAX_IO_BUFSIZ) {
+		len = MAX_IO_BUFSIZ;
+	}
+
+	const char* s   = buf;
+	size_t      pos = 0;
+	while (len > pos) {
+		ssize_t nw = send(sockfd, s + pos, len - pos, MSG_NOSIGNAL);
+		switch (nw) {
+			case -1:
+				if (errno == EINTR) {
+					continue;
+				} else if (errno == EAGAIN) {
+					struct pollfd pfd = { 0 };
+					pfd.fd            = sockfd;
+					pfd.events        = POLLOUT;
+
+					poll(&pfd, 1, -1);
+					continue;
+				}
 				return -1;
 			default:
 				pos += (size_t) nw;
