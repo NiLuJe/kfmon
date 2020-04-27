@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.7
 # -*- coding:utf-8 -*-
 #
-# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Massage the latest KOReader/Plato releases into "one-click" install bundles.
 #

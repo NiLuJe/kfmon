@@ -16,10 +16,6 @@ This project makes use of a number of third-party libraries, which we'll acknowl
 		Released under the GNU Lesser General Public License (https://www.gnu.org/licenses/lgpl-3.0.html)
 		(http://aral.iut-rodez.fr/en/sanchis/miscellaneous/str5/str5.html)
 
-	* git/wrapper.c (Various trivial helper wrappers around standard functions, imported from the Git project), Copyright (C) Git contributors: http://www.openhub.net/p/git/contributors/summary,
-		Released under the GNU General Public License version 2 (https://github.com/git/git/blob/master/COPYING)
-		(https://git-scm.com/)
-
 	* openssh/atomicio.* (Wrappers around read/write, initially imported from the OpenSSH project), Copyright (c) 2006 Damien Miller, Copyright (c) 2005 Anil Madhavapeddy, Copyright (c) 1995,1999 Theo de Raadt,
 		Released under the BSD 2-clause license (https://opensource.org/licenses/BSD-2-Clause)
 		(https://www.openssh.com/)

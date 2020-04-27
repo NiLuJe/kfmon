@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Print the last ${LOG_LINES} lines of log on screen, with FBInk
 #
