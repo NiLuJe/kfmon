@@ -94,35 +94,64 @@ ssize_t
 
 // Based on OpenSSH's atomicio6, except we keep the return value/data type of the original call.
 // Ensure all of data on socket comes through.
-/*
- * ensure all of data on socket comes through. f==read || f==vwrite
- */
 ssize_t
-    atomicio6(ssize_t (*f)(int, void*, size_t), int fd, void* _s, size_t n)
+    read_in_full(int fd, void* buf, size_t n)
 {
-	char*         s   = _s;
-	size_t        pos = 0;
-	ssize_t       res;
-	struct pollfd pfd;
-
-	pfd.fd     = fd;
-	pfd.events = f == read ? POLLIN : POLLOUT;
+	char*  s   = buf;
+	size_t pos = 0;
 	while (n > pos) {
-		res = (f)(fd, s + pos, n - pos);
-		switch (res) {
+		ssize_t nr = read(fd, s + pos, n - pos);
+		switch (nr) {
 			case -1:
 				if (errno == EINTR) {
 					continue;
-				} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-					(void) poll(&pfd, 1, -1);
+				} else if (errno == EAGAIN) {
+					struct pollfd pfd = { 0 };
+					pfd.fd            = fd;
+					pfd.events        = POLLIN;
+
+					poll(&pfd, 1, -1);
 					continue;
 				}
-				return res;
+				return -1;
 			case 0:
+				// i.e., EoF/EoT
 				errno = EPIPE;
 				return pos;
 			default:
-				pos += (size_t) res;
+				pos += (size_t) nr;
+		}
+	}
+	return pos;
+}
+
+ssize_t
+    write_in_full(int fd, const void* buf, size_t n)
+{
+	const char* s   = buf;
+	size_t      pos = 0;
+	while (n > pos) {
+		ssize_t nw = write(fd, s + pos, n - pos);
+		switch (nw) {
+			case -1:
+				if (errno == EINTR) {
+					continue;
+				} else if (errno == EAGAIN) {
+					struct pollfd pfd = { 0 };
+					pfd.fd            = fd;
+					pfd.events        = POLLOUT;
+
+					poll(&pfd, 1, -1);
+					continue;
+				}
+				return -1;
+			case 0:
+				// That only makes sense for regular files.
+				// On the other hand, write() returning 0 on !regular files is UB.
+				errno = ENOSPC;
+				return -1;
+			default:
+				pos += (size_t) nw;
 		}
 	}
 	return pos;

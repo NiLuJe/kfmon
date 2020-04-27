@@ -51,12 +51,8 @@
 ssize_t xread(int fd, void* buf, size_t len);
 ssize_t xwrite(int fd, const void* buf, size_t len);
 
-/*
- * Ensure all of data on socket comes through. f==read || f==vwrite
- */
-ssize_t atomicio6(ssize_t (*)(int, void*, size_t), int, void*, size_t);
-
-// Drop the const to get a signature matching read
-#define vwrite (ssize_t(*)(int, void*, size_t)) write
+// Ensure all of data on socket comes through.
+ssize_t read_in_full(int fd, void* buf, size_t n);
+ssize_t write_in_full(int fd, const void* buf, size_t n);
 
 #endif /* _ATOMICIO_H */
