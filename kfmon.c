@@ -27,7 +27,7 @@ static int
 
 	switch (fork()) {
 		case -1:
-			LOG(LOG_CRIT, "initial fork: %m");
+			PFLOG(LOG_CRIT, "initial fork: %m");
 			return -1;
 		case 0:
 			break;
@@ -36,7 +36,7 @@ static int
 	}
 
 	if (setsid() == -1) {
-		LOG(LOG_CRIT, "setsid: %m");
+		PFLOG(LOG_CRIT, "setsid: %m");
 		return -1;
 	}
 
@@ -44,12 +44,12 @@ static int
 	// In practical terms, this ensures we get re-parented to init *now*.
 	// Ignore SIGHUP while we're there, since we don't want to be killed by it.
 	if (signal(SIGHUP, SIG_IGN) == SIG_ERR) {
-		LOG(LOG_CRIT, "signal: %m");
+		PFLOG(LOG_CRIT, "signal: %m");
 		return -1;
 	}
 	switch (fork()) {
 		case -1:
-			LOG(LOG_CRIT, "final fork: %m");
+			PFLOG(LOG_CRIT, "final fork: %m");
 			return -1;
 		case 0:
 			break;
@@ -58,7 +58,7 @@ static int
 	}
 
 	if (chdir("/") == -1) {
-		LOG(LOG_CRIT, "chdir: %m");
+		PFLOG(LOG_CRIT, "chdir: %m");
 		return -1;
 	}
 
@@ -79,7 +79,7 @@ static int
 			close(fd);
 		}
 	} else {
-		LOG(LOG_CRIT, "Failed to redirect stdin & stdout to /dev/null (open: %m)");
+		PFLOG(LOG_CRIT, "Failed to redirect stdin & stdout to /dev/null (open: %m)");
 		return -1;
 	}
 
@@ -101,7 +101,7 @@ static int
 			close(fd);
 		}
 	} else {
-		LOG(LOG_CRIT, "Failed to redirect stderr to logfile '%s' (open: %m)", KFMON_LOGFILE);
+		PFLOG(LOG_CRIT, "Failed to redirect stderr to logfile '%s' (open: %m)", KFMON_LOGFILE);
 		return -1;
 	}
 
@@ -256,7 +256,7 @@ static int
 	val   = strtoul(str, &endptr, 10);
 
 	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
-		LOG(LOG_WARNING, "strtoul: %m");
+		PFLOG(LOG_WARNING, "strtoul: %m");
 		return -EINVAL;
 	}
 
@@ -749,7 +749,7 @@ static int
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
 	    NULL) {
-		LOG(LOG_CRIT, "fts_open: %m");
+		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
@@ -927,7 +927,7 @@ static int
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
 	    NULL) {
-		LOG(LOG_CRIT, "fts_open: %m");
+		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
@@ -1581,7 +1581,7 @@ static void*
 	} while (ret == -1 && errno == EINTR);
 	// Recap what happened to it
 	if (ret != cpid) {
-		MTLOG(LOG_CRIT, "waitpid: %m");
+		PFMTLOG(LOG_CRIT, "waitpid: %m");
 		free(ptr);
 		return (void*) NULL;
 	} else {
@@ -1674,7 +1674,7 @@ static pid_t
 
 	if (pid < 0) {
 		// Fork failed?
-		LOG(LOG_ERR, "Aborting: fork: %m");
+		PFLOG(LOG_ERR, "Aborting: fork: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fork failed ?!", &fbinkConfig);
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
@@ -1760,12 +1760,12 @@ static pid_t
 			//       to make sure their resources will be released when they terminate.
 			pthread_attr_t attr;
 			if (pthread_attr_init(&attr) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_attr_init: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_attr_init: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_init failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_attr_setdetachstate: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_attr_setdetachstate: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setdetachstate failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1776,12 +1776,12 @@ static pid_t
 			//       In the grand scheme of things, this won't really change much ;).
 			if (pthread_attr_setstacksize(
 				&attr, MAX((1U * 1024U * 1024U) / 2U, (sizeof(void*) * 1024U * 1024U) / 8U)) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_attr_setstacksize: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_attr_setstacksize: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setstacksize failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_create(&rthread, &attr, reaper_thread, arg) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_create: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_create: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_create failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1790,13 +1790,13 @@ static pid_t
 			char thname[16];
 			snprintf(thname, sizeof(thname), "Reap:%ld", (long) pid);
 			if (pthread_setname_np(rthread, thname) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_setname_np: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_setname_np: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_setname_np failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 
 			if (pthread_attr_destroy(&attr) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_attr_destroy: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_attr_destroy: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_destroy failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1919,7 +1919,7 @@ static bool
 			if (errno == EINTR) {
 				continue;
 			}
-			LOG(LOG_ERR, "Aborting: read: %m");
+			PFLOG(LOG_ERR, "Aborting: read: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
@@ -2142,7 +2142,7 @@ static bool
 				    watch_idx);
 				if (inotify_rm_watch(fd, watchConfig[watch_idx].inotify_wd) == -1) {
 					// That's too bad, but may not be fatal, so warn only...
-					LOG(LOG_WARNING, "inotify_rm_watch: %m");
+					PFLOG(LOG_WARNING, "inotify_rm_watch: %m");
 				} else {
 					// Flag it as gone if rm was successful
 					watchConfig[watch_idx].inotify_wd = -1;
@@ -2188,7 +2188,7 @@ static bool
 							if (inotify_rm_watch(fd, watchConfig[watch_idx].inotify_wd) ==
 							    -1) {
 								// That's too bad, but may not be fatal, so warn only...
-								LOG(LOG_WARNING, "inotify_rm_watch: %m");
+								PFLOG(LOG_WARNING, "inotify_rm_watch: %m");
 							} else {
 								// It's gone!
 								watchConfig[watch_idx].inotify_wd = -1;
@@ -2220,7 +2220,7 @@ static bool
 	ssize_t len = xread(data_fd, buf, sizeof(buf));
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
-		LOG(LOG_WARNING, "read: %m");
+		PFLOG(LOG_WARNING, "read: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
 		// Signal our polling to close the connection, don't retry, as we risk failing here again otherwise.
 		return true;
@@ -2252,7 +2252,7 @@ static bool
 				LOG(LOG_WARNING, "Timed out waiting for client");
 				return true;
 			} else {
-				LOG(LOG_WARNING, "poll: %m");
+				PFLOG(LOG_WARNING, "poll: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 				return true;
 			}
@@ -2286,7 +2286,7 @@ static bool
 			// Make sure we reply with that in full (w/o a NUL, we're not done yet) to the client.
 			if (write_in_full(data_fd, buf, (size_t)(packet_len)) < 0) {
 				// Only actual failures are left, xwrite handles the rest
-				LOG(LOG_WARNING, "write: %m");
+				PFLOG(LOG_WARNING, "write: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
 				// We may attempt a retry
 				// (in practice, we're likely to hit a POLLHUP, or an EoF/failure on read on said retry)
@@ -2297,7 +2297,7 @@ static bool
 		buf[0] = '\0';
 		if (write_in_full(data_fd, buf, 1U) < 0) {
 			// Only actual failures are left, xwrite handles the rest
-			LOG(LOG_WARNING, "write: %m");
+			PFLOG(LOG_WARNING, "write: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
 			// We may attempt a retry
 			return false;
@@ -2458,7 +2458,7 @@ static bool
 				}
 			}
 		} else if (errno != 0) {
-			LOG(LOG_WARNING, "sscanf: %m");
+			PFLOG(LOG_WARNING, "sscanf: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] sscanf failed ?!", &fbinkConfig);
 			if (trigger) {
 				packet_len = snprintf(buf,
@@ -2498,7 +2498,7 @@ static bool
 				LOG(LOG_WARNING, "Timed out waiting for client");
 				return true;
 			} else {
-				LOG(LOG_WARNING, "poll: %m");
+				PFLOG(LOG_WARNING, "poll: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 				return true;
 			}
@@ -2507,7 +2507,7 @@ static bool
 		// Reply with the status (w/ NUL)
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
-			LOG(LOG_WARNING, "write: %m");
+			PFLOG(LOG_WARNING, "write: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
 			// We may attempt a retry
 			return false;
@@ -2531,7 +2531,7 @@ static bool
 				LOG(LOG_WARNING, "Timed out waiting for client");
 				return true;
 			} else {
-				LOG(LOG_WARNING, "poll: %m");
+				PFLOG(LOG_WARNING, "poll: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 				return true;
 			}
@@ -2540,7 +2540,7 @@ static bool
 		// w/ NUL
 		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
 			// Only actual failures are left, xwrite handles the rest
-			LOG(LOG_WARNING, "write: %m");
+			PFLOG(LOG_WARNING, "write: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
 			// We may attempt a retry
 			return false;
@@ -2591,7 +2591,7 @@ static void
 			//       c.f., Go's Accept() wrapper in src/internal/poll/fd_unix.go
 			return;
 		}
-		LOG(LOG_ERR, "Aborting: accept: %m");
+		PFLOG(LOG_ERR, "Aborting: accept: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] accept failed ?!", &fbinkConfig);
 		exit(EXIT_FAILURE);
 	}
@@ -2599,23 +2599,23 @@ static void
 	// NOTE: We have to do that manually, because despite what the man page says, accept4 isn't implemented on Mk. 5 kernels
 	int fdflags = fcntl(data_fd, F_GETFD, 0);
 	if (fdflags == -1) {
-		LOG(LOG_WARNING, "getfd fcntl: %m");
+		PFLOG(LOG_WARNING, "getfd fcntl: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
 		goto cleanup;
 	}
 	if (fcntl(data_fd, F_SETFD, fdflags | FD_CLOEXEC) == -1) {
-		LOG(LOG_WARNING, "setfd fcntl: %m");
+		PFLOG(LOG_WARNING, "setfd fcntl: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
 		goto cleanup;
 	}
 	int flflags = fcntl(data_fd, F_GETFL, 0);
 	if (flflags == -1) {
-		LOG(LOG_WARNING, "getfl fcntl: %m");
+		PFLOG(LOG_WARNING, "getfl fcntl: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
 		goto cleanup;
 	}
 	if (fcntl(data_fd, F_SETFL, flflags | O_NONBLOCK) == -1) {
-		LOG(LOG_WARNING, "setfl fcntl: %m");
+		PFLOG(LOG_WARNING, "setfl fcntl: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
 		goto cleanup;
 	}
@@ -2625,7 +2625,7 @@ static void
 	struct ucred ucred;
 	socklen_t    len = sizeof(ucred);
 	if (getsockopt(data_fd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) == -1) {
-		LOG(LOG_WARNING, "getsockopt: %m");
+		PFLOG(LOG_WARNING, "getsockopt: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] getsockopt failed ?!", &fbinkConfig);
 		goto cleanup;
 	}
@@ -2655,7 +2655,7 @@ static void
 			if (errno == EINTR) {
 				continue;
 			}
-			LOG(LOG_WARNING, "poll: %m");
+			PFLOG(LOG_WARNING, "poll: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 			goto early_close;
 		}
@@ -2730,7 +2730,7 @@ int
 	// Make sure we're running at a neutral niceness
 	// (e.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
-		LOG(LOG_ERR, "Aborting: setpriority: %m");
+		PFLOG(LOG_ERR, "Aborting: setpriority: %m");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2766,7 +2766,7 @@ int
 				close(fd);
 			}
 		} else {
-			LOG(LOG_ERR, "Failed to redirect stderr to /dev/null (open: %m), aborting!");
+			PFLOG(LOG_ERR, "Failed to redirect stderr to /dev/null (open: %m), aborting!");
 			exit(EXIT_FAILURE);
 		}
 
@@ -2801,7 +2801,7 @@ int
 	// NOTE: We want it non-blocking because we handle incoming connections via poll,
 	//       and CLOEXEC not to pollute our spawns.
 	if ((conn_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
-		LOG(LOG_ERR, "Failed to create IPC socket (socket: %m), aborting!");
+		PFLOG(LOG_ERR, "Failed to create IPC socket (socket: %m), aborting!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2812,7 +2812,7 @@ int
 	// Although we should never trip an existing socket, unlink it first, just to be safe
 	unlink(KFMON_IPC_SOCKET);
 	if (bind(conn_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {
-		LOG(LOG_ERR, "Failed to bind IPC socket (bind: %m), aborting!");
+		PFLOG(LOG_ERR, "Failed to bind IPC socket (bind: %m), aborting!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2820,7 +2820,7 @@ int
 	//       Be aware that, in practice, the kernel will round that up, which means that you can successfully connect,
 	//       send a request, but only get a reply whenever we actually get to it...
 	if (listen(conn_fd, 1) == -1) {
-		LOG(LOG_ERR, "Failed to listen to IPC socket (listen: %m), aborting!");
+		PFLOG(LOG_ERR, "Failed to listen to IPC socket (listen: %m), aborting!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2875,7 +2875,7 @@ int
 		LOG(LOG_INFO, "Initializing inotify.");
 		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
-			LOG(LOG_ERR, "Aborting: inotify_init1: %m");
+			PFLOG(LOG_ERR, "Aborting: inotify_init1: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
@@ -2906,7 +2906,7 @@ int
 			watchConfig[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watchConfig[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watchConfig[watch_idx].inotify_wd == -1) {
-				LOG(LOG_WARNING, "inotify_add_watch: %m");
+				PFLOG(LOG_WARNING, "inotify_add_watch: %m");
 				LOG(LOG_WARNING, "Cannot watch '%s', discarding it!", watchConfig[watch_idx].filename);
 				fbink_printf(FBFD_AUTO,
 					     NULL,
@@ -2960,7 +2960,7 @@ int
 				if (errno == EINTR) {
 					continue;
 				}
-				LOG(LOG_ERR, "Aborting: poll: %m");
+				PFLOG(LOG_ERR, "Aborting: poll: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}

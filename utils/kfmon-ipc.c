@@ -46,7 +46,7 @@ static bool
 	// Check how many bytes we need to drain
 	int bytes = 0;
 	if (ioctl(fileno(stdin), FIONREAD, &bytes) == -1) {
-		fprintf(stderr, "Aborting: ioctl: %m!\n");
+		fprintf(stderr, "[%s] Aborting: ioctl: %m!\n", __PRETTY_FUNCTION__);
 		exit(EXIT_FAILURE);
 	}
 
@@ -63,7 +63,7 @@ static bool
 	ssize_t len = read_in_full(fileno(stdin), buf, (size_t) bytes);
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
-		fprintf(stderr, "Aborting: read: %m!\n");
+		fprintf(stderr, "[%s] Aborting: read: %m!\n", __PRETTY_FUNCTION__);
 		exit(EXIT_FAILURE);
 	}
 
@@ -98,7 +98,7 @@ static bool
 			fprintf(stderr, "Timed out waiting for KFMon to be ready for us!\n");
 			return false;
 		} else {
-			fprintf(stderr, "Aborting: poll: %m!\n");
+			fprintf(stderr, "[%s] Aborting: poll: %m!\n", __PRETTY_FUNCTION__);
 			return false;
 		}
 	}
@@ -106,7 +106,7 @@ static bool
 	// Then do it
 	if (write_in_full(data_fd, buf, packet_len) < 0) {
 		// Only actual failures are left, xwrite handles the rest
-		fprintf(stderr, "Aborting: write: %m!\n");
+		fprintf(stderr, "[%s] Aborting: write: %m!\n", __PRETTY_FUNCTION__);
 		exit(EXIT_FAILURE);
 	}
 
@@ -125,7 +125,7 @@ static bool
 	ssize_t len = xread(data_fd, buf, sizeof(buf));
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
-		fprintf(stderr, "Aborting: read: %m!\n");
+		fprintf(stderr, "[%s] Aborting: read: %m!\n", __PRETTY_FUNCTION__);
 		exit(EXIT_FAILURE);
 	}
 
@@ -197,7 +197,7 @@ int
 			fprintf(stderr, "Timed out waiting for KFMon to be ready for us!\n");
 			goto cleanup;
 		} else {
-			fprintf(stderr, "Aborting: poll: %m!\n");
+			fprintf(stderr, "[%s] Aborting: poll: %m!\n", __PRETTY_FUNCTION__);
 			goto cleanup;
 		}
 	}
@@ -223,7 +223,7 @@ int
 			if (errno == EINTR) {
 				continue;
 			}
-			fprintf(stderr, "Aborting: poll: %m!\n");
+			fprintf(stderr, "[%s] Aborting: poll: %m!\n", __PRETTY_FUNCTION__);
 			rc = EXIT_FAILURE;
 			goto cleanup;
 		}

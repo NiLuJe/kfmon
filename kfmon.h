@@ -120,6 +120,9 @@ extern const char* sqlite3ErrName(int);
 		}                                                                                                        \
 	})
 
+// Same, but with __PRETTY_FUNCTION__ right before fmt
+#define PFLOG(prio, fmt, ...) ({ LOG(prio, "[%s] " fmt, __PRETTY_FUNCTION__, ##__VA_ARGS__); })
+
 // Slight variation without date/time handling to ensure thread safety
 #define MTLOG(prio, fmt, ...)                                                                                            \
 	({                                                                                                               \
@@ -129,6 +132,9 @@ extern const char* sqlite3ErrName(int);
 			fprintf(stderr, "[KFMon] " fmt "\n", ##__VA_ARGS__);                                             \
 		}                                                                                                        \
 	})
+
+// Same, but with __PRETTY_FUNCTION__ right before fmt
+#define PFMTLOG(prio, fmt, ...) ({ MTLOG(prio, "[%s] " fmt, __PRETTY_FUNCTION__, ##__VA_ARGS__); })
 
 // Some extra verbose stuff is relegated to DEBUG builds... (c.f., https://stackoverflow.com/questions/1644868)
 #ifdef DEBUG
