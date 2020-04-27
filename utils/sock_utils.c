@@ -37,8 +37,8 @@ int
 			if (errno == EINTR) {
 				continue;
 			}
-			// errno *should* be set accordingly, but try very hard not to return 0, just in case...
-			status = errno ? errno : EXIT_FAILURE;
+			// The caller will then be free to check errno
+			status = EXIT_FAILURE;
 			break;
 		}
 
