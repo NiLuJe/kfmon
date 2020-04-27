@@ -143,8 +143,8 @@ SRCS:=kfmon.c
 INIH_SRCS:=inih/ini.c
 # We only need str5cpy
 STR5_SRCS:=str5/str5cpy.c
-# We always need git's neat read/write wrappers
-GIT_SRCS:=git/wrapper.c
+# We always need OpenSSH's neat io wrappers
+SSH_SRCS:=openssh/atomicio.c
 # As well as our own helpers for socket handling
 SOCK_SRCS:=utils/sock_utils.c
 
@@ -153,7 +153,7 @@ default: vendored
 OBJS:=$(addprefix $(OUT_DIR)/, $(SRCS:.c=.o))
 INIH_OBJS:=$(addprefix $(OUT_DIR)/, $(INIH_SRCS:.c=.o))
 STR5_OBJS:=$(addprefix $(OUT_DIR)/, $(STR5_SRCS:.c=.o))
-GIT_OBJS:=$(addprefix $(OUT_DIR)/, $(GIT_SRCS:.c=.o))
+SSH_OBJS:=$(addprefix $(OUT_DIR)/, $(SSH_SRCS:.c=.o))
 SOCK_OBJS:=$(addprefix $(OUT_DIR)/, $(SOCK_SRCS:.c=.o))
 
 # And now we can silence a few inih-specific warnings
@@ -163,14 +163,14 @@ $(OUT_DIR)/%.o: %.c
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(QUIET_CFLAGS) -o $@ -c $<
 
 outdir:
-	mkdir -p $(OUT_DIR)/inih $(OUT_DIR)/str5 $(OUT_DIR)/git $(OUT_DIR)/utils
+	mkdir -p $(OUT_DIR)/inih $(OUT_DIR)/str5 $(OUT_DIR)/openssh $(OUT_DIR)/utils
 
 # Make absolutely sure we create our output directories first, even with unfortunate // timings!
 # c.f., https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html#Prerequisite-Types
 $(OBJS): | outdir
 $(INIH_OBJS): | outdir
 $(STR5_OBJS): | outdir
-$(GIT_OBJS): | outdir
+$(SSH_OBJS): | outdir
 $(SOCK_OBJS): | outdir
 
 all: kfmon
@@ -178,15 +178,15 @@ all: kfmon
 vendored: sqlite.built fbink.built
 	$(MAKE) kfmon SQLITE=true
 
-kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(GIT_OBJS) $(SOCK_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(GIT_OBJS) $(SOCK_OBJS) $(LIBS)
+kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS) $(SOCK_OBJS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS) $(SOCK_OBJS) $(LIBS)
 
 shim: | outdir
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/shim$(BINEXT) utils/shim.c
 	$(STRIP) --strip-unneeded $(OUT_DIR)/shim
 
-kfmon-ipc: | outdir $(GIT_OBJS) $(SOCK_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/kfmon-ipc$(BINEXT) utils/kfmon-ipc.c $(GIT_OBJS) $(SOCK_OBJS)
+kfmon-ipc: | outdir $(SSH_OBJS) $(SOCK_OBJS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/kfmon-ipc$(BINEXT) utils/kfmon-ipc.c $(SSH_OBJS) $(SOCK_OBJS)
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon-ipc
 
 strip: all
@@ -241,7 +241,7 @@ nilujed:
 clean:
 	rm -rf Release/inih/*.o
 	rm -rf Release/str5/*.o
-	rm -rf Release/git/*.o
+	rm -rf Release/openssh/*.o
 	rm -rf Release/utils/*.o
 	rm -rf Release/*.o
 	rm -rf Release/kfmon
@@ -250,7 +250,7 @@ clean:
 	rm -rf Release/KoboRoot.tgz
 	rm -rf Debug/inih/*.o
 	rm -rf Debug/str5/*.o
-	rm -rf Debug/git/*.o
+	rm -rf Debug/openssh/*.o
 	rm -rf Debug/utils/*.o
 	rm -rf Debug/*.o
 	rm -rf Debug/kfmon

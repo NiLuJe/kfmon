@@ -4,6 +4,7 @@
  * Copyright (c) 2005 Anil Madhavapeddy. All rights reserved.
  * Copyright (c) 1995,1999 Theo de Raadt.  All rights reserved.
  * All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -124,12 +125,12 @@ ssize_t
 			case 0:
 				// i.e., EoF/EoT
 				errno = EPIPE;
-				return pos;
+				return (ssize_t) pos;
 			default:
 				pos += (size_t) nr;
 		}
 	}
-	return pos;
+	return (ssize_t) pos;
 }
 
 ssize_t
@@ -166,7 +167,7 @@ ssize_t
 				pos += (size_t) nw;
 		}
 	}
-	return pos;
+	return (ssize_t) pos;
 }
 
 // Exactly like write_in_full, but using send w/ flags set to MSG_NOSIGNAL,
@@ -200,5 +201,5 @@ ssize_t
 				pos += (size_t) nw;
 		}
 	}
-	return pos;
+	return (ssize_t) pos;
 }
