@@ -2566,6 +2566,9 @@ static void
 			name[size - 1U] = '\0';
 		}
 		fclose(f);
+	} else {
+		// comm is 16 bytes
+		str5cpy(name, 16, "<!>", 16, TRUNC);
 	}
 }
 
