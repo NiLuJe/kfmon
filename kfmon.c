@@ -2243,23 +2243,6 @@ static bool
 		// Discriminate gui-list
 		bool gui = (buf[0] == 'g' || buf[0] == 'G');
 
-		// Check that we still have a client to talk to...
-		int status = can_write_to_socket(data_fd, 250, 4);
-		if (status != EXIT_SUCCESS) {
-			if (status == EPIPE) {
-				PFLOG(LOG_WARNING, "Client closed the connection");
-				// Signal our polling to close the connection
-				return true;
-			} else if (status == ETIMEDOUT) {
-				PFLOG(LOG_WARNING, "Timed out waiting for client");
-				return true;
-			} else {
-				PFLOG(LOG_WARNING, "poll: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
-				return true;
-			}
-		}
-
 		// Reply with a list of active watches, format is id:basename(filename):label (separated by a LF)
 		//                                             or id:basename(filename) if the watch has no label set.
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
@@ -2286,23 +2269,30 @@ static bool
 				    buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
 			}
 			// Make sure we reply with that in full (w/o a NUL, we're not done yet) to the client.
-			if (write_in_full(data_fd, buf, (size_t)(packet_len)) < 0) {
-				// Only actual failures are left, xwrite handles the rest
-				PFLOG(LOG_WARNING, "write: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
-				// We may attempt a retry
-				// (in practice, we're likely to hit a POLLHUP, or an EoF/failure on read on said retry)
-				return false;
+			if (send_in_full(data_fd, buf, (size_t)(packet_len)) < 0) {
+				// Only actual failures are left, so we're pretty much done
+				if (errno == EPIPE) {
+					PFLOG(LOG_WARNING, "Client closed the connection early");
+				} else {
+					PFLOG(LOG_WARNING, "write: %m");
+					fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+				}
+				// Don't retry on write failures, just signal our polling to close the connection
+				return true;
 			}
 		}
 		// Now that we're done, send a final NUL, just to be nice.
 		buf[0] = '\0';
-		if (write_in_full(data_fd, buf, 1U) < 0) {
-			// Only actual failures are left, xwrite handles the rest
-			PFLOG(LOG_WARNING, "write: %m");
-			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
-			// We may attempt a retry
-			return false;
+		if (send_in_full(data_fd, buf, 1U) < 0) {
+			// Only actual failures are left, so we're pretty much done
+			if (errno == EPIPE) {
+				PFLOG(LOG_WARNING, "Client closed the connection early");
+			} else {
+				PFLOG(LOG_WARNING, "write: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			}
+			// Don't retry on write failures, just signal our polling to close the connection
+			return true;
 		}
 	} else if ((strncmp(buf, "start", 5) == 0) || (strncmp(buf, "force-start", 11) == 0) ||
 		   (strncmp(buf, "trigger", 7) == 0) || (strncmp(buf, "force-trigger", 13) == 0)) {
@@ -2489,30 +2479,17 @@ static bool
 			}
 		}
 
-		// Check that we still have a client to talk to...
-		int status = can_write_to_socket(data_fd, 250, 4);
-		if (status != EXIT_SUCCESS) {
-			if (status == EPIPE) {
-				PFLOG(LOG_WARNING, "Client closed the connection");
-				// Signal our polling to close the connection
-				return true;
-			} else if (status == ETIMEDOUT) {
-				PFLOG(LOG_WARNING, "Timed out waiting for client");
-				return true;
-			} else {
-				PFLOG(LOG_WARNING, "poll: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
-				return true;
-			}
-		}
-
 		// Reply with the status (w/ NUL)
-		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
-			// Only actual failures are left, xwrite handles the rest
-			PFLOG(LOG_WARNING, "write: %m");
-			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
-			// We may attempt a retry
-			return false;
+		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Only actual failures are left, so we're pretty much done
+			if (errno == EPIPE) {
+				PFLOG(LOG_WARNING, "Client closed the connection early");
+			} else {
+				PFLOG(LOG_WARNING, "write: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			}
+			// Don't retry on write failures, just signal our polling to close the connection
+			return true;
 		}
 	} else {
 		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
@@ -2522,30 +2499,17 @@ static bool
 		    sizeof(buf),
 		    "ERR_INVALID_CMD\nComma separated list of valid commands: list, gui-list, start, force-start, trigger, force-trigger\n");
 
-		// Check that we still have a client to talk to...
-		int status = can_write_to_socket(data_fd, 250, 4);
-		if (status != EXIT_SUCCESS) {
-			if (status == EPIPE) {
-				PFLOG(LOG_WARNING, "Client closed the connection");
-				// Signal our polling to close the connection
-				return true;
-			} else if (status == ETIMEDOUT) {
-				PFLOG(LOG_WARNING, "Timed out waiting for client");
-				return true;
-			} else {
-				PFLOG(LOG_WARNING, "poll: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
-				return true;
-			}
-		}
-
 		// w/ NUL
-		if (write_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
-			// Only actual failures are left, xwrite handles the rest
-			PFLOG(LOG_WARNING, "write: %m");
-			fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
-			// We may attempt a retry
-			return false;
+		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Only actual failures are left, so we're pretty much done
+			if (errno == EPIPE) {
+				PFLOG(LOG_WARNING, "Client closed the connection early");
+			} else {
+				PFLOG(LOG_WARNING, "write: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			}
+			// Don't retry on write failures, just signal our polling to close the connection
+			return true;
 		}
 	}
 
@@ -2667,7 +2631,7 @@ static void
 
 		if (poll_num > 0) {
 			// Don't even *try* to deal with a connection that was closed by the client,
-			// as we wouldn't be able to reply to it in handle_ipc (write on closed socket -> SIGPIPE),
+			// as we wouldn't be able to reply to it in handle_ipc (NOSIGNAL send on closed socket -> EPIPE),
 			// just close it on our end, too, and move on.
 			// NOTE: Said client should already have reported a timeout waiting for our reply,
 			//       so we don't even try to drain its command, and just forget about it.
