@@ -28,5 +28,5 @@
 //   Set timeout to -1 and attempts to > 0 to wait indefinitely.
 // Returns EPIPE if remote has closed the connection
 // Returns EXIT_SUCCESS if remote is ready for us
-// Anything else is poll's errno
+// Returns EXIT_FAILURE if poll failed unexpectedly, check errno
 int can_write_to_socket(int data_fd, int timeout, size_t attempts);
