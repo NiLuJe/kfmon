@@ -2319,6 +2319,9 @@ static bool
 			}
 		}
 		// We'll add a courtesy reply with the status
+		// NOTE: Actually replying something is *mandatory* in our little IPC "protocol",
+		//       as failing to get a reply in time is the only way a client can figure out that KFMon
+		//       is already busy with a previous IPC connection...
 		int packet_len = 0;
 		if (n == 1) {
 			// Got it! Now check if it's valid...
@@ -2538,6 +2541,64 @@ static void
 	}
 }
 
+// Do the getpwuid_r dance and then just store the name
+// NOTE: name is 32 bytes
+static void
+    get_user_name(const uid_t uid, char* name)
+{
+	size_t bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+	if (bufsize == -1) {
+		// That's the usual value on Linux
+		bufsize = 1024;
+	}
+	char* buf = alloca(bufsize);
+
+	struct passwd  pwd;
+	struct passwd* result;
+	int            s = getpwuid_r(uid, &pwd, buf, bufsize, &result);
+	if (result == NULL) {
+		if (s == 0) {
+			// Not found, use the UID...
+			snprintf(name, 32, "%ld", (long) uid);
+		} else {
+			errno = s;
+			PFLOG(LOG_WARNING, "getpwnam_r: %m");
+			str5cpy(name, 32, "<!>", 32, TRUNC);
+		}
+	} else {
+		str5cpy(name, 32, pwd.pw_name, 32, TRUNC);
+	}
+}
+
+// Do the getgrgid_r dance and then just store the name
+// NOTE: name is 32 bytes
+static void
+    get_group_name(const gid_t gid, char* name)
+{
+	size_t bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+	if (bufsize == -1) {
+		// That's the usual value on Linux
+		bufsize = 1024;
+	}
+	char* buf = alloca(bufsize);
+
+	struct group  grp;
+	struct group* result;
+	int           s = getgrgid_r(gid, &grp, buf, bufsize, &result);
+	if (result == NULL) {
+		if (s == 0) {
+			// Not found, use the GID...
+			snprintf(name, 32, "%ld", (long) gid);
+		} else {
+			errno = s;
+			PFLOG(LOG_WARNING, "getgrgid_r: %m");
+			str5cpy(name, 32, "<!>", 32, TRUNC);
+		}
+	} else {
+		str5cpy(name, 32, grp.gr_name, 32, TRUNC);
+	}
+}
+
 // Handle a connection attempt on socket 'conn_fd'.
 static void
     handle_connection(int conn_fd)
@@ -2602,14 +2663,20 @@ static void
 	// NOTE: comm is 16 bytes on Linux
 	char pname[16] = { 0 };
 	get_process_name(ucred.pid, pname);
+	// Lookup UID & GID
+	// NOTE: Both fields are 32 bytes on Linux
+	char uname[32] = { 0 };
+	get_user_name(ucred.uid, uname);
+	char gname[32] = { 0 };
+	get_group_name(ucred.gid, gname);
 
-	// NOTE: Probably not worth bothering looking up user & group names via getpwuid/getgrid ;).
+	// And now we have fancy logging :)
 	LOG(LOG_INFO,
-	    "Handling incoming IPC connection from PID %ld (%s) by user %ld:%ld",
+	    "Handling incoming IPC connection from PID %ld (%s) by user %s:%s",
 	    (long) ucred.pid,
 	    pname,
-	    (long) ucred.uid,
-	    (long) ucred.gid);
+	    uname,
+	    gname);
 
 	struct pollfd pfd = { 0 };
 	// Data socket
@@ -2664,12 +2731,7 @@ static void
 
 early_close:
 	// We're done, close the data connection
-	LOG(LOG_INFO,
-	    "Closed IPC connection from PID %ld (%s) by user %ld:%ld",
-	    (long) ucred.pid,
-	    pname,
-	    (long) ucred.uid,
-	    (long) ucred.gid);
+	LOG(LOG_INFO, "Closed IPC connection from PID %ld (%s) by user %s:%s", (long) ucred.pid, pname, uname, gname);
 
 cleanup:
 	close(data_fd);

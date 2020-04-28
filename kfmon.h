@@ -32,11 +32,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>
+#include <grp.h>
 #include <limits.h>
 #include <linux/limits.h>
 #include <mntent.h>
 #include <poll.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <signal.h>
 #include <sqlite3.h>
 #include <stdbool.h>
@@ -276,6 +278,8 @@ static pid_t get_spawn_pid_for_watch(uint8_t);
 
 static bool handle_events(int);
 static void get_process_name(const pid_t, char*);
+static void get_user_name(const uid_t, char*);
+static void get_group_name(const gid_t, char*);
 static void handle_connection(int);
 static bool handle_ipc(int);
 
