@@ -2487,7 +2487,7 @@ static bool
 		}
 	} else {
 		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
-		// Reply with a list of valid commands
+		// Reply with a list of valid commands, that should be good enough, no need for a full fledged help command.
 		int packet_len = snprintf(
 		    buf,
 		    sizeof(buf),
