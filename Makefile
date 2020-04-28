@@ -93,7 +93,7 @@ endif
 KFMON_VERSION:=$(shell git describe)
 EXTRA_CFLAGS+=-DKFMON_VERSION='"$(KFMON_VERSION)"'
 # A timestamp, formatted according to ISO 8601 (latest commit)...
-KFMON_TIMESTAMP:=$(shell git show -s --format=%ci master)
+KFMON_TIMESTAMP:=$(shell git show -s --format=%ci)
 # NOTE: We used to use __DATE__ @ __TIME__ (i.e., the build date), which we can format the same way like so:
 #       date +'%Y-%m-%d %H:%M:%S %z'
 #       If, instead, we'd want to emulate __TIMESTAMP__ (i.e., modification date of the file):
