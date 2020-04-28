@@ -23,8 +23,6 @@
 static int
     daemonize(void)
 {
-	int fd = -1;
-
 	switch (fork()) {
 		case -1:
 			PFLOG(LOG_CRIT, "initial fork: %m");
@@ -73,6 +71,7 @@ static int
 	origStderr = dup(fileno(stderr));
 
 	// Redirect stdin & stdout to /dev/null
+	int fd = -1;
 	if ((fd = open("/dev/null", O_RDWR)) != -1) {
 		dup2(fd, fileno(stdin));
 		dup2(fd, fileno(stdout));
@@ -202,14 +201,14 @@ static void
     wait_for_target_mountpoint(void)
 {
 	// c.f., https://stackoverflow.com/questions/5070801
-	int           mfd = open("/proc/mounts", O_RDONLY);
-	struct pollfd pfd;
-
-	uint8_t changes     = 0U;
-	uint8_t max_changes = 6U;
+	int           mfd   = open("/proc/mounts", O_RDONLY);
+	struct pollfd pfd   = { 0 };
 	pfd.fd              = mfd;
 	pfd.events          = POLLERR | POLLPRI;
 	pfd.revents         = 0;
+	uint8_t changes     = 0U;
+	uint8_t max_changes = 6U;
+
 	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
 			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %d of %hhu)", ++changes, max_changes);
@@ -250,11 +249,9 @@ static int
 	}
 
 	// Now that we know it's positive, we can go on with strtoul...
-	char*             endptr;
-	unsigned long int val;
-
-	errno = 0;    // To distinguish success/failure after call
-	val   = strtoul(str, &endptr, 10);
+	char* endptr;
+	errno                 = 0;    // To distinguish success/failure after call
+	unsigned long int val = strtoul(str, &endptr, 10);
 
 	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
 		PFLOG(LOG_WARNING, "strtoul: %m");
@@ -733,9 +730,6 @@ static int
 
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
-	FTS* restrict    ftsp;
-	FTSENT* restrict p;
-	FTSENT* restrict chp;
 	// We only need to walk a single directory...
 #pragma GCC diagnostic   push
 #pragma GCC diagnostic   ignored "-Wunknown-pragmas"
@@ -744,16 +738,16 @@ static int
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
-	int ret;
-	int rval = 0;
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
+	FTS* restrict ftsp;
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
 	    NULL) {
 		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
+	FTSENT* restrict chp;
 	chp = fts_children(ftsp, 0);
 	if (chp == NULL) {
 		// No files to traverse!
@@ -762,9 +756,12 @@ static int
 		return -1;
 	}
 
+	// Until something goes wrong...
+	int rval = EXIT_SUCCESS;
 	// Keep track of how many watches we've set up
 	uint8_t watch_count = 0U;
 
+	FTSENT* restrict p;
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
@@ -778,7 +775,7 @@ static int
 						// NOTE: Can technically return -1 on file open error,
 						//       but that shouldn't really ever happen
 						//       given the nature of the loop we're in ;).
-						ret = ini_parse(p->fts_path, daemon_handler, &daemonConfig);
+						int ret = ini_parse(p->fts_path, daemon_handler, &daemonConfig);
 						if (ret != 0) {
 							LOG(LOG_CRIT,
 							    "Failed to parse main config file '%s' (first error on line %d), will abort!",
@@ -813,7 +810,8 @@ static int
 
 						// Assume a config is invalid until proven otherwise...
 						bool is_watch_valid = false;
-						ret = ini_parse(p->fts_path, watch_handler, &watchConfig[watch_count]);
+						int  ret =
+						    ini_parse(p->fts_path, watch_handler, &watchConfig[watch_count]);
 						if (ret != 0) {
 							LOG(LOG_WARNING,
 							    "Failed to parse watch config file '%s' (first error on line %d), it will be discarded!",
@@ -861,7 +859,7 @@ static int
 	// Now we can see if we have an user daemon config to handle...
 	const char usercfg_path[] = KFMON_CONFIGPATH "/kfmon.user.ini";
 	if (access(usercfg_path, F_OK) == 0) {
-		ret = ini_parse(usercfg_path, daemon_handler, &daemonConfig);
+		int ret = ini_parse(usercfg_path, daemon_handler, &daemonConfig);
 		if (ret != 0) {
 			LOG(LOG_CRIT,
 			    "Failed to parse user config file '%s' (first error on line %d), will abort!",
@@ -912,9 +910,6 @@ static int
 {
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
-	FTS* restrict    ftsp;
-	FTSENT* restrict p;
-	FTSENT* restrict chp;
 	// We only need to walk a single directory...
 #pragma GCC diagnostic   push
 #pragma GCC diagnostic   ignored "-Wunknown-pragmas"
@@ -923,15 +918,16 @@ static int
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
-	int ret;
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
+	FTS* restrict ftsp;
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
 	    NULL) {
 		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
+	FTSENT* restrict chp;
 	chp = fts_children(ftsp, 0);
 	if (chp == NULL) {
 		// No files to traverse!
@@ -945,6 +941,7 @@ static int
 	int8_t  new_watch_list[] = { [0 ... WATCH_MAX - 1] = -1 };
 	uint8_t new_watch_count  = 0U;
 
+	FTSENT* restrict p;
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
@@ -970,7 +967,7 @@ static int
 						// so we can compare it to our current watches...
 						WatchConfig cur_watch = { 0 };
 
-						ret = ini_parse(p->fts_path, watch_handler, &cur_watch);
+						int ret = ini_parse(p->fts_path, watch_handler, &cur_watch);
 						if (ret != 0) {
 							LOG(LOG_WARNING,
 							    "Failed to parse watch config file '%s' (first error on line %d), it will be discarded!",
@@ -1180,13 +1177,6 @@ static unsigned int
 static bool
     is_target_processed(uint8_t watch_idx, bool wait_for_db)
 {
-	sqlite3*      db;
-	sqlite3_stmt* stmt;
-	int           rc;
-	int           idx;
-	bool          is_processed = false;
-	bool          needs_update = false;
-
 #ifdef DEBUG
 	// Bypass DB checks on demand for debugging purposes...
 	if (watchConfig[watch_idx].skip_db_checks)
@@ -1194,10 +1184,13 @@ static bool
 #endif
 
 	// Did the user want to try to update the DB for this icon?
-	bool update = watchConfig[watch_idx].do_db_update;
+	bool update       = watchConfig[watch_idx].do_db_update;
+	bool is_processed = false;
+	bool needs_update = false;
 
 	// NOTE: Open the db in single-thread threading mode (we build w/o threadsafe),
 	//       and without a shared cache: we only do SQL from the main thread.
+	sqlite3* db;
 	if (update) {
 		CALL_SQLITE(open_v2(
 		    KOBO_DB_PATH, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
@@ -1219,6 +1212,7 @@ static bool
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book?
 	//       Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
+	sqlite3_stmt* stmt;
 	CALL_SQLITE(prepare_v2(
 	    db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
 
@@ -1226,10 +1220,10 @@ static bool
 	char book_path[CFG_SZ_MAX + 7];
 	snprintf(book_path, sizeof(book_path), "file://%s", watchConfig[watch_idx].filename);
 
-	idx = sqlite3_bind_parameter_index(stmt, "@id");
+	int idx = sqlite3_bind_parameter_index(stmt, "@id");
 	CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
 
-	rc = sqlite3_step(stmt);
+	int rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
 		DBGLOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
 		if (sqlite3_column_int(stmt, 0) == 1) {
@@ -1549,8 +1543,7 @@ static void*
 {
 	uint8_t i = *((uint8_t*) ptr);
 
-	pid_t tid;
-	tid = (pid_t) syscall(SYS_gettid);
+	pid_t tid = (pid_t) syscall(SYS_gettid);
 
 	pid_t   cpid;
 	uint8_t watch_idx;
@@ -1669,9 +1662,7 @@ static void*
 static pid_t
     spawn(char* const* command, uint8_t watch_idx)
 {
-	pid_t pid;
-
-	pid = fork();
+	pid_t pid = fork();
 
 	if (pid < 0) {
 		// Fork failed?
