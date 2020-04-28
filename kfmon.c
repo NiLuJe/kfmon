@@ -2578,7 +2578,7 @@ static void
 static void
     get_group_name(const gid_t gid, char* name)
 {
-	ssize_t  bufsize;
+	size_t   bufsize;
 	long int rc = sysconf(_SC_GETGR_R_SIZE_MAX);
 	if (rc == -1) {
 		// That's the usual value on Linux
