@@ -2701,7 +2701,7 @@ static void
 			//       so we don't even try to drain its command, and just forget about it.
 			//       On the upside, that prevents said command from being triggered after a random delay.
 			if (pfd.revents & POLLHUP) {
-				PFLOG(LOG_NOTICE, "Remote end closed the IPC connection");
+				PFLOG(LOG_NOTICE, "Client closed the IPC connection");
 				goto early_close;
 			}
 
@@ -2728,7 +2728,7 @@ static void
 
 early_close:
 	// We're done, close the data connection
-	LOG(LOG_INFO, "Closed IPC connection from PID %ld (%s) by user %s:%s", (long) ucred.pid, pname, uname, gname);
+	LOG(LOG_INFO, "Closing IPC connection from PID %ld (%s) by user %s:%s", (long) ucred.pid, pname, uname, gname);
 
 cleanup:
 	close(data_fd);

@@ -17,7 +17,9 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-// Small client that sends stdin to the KFMon IPC socket
+// Small client that sends stdin to the KFMon IPC socket and prints the replies.
+// Replies are always sent to stdout, stderr is used for errors and 'UI'
+// (i.e., in a script, you'll generally want to discard stderr).
 
 // Because we're pretty much Linux-bound ;).
 #ifndef _GNU_SOURCE
@@ -35,7 +37,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-// Path to our IPC Unix socket
+// Path to KFMon's IPC Unix socket
 #define KFMON_IPC_SOCKET "/tmp/kfmon-ipc.ctl"
 
 // Drain stdin and send it to the IPC socket (caller aborts on false)
@@ -166,7 +168,7 @@ int
 
 	// Connect to IPC socket
 	if (connect(data_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {
-		fprintf(stderr, "IPC is down (connect: %m), aborting!\n");
+		fprintf(stderr, "KFMon IPC is down (connect: %m), aborting!\n");
 		exit(EXIT_FAILURE);
 	}
 
