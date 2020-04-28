@@ -2546,10 +2546,13 @@ static void
 static void
     get_user_name(const uid_t uid, char* name)
 {
-	size_t bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
-	if (bufsize == -1) {
+	size_t   bufsize;
+	long int rc = sysconf(_SC_GETPW_R_SIZE_MAX);
+	if (rc == -1) {
 		// That's the usual value on Linux
-		bufsize = 1024;
+		bufsize = 1024U;
+	} else {
+		bufsize = (size_t) rc;
 	}
 	char* buf = alloca(bufsize);
 
@@ -2575,10 +2578,13 @@ static void
 static void
     get_group_name(const gid_t gid, char* name)
 {
-	size_t bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
-	if (bufsize == -1) {
+	ssize_t  bufsize;
+	long int rc = sysconf(_SC_GETGR_R_SIZE_MAX);
+	if (rc == -1) {
 		// That's the usual value on Linux
-		bufsize = 1024;
+		bufsize = 1024U;
+	} else {
+		bufsize = (size_t) rc;
 	}
 	char* buf = alloca(bufsize);
 
