@@ -166,10 +166,12 @@ int
 	sock_name.sun_family         = AF_UNIX;
 	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
 
-	// Connect to IPC socket
-	if (connect(data_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {
-		fprintf(stderr, "KFMon IPC is down (connect: %m), aborting!\n");
-		exit(EXIT_FAILURE);
+	// Connect to IPC socket, retrying safely on EINTR (c.f., http://www.madore.org/~david/computers/connect-intr.html)
+	while (connect(data_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1 && errno != EISCONN) {
+		if (errno != EINTR) {
+			fprintf(stderr, "KFMon IPC is down (connect: %m), aborting!\n");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	// Assume everything's peachy until shit happens...
