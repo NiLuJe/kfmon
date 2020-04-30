@@ -2271,6 +2271,11 @@ static bool
 				// Don't retry on write failures, just signal our polling to close the connection
 				return true;
 			}
+			// NOTE: In debug mode, add a delay to test handling of replies split across multiple reads in clients...
+#ifdef DEBUG
+			const struct timespec zzz = { 0L, 250000000L };
+			nanosleep(&zzz, NULL);
+#endif
 		}
 		// Now that we're done, send a final NUL, just to be nice.
 		buf[0] = '\0';
