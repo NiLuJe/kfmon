@@ -9,6 +9,9 @@ pkill kfmon
 # Uninstall: blow the full directroy tree away
 rm -rf "/usr/local/kfmon"
 
+# Also remove the kfmon-ipc symlink
+rm -f "/usr/bin/kfmon-ipc"
+
 # NOTE: We're leaving /mnt/onboard/kfmon.png & /mnt/onboard/koreader.png in,
 #       as well as basically whatever's in onboard, because that might contain user-created content,
 #       so, not our place to delete it.
