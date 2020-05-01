@@ -84,6 +84,10 @@ Note that none of these two fields can exceed **128 characters**, if they do, th
 
 Next comes optional entries:
 
+`label = My cool app`, which specify a text label that may be used by a GUI frontend (otherwise, the basename of the filename entry is used).
+
+`hidden = 0`, which, when set to 1, prevents this action from being listed by a GUI frontend.
+
 `block_spawns = 0`, which, when set to 1, prevents *anything* from being launched by KFMon while the command from the watch marked as such is still running. This is mainly useful for document readers, since they could otherwise unwittingly trigger a number of other watches (usually through their background metadata reader, their thumbnailer, or more generally their file manager). Which is precisely why this is set to 1 for KOReader & Plato ;).
 
 In addition to that, you can try to do some cool but potentially dangerous stuff with the Nickel database: updating the Title, Author and Comment entries of your "book" in the Library.
@@ -162,5 +166,9 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
     
 -   Since FW 4.17, Nickel *will* index content found in *nix hidden directories by default. Thankfully, this behavior is [configurable](https://www.mobileread.com/forums/showpost.php?p=3892463&postcount=10).  
     Note that the "[One Click Packages](#one-click-packages)" [installers](https://github.com/NiLuJe/kfmon/blob/43f43c0d2570bab87d3e0736d297cb699c326178/tools/install.sh#L85-L97) take care of handling that setting automatically ;).
+    
+-   KFMon 1.4.0 introduced an IPC mechanism, allowing interaction (be it listing available actions, or triggering them) with KFMon from the outside world (be it scripts or even a GUI frontend).  
+    Communication is done over an Unix socket, see [kfmon_ipc.c](/utils/kfmon-ipc.c) for a basic C implementation, which ships with every KFMon installation.  
+    Just run `kfmon-ipc` in a shell, or use it as part of a shell pipeline, e.g., `echo "list" | kfmon-ipc 2>/dev/null`. KFMon will reply with usage information if you send an invalid or malformed command.
 
 <!-- kate: indent-mode cstyle; indent-width 4; replace-tabs on; remove-trailing-spaces none; -->

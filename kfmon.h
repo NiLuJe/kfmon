@@ -27,15 +27,18 @@
 
 #include "FBInk/fbink.h"
 #include "inih/ini.h"
+#include "openssh/atomicio.h"
 #include "str5/str5.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>
+#include <grp.h>
 #include <limits.h>
 #include <linux/limits.h>
 #include <mntent.h>
 #include <poll.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <signal.h>
 #include <sqlite3.h>
 #include <stdbool.h>
@@ -44,10 +47,12 @@
 #include <string.h>
 #include <sys/inotify.h>
 #include <sys/resource.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <time.h>
@@ -81,6 +86,9 @@ extern const char* sqlite3ErrName(int);
 #	define KFMON_CONFIGPATH "/home/niluje/Kindle/Staging/kfmon"
 #endif
 
+// Path to our IPC Unix socket
+#define KFMON_IPC_SOCKET "/tmp/kfmon-ipc.ctl"
+
 // MIN/MAX with no side-effects,
 // c.f., https://gcc.gnu.org/onlinedocs/cpp/Duplication-of-Side-Effects.html#Duplication-of-Side-Effects
 //     & https://dustri.org/b/min-and-max-macro-considered-harmful.html
@@ -113,6 +121,9 @@ extern const char* sqlite3ErrName(int);
 		}                                                                                                        \
 	})
 
+// Same, but with __PRETTY_FUNCTION__ right before fmt
+#define PFLOG(prio, fmt, ...) ({ LOG(prio, "[%s] " fmt, __PRETTY_FUNCTION__, ##__VA_ARGS__); })
+
 // Slight variation without date/time handling to ensure thread safety
 #define MTLOG(prio, fmt, ...)                                                                                            \
 	({                                                                                                               \
@@ -122,6 +133,9 @@ extern const char* sqlite3ErrName(int);
 			fprintf(stderr, "[KFMon] " fmt "\n", ##__VA_ARGS__);                                             \
 		}                                                                                                        \
 	})
+
+// Same, but with __PRETTY_FUNCTION__ right before fmt
+#define PFMTLOG(prio, fmt, ...) ({ MTLOG(prio, "[%s] " fmt, __PRETTY_FUNCTION__, ##__VA_ARGS__); })
 
 // Some extra verbose stuff is relegated to DEBUG builds... (c.f., https://stackoverflow.com/questions/1644868)
 #ifdef DEBUG
@@ -156,6 +170,8 @@ extern const char* sqlite3ErrName(int);
 //       that would actually leave us somewhere around 186 bytes.
 //       Just chop that down to 128 for symmetry, and we'll warn in case user input doesn't fit.
 #define CFG_SZ_MAX 128
+// For sscanf
+#define CFG_SZ_MAX_STR "128"
 
 // What the daemon config should look like
 typedef struct
@@ -172,9 +188,11 @@ typedef struct
 	int    inotify_wd;
 	char   filename[CFG_SZ_MAX];
 	char   action[CFG_SZ_MAX];
+	char   label[CFG_SZ_MAX];
 	char   db_title[DB_SZ_MAX];
 	char   db_author[DB_SZ_MAX];
 	char   db_comment[DB_SZ_MAX];
+	bool   hidden;
 	bool   skip_db_checks;
 	bool   do_db_update;
 	bool   block_spawns;
@@ -259,6 +277,11 @@ static bool  are_spawns_blocked(void);
 static pid_t get_spawn_pid_for_watch(uint8_t);
 
 static bool handle_events(int);
+static void get_process_name(const pid_t, char*);
+static void get_user_name(const uid_t, char*);
+static void get_group_name(const gid_t, char*);
+static void handle_connection(int);
+static bool handle_ipc(int);
 
 static void sql_errorlogcb(void* __attribute__((unused)), int, const char*);
 

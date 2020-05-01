@@ -23,11 +23,9 @@
 static int
     daemonize(void)
 {
-	int fd = -1;
-
 	switch (fork()) {
 		case -1:
-			LOG(LOG_CRIT, "initial fork: %m");
+			PFLOG(LOG_CRIT, "initial fork: %m");
 			return -1;
 		case 0:
 			break;
@@ -36,20 +34,21 @@ static int
 	}
 
 	if (setsid() == -1) {
-		LOG(LOG_CRIT, "setsid: %m");
+		PFLOG(LOG_CRIT, "setsid: %m");
 		return -1;
 	}
 
 	// Double fork, for... reasons!
 	// In practical terms, this ensures we get re-parented to init *now*.
 	// Ignore SIGHUP while we're there, since we don't want to be killed by it.
-	if (signal(SIGHUP, SIG_IGN) == SIG_ERR) {
-		LOG(LOG_CRIT, "signal: %m");
+	struct sigaction sa = { .sa_handler = SIG_IGN, .sa_flags = SA_RESTART };
+	if (sigaction(SIGHUP, &sa, NULL) == -1) {
+		PFLOG(LOG_CRIT, "sigaction: %m");
 		return -1;
 	}
 	switch (fork()) {
 		case -1:
-			LOG(LOG_CRIT, "final fork: %m");
+			PFLOG(LOG_CRIT, "final fork: %m");
 			return -1;
 		case 0:
 			break;
@@ -58,7 +57,7 @@ static int
 	}
 
 	if (chdir("/") == -1) {
-		LOG(LOG_CRIT, "chdir: %m");
+		PFLOG(LOG_CRIT, "chdir: %m");
 		return -1;
 	}
 
@@ -72,6 +71,7 @@ static int
 	origStderr = dup(fileno(stderr));
 
 	// Redirect stdin & stdout to /dev/null
+	int fd = -1;
 	if ((fd = open("/dev/null", O_RDWR)) != -1) {
 		dup2(fd, fileno(stdin));
 		dup2(fd, fileno(stdout));
@@ -79,7 +79,7 @@ static int
 			close(fd);
 		}
 	} else {
-		LOG(LOG_CRIT, "Failed to redirect stdin & stdout to /dev/null (open: %m)");
+		PFLOG(LOG_CRIT, "Failed to redirect stdin & stdout to /dev/null (open: %m)");
 		return -1;
 	}
 
@@ -101,7 +101,7 @@ static int
 			close(fd);
 		}
 	} else {
-		LOG(LOG_CRIT, "Failed to redirect stderr to logfile '%s' (open: %m)", KFMON_LOGFILE);
+		PFLOG(LOG_CRIT, "Failed to redirect stderr to logfile '%s' (open: %m)", KFMON_LOGFILE);
 		return -1;
 	}
 
@@ -201,14 +201,14 @@ static void
     wait_for_target_mountpoint(void)
 {
 	// c.f., https://stackoverflow.com/questions/5070801
-	int           mfd = open("/proc/mounts", O_RDONLY);
-	struct pollfd pfd;
-
-	uint8_t changes     = 0U;
-	uint8_t max_changes = 6U;
+	int           mfd   = open("/proc/mounts", O_RDONLY);
+	struct pollfd pfd   = { 0 };
 	pfd.fd              = mfd;
 	pfd.events          = POLLERR | POLLPRI;
 	pfd.revents         = 0;
+	uint8_t changes     = 0U;
+	uint8_t max_changes = 6U;
+
 	while (poll(&pfd, 1, -1) >= 0) {
 		if (pfd.revents & POLLERR) {
 			LOG(LOG_INFO, "Mountpoints changed (iteration nr. %d of %hhu)", ++changes, max_changes);
@@ -249,14 +249,12 @@ static int
 	}
 
 	// Now that we know it's positive, we can go on with strtoul...
-	char*             endptr;
-	unsigned long int val;
-
-	errno = 0;    // To distinguish success/failure after call
-	val   = strtoul(str, &endptr, 10);
+	char* endptr;
+	errno                 = 0;    // To distinguish success/failure after call
+	unsigned long int val = strtoul(str, &endptr, 10);
 
 	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
-		LOG(LOG_WARNING, "strtoul: %m");
+		PFLOG(LOG_WARNING, "strtoul: %m");
 		return -EINVAL;
 	}
 
@@ -435,6 +433,20 @@ static int
 			LOG(LOG_CRIT, "Passed an invalid value for action (too long?)!");
 			return 0;
 		}
+	} else if (MATCH("watch", "label")) {
+		if (str5cpy(pconfig->label, CFG_SZ_MAX, value, CFG_SZ_MAX, TRUNC) < 0) {
+			LOG(LOG_WARNING, "The value passed for label may have been truncated!");
+		}
+	} else if (MATCH("watch", "hidden")) {
+		if (strtobool(value, &pconfig->hidden) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for hidden!");
+			return 0;
+		}
+	} else if (MATCH("watch", "block_spawns")) {
+		if (strtobool(value, &pconfig->block_spawns) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
+			return 0;
+		}
 	} else if (MATCH("watch", "skip_db_checks")) {
 		if (strtobool(value, &pconfig->skip_db_checks) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for skip_db_checks!");
@@ -457,11 +469,6 @@ static int
 	} else if (MATCH("watch", "db_comment")) {
 		if (str5cpy(pconfig->db_comment, DB_SZ_MAX, value, DB_SZ_MAX, TRUNC) != 0) {
 			LOG(LOG_WARNING, "The value passed for db_comment may have been truncated!");
-		}
-	} else if (MATCH("watch", "block_spawns")) {
-		if (strtobool(value, &pconfig->block_spawns) < 0) {
-			LOG(LOG_CRIT, "Passed an invalid value for block_spawns!");
-			return 0;
 		}
 	} else if (MATCH("watch", "reboot_on_exit")) {
 		;
@@ -506,6 +513,8 @@ static bool
 		LOG(LOG_CRIT, "Mandatory key 'action' is missing or blank!");
 		sane = false;
 	}
+
+	// Don't warn about a missing/blank 'label', it's optional.
 
 	// If we asked for a database update, the next three keys become mandatory
 	if (pconfig->do_db_update) {
@@ -588,6 +597,46 @@ static bool
 			    watchConfig[target_idx].action,
 			    target_idx);
 		}
+	}
+
+	// Check if label was updated...
+	if (strcmp(pconfig->label, watchConfig[target_idx].label) != 0) {
+		str5cpy(watchConfig[target_idx].label, CFG_SZ_MAX, pconfig->label, CFG_SZ_MAX, TRUNC);
+		updated = true;
+		LOG(LOG_NOTICE,
+		    "Updated label to %s for watch config @ index %hhu",
+		    watchConfig[target_idx].label,
+		    target_idx);
+	}
+
+	// Check if hidden was updated...
+	if (pconfig->hidden != watchConfig[target_idx].hidden) {
+		watchConfig[target_idx].hidden = pconfig->hidden;
+		updated                        = true;
+		LOG(LOG_NOTICE,
+		    "Updated hidden to %d for watch config @ index %hhu",
+		    watchConfig[target_idx].hidden,
+		    target_idx);
+	}
+
+	// Check if block_spawns was updated...
+	if (pconfig->block_spawns != watchConfig[target_idx].block_spawns) {
+		watchConfig[target_idx].block_spawns = pconfig->block_spawns;
+		updated                              = true;
+		LOG(LOG_NOTICE,
+		    "Updated block_spawns to %d for watch config @ index %hhu",
+		    watchConfig[target_idx].block_spawns,
+		    target_idx);
+	}
+
+	// Check if skip_db_checks was updated...
+	if (pconfig->skip_db_checks != watchConfig[target_idx].skip_db_checks) {
+		watchConfig[target_idx].skip_db_checks = pconfig->skip_db_checks;
+		updated                                = true;
+		LOG(LOG_NOTICE,
+		    "Updated skip_db_checks to %d for watch config @ index %hhu",
+		    watchConfig[target_idx].skip_db_checks,
+		    target_idx);
 	}
 
 	// Check if do_db_update was updated...
@@ -681,9 +730,6 @@ static int
 
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
-	FTS* restrict    ftsp;
-	FTSENT* restrict p;
-	FTSENT* restrict chp;
 	// We only need to walk a single directory...
 #pragma GCC diagnostic   push
 #pragma GCC diagnostic   ignored "-Wunknown-pragmas"
@@ -692,16 +738,16 @@ static int
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
-	int ret;
-	int rval = 0;
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
+	FTS* restrict ftsp;
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
 	    NULL) {
-		LOG(LOG_CRIT, "fts_open: %m");
+		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
+	FTSENT* restrict chp;
 	chp = fts_children(ftsp, 0);
 	if (chp == NULL) {
 		// No files to traverse!
@@ -710,9 +756,12 @@ static int
 		return -1;
 	}
 
+	// Until something goes wrong...
+	int rval = EXIT_SUCCESS;
 	// Keep track of how many watches we've set up
 	uint8_t watch_count = 0U;
 
+	FTSENT* restrict p;
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
@@ -726,7 +775,7 @@ static int
 						// NOTE: Can technically return -1 on file open error,
 						//       but that shouldn't really ever happen
 						//       given the nature of the loop we're in ;).
-						ret = ini_parse(p->fts_path, daemon_handler, &daemonConfig);
+						int ret = ini_parse(p->fts_path, daemon_handler, &daemonConfig);
 						if (ret != 0) {
 							LOG(LOG_CRIT,
 							    "Failed to parse main config file '%s' (first error on line %d), will abort!",
@@ -761,7 +810,8 @@ static int
 
 						// Assume a config is invalid until proven otherwise...
 						bool is_watch_valid = false;
-						ret = ini_parse(p->fts_path, watch_handler, &watchConfig[watch_count]);
+						int  ret =
+						    ini_parse(p->fts_path, watch_handler, &watchConfig[watch_count]);
 						if (ret != 0) {
 							LOG(LOG_WARNING,
 							    "Failed to parse watch config file '%s' (first error on line %d), it will be discarded!",
@@ -770,11 +820,13 @@ static int
 						} else {
 							if (validate_watch_config(&watchConfig[watch_count])) {
 								LOG(LOG_NOTICE,
-								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, label=%s, hidden=%d, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 								    watch_count,
 								    p->fts_name,
 								    watchConfig[watch_count].filename,
 								    watchConfig[watch_count].action,
+								    watchConfig[watch_count].label,
+								    watchConfig[watch_count].hidden,
 								    watchConfig[watch_count].block_spawns,
 								    watchConfig[watch_count].do_db_update,
 								    watchConfig[watch_count].db_title,
@@ -807,7 +859,7 @@ static int
 	// Now we can see if we have an user daemon config to handle...
 	const char usercfg_path[] = KFMON_CONFIGPATH "/kfmon.user.ini";
 	if (access(usercfg_path, F_OK) == 0) {
-		ret = ini_parse(usercfg_path, daemon_handler, &daemonConfig);
+		int ret = ini_parse(usercfg_path, daemon_handler, &daemonConfig);
 		if (ret != 0) {
 			LOG(LOG_CRIT,
 			    "Failed to parse user config file '%s' (first error on line %d), will abort!",
@@ -833,11 +885,13 @@ static int
 	       daemonConfig.with_notifications);
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, label=%s, hidden=%d, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
 		    watchConfig[watch_idx].is_active,
 		    watchConfig[watch_idx].filename,
 		    watchConfig[watch_idx].action,
+		    watchConfig[watch_idx].label,
+		    watchConfig[watch_idx].hidden,
 		    watchConfig[watch_idx].block_spawns,
 		    watchConfig[watch_idx].skip_db_checks,
 		    watchConfig[watch_idx].do_db_update,
@@ -856,9 +910,6 @@ static int
 {
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
-	FTS* restrict    ftsp;
-	FTSENT* restrict p;
-	FTSENT* restrict chp;
 	// We only need to walk a single directory...
 #pragma GCC diagnostic   push
 #pragma GCC diagnostic   ignored "-Wunknown-pragmas"
@@ -867,15 +918,16 @@ static int
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
-	int ret;
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
+	FTS* restrict ftsp;
 	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
 	    NULL) {
-		LOG(LOG_CRIT, "fts_open: %m");
+		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
 	// Initialize ftsp with as many toplevel entries as possible.
+	FTSENT* restrict chp;
 	chp = fts_children(ftsp, 0);
 	if (chp == NULL) {
 		// No files to traverse!
@@ -889,6 +941,7 @@ static int
 	int8_t  new_watch_list[] = { [0 ... WATCH_MAX - 1] = -1 };
 	uint8_t new_watch_count  = 0U;
 
+	FTSENT* restrict p;
 	while ((p = fts_read(ftsp)) != NULL) {
 		switch (p->fts_info) {
 			case FTS_F:
@@ -914,7 +967,7 @@ static int
 						// so we can compare it to our current watches...
 						WatchConfig cur_watch = { 0 };
 
-						ret = ini_parse(p->fts_path, watch_handler, &cur_watch);
+						int ret = ini_parse(p->fts_path, watch_handler, &cur_watch);
 						if (ret != 0) {
 							LOG(LOG_WARNING,
 							    "Failed to parse watch config file '%s' (first error on line %d), it will be discarded!",
@@ -955,11 +1008,13 @@ static int
 									if (validate_watch_config(
 										&watchConfig[watch_idx])) {
 										LOG(LOG_NOTICE,
-										    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+										    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, label=%s, hidden=%d, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 										    watch_idx,
 										    p->fts_name,
 										    watchConfig[watch_idx].filename,
 										    watchConfig[watch_idx].action,
+										    watchConfig[watch_idx].label,
+										    watchConfig[watch_idx].hidden,
 										    watchConfig[watch_idx].block_spawns,
 										    watchConfig[watch_idx].do_db_update,
 										    watchConfig[watch_idx].db_title,
@@ -1083,11 +1138,13 @@ static int
 	// Let's recap (including failures)...
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, label=%s, hidden=%d, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
 		    watchConfig[watch_idx].is_active,
 		    watchConfig[watch_idx].filename,
 		    watchConfig[watch_idx].action,
+		    watchConfig[watch_idx].label,
+		    watchConfig[watch_idx].hidden,
 		    watchConfig[watch_idx].block_spawns,
 		    watchConfig[watch_idx].skip_db_checks,
 		    watchConfig[watch_idx].do_db_update,
@@ -1120,13 +1177,6 @@ static unsigned int
 static bool
     is_target_processed(uint8_t watch_idx, bool wait_for_db)
 {
-	sqlite3*      db;
-	sqlite3_stmt* stmt;
-	int           rc;
-	int           idx;
-	bool          is_processed = false;
-	bool          needs_update = false;
-
 #ifdef DEBUG
 	// Bypass DB checks on demand for debugging purposes...
 	if (watchConfig[watch_idx].skip_db_checks)
@@ -1134,10 +1184,13 @@ static bool
 #endif
 
 	// Did the user want to try to update the DB for this icon?
-	bool update = watchConfig[watch_idx].do_db_update;
+	bool update       = watchConfig[watch_idx].do_db_update;
+	bool is_processed = false;
+	bool needs_update = false;
 
 	// NOTE: Open the db in single-thread threading mode (we build w/o threadsafe),
 	//       and without a shared cache: we only do SQL from the main thread.
+	sqlite3* db;
 	if (update) {
 		CALL_SQLITE(open_v2(
 		    KOBO_DB_PATH, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
@@ -1159,6 +1212,7 @@ static bool
 
 	// NOTE: ContentType 6 should mean a book on pretty much anything since FW 1.9.17 (and why a book?
 	//       Because Nickel currently identifies single PNGs as application/x-cbz, bless its cute little bytes).
+	sqlite3_stmt* stmt;
 	CALL_SQLITE(prepare_v2(
 	    db, "SELECT EXISTS(SELECT 1 FROM content WHERE ContentID = @id AND ContentType = '6');", -1, &stmt, NULL));
 
@@ -1166,10 +1220,10 @@ static bool
 	char book_path[CFG_SZ_MAX + 7];
 	snprintf(book_path, sizeof(book_path), "file://%s", watchConfig[watch_idx].filename);
 
-	idx = sqlite3_bind_parameter_index(stmt, "@id");
+	int idx = sqlite3_bind_parameter_index(stmt, "@id");
 	CALL_SQLITE(bind_text(stmt, idx, book_path, -1, SQLITE_STATIC));
 
-	rc = sqlite3_step(stmt);
+	int rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
 		DBGLOG("SELECT SQL query returned: %d", sqlite3_column_int(stmt, 0));
 		if (sqlite3_column_int(stmt, 0) == 1) {
@@ -1489,8 +1543,7 @@ static void*
 {
 	uint8_t i = *((uint8_t*) ptr);
 
-	pid_t tid;
-	tid = (pid_t) syscall(SYS_gettid);
+	pid_t tid = (pid_t) syscall(SYS_gettid);
 
 	pid_t   cpid;
 	uint8_t watch_idx;
@@ -1516,12 +1569,13 @@ static void*
 	pid_t ret;
 	int   wstatus;
 	// Wait for our child process to terminate, retrying on EINTR
+	// NOTE: This is quite likely overkill on Linux (c.f., https://stackoverflow.com/a/59795677)
 	do {
 		ret = waitpid(cpid, &wstatus, 0);
 	} while (ret == -1 && errno == EINTR);
 	// Recap what happened to it
 	if (ret != cpid) {
-		MTLOG(LOG_CRIT, "waitpid: %m");
+		PFMTLOG(LOG_CRIT, "waitpid: %m");
 		free(ptr);
 		return (void*) NULL;
 	} else {
@@ -1608,13 +1662,11 @@ static void*
 static pid_t
     spawn(char* const* command, uint8_t watch_idx)
 {
-	pid_t pid;
-
-	pid = fork();
+	pid_t pid = fork();
 
 	if (pid < 0) {
 		// Fork failed?
-		LOG(LOG_ERR, "Aborting: fork: %m");
+		PFLOG(LOG_ERR, "Aborting: fork: %m");
 		fbink_print(FBFD_AUTO, "[KFMon] fork failed ?!", &fbinkConfig);
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
@@ -1631,7 +1683,8 @@ static pid_t
 		close(origStdout);
 		close(origStderr);
 		// Restore signals
-		signal(SIGHUP, SIG_DFL);
+		struct sigaction sa = { .sa_handler = SIG_DFL, .sa_flags = SA_RESTART };
+		sigaction(SIGHUP, &sa, NULL);
 		// NOTE: We used to use execvpe when being launched from udev,
 		//       in order to sanitize all the crap we inherited from udev's env ;).
 		//       Now, we actually rely on the specific env we inherit from rcS/on-animator!
@@ -1700,12 +1753,12 @@ static pid_t
 			//       to make sure their resources will be released when they terminate.
 			pthread_attr_t attr;
 			if (pthread_attr_init(&attr) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_attr_init: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_attr_init: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_init failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_attr_setdetachstate: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_attr_setdetachstate: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setdetachstate failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1716,12 +1769,12 @@ static pid_t
 			//       In the grand scheme of things, this won't really change much ;).
 			if (pthread_attr_setstacksize(
 				&attr, MAX((1U * 1024U * 1024U) / 2U, (sizeof(void*) * 1024U * 1024U) / 8U)) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_attr_setstacksize: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_attr_setstacksize: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setstacksize failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_create(&rthread, &attr, reaper_thread, arg) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_create: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_create: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_create failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1730,13 +1783,13 @@ static pid_t
 			char thname[16];
 			snprintf(thname, sizeof(thname), "Reap:%ld", (long) pid);
 			if (pthread_setname_np(rthread, thname) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_setname_np: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_setname_np: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_setname_np failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 
 			if (pthread_attr_destroy(&attr) != 0) {
-				LOG(LOG_ERR, "Aborting: pthread_attr_destroy: %m");
+				PFLOG(LOG_ERR, "Aborting: pthread_attr_destroy: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_destroy failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
@@ -1818,10 +1871,30 @@ static pid_t
 	return -1;
 }
 
-// Read all available inotify events from the file descriptor 'fd'.
+// Read all available inotify events from the file descriptor 'fd' (caller breaks on true).
 static bool
     handle_events(int fd)
 {
+	// NOTE: Because the framebuffer state is liable to have changed since our last init/reinit,
+	//       either expectedly (boot -> pickel -> nickel), or a bit more unpredictably (rotation, bitdepth change),
+	//       we'll ask FBInk to make sure it has an up-to-date fb state for each new batch of events,
+	//       so that messages will be printed properly, no matter what :).
+	//       Put everything behind our mutex to be super-safe,
+	//       since we're playing with library globals...
+	// NOTE: Even forgetting about rotation and bitdepth changes, which may not ever happen on most *vanilla* devices,
+	//       this is needed because processing is done very early by Nickel for "new" icons,
+	//       when they end up on the Home screen straight away,
+	//       (which is a given if you added at most 3 items, with the new Home screen).
+	//       Not doing a reinit would be problematic, because it's early enough that pickel is still running,
+	//       so we'd be inheriting its quirky fb setup and not Nickel's...
+	// NOTE: This was moved from inside the following loop to here, just outside of it, in order to limit locking,
+	//       but it will in fact change nothing if events aren't actually batched,
+	//       which appears to be the case in most of our use-cases...
+	pthread_mutex_lock(&ptlock);
+	// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+	fbink_reinit(FBFD_AUTO, &fbinkConfig);
+	pthread_mutex_unlock(&ptlock);
+
 	// Some systems cannot read integer variables if they are not properly aligned.
 	// On other systems, incorrect alignment may decrease performance.
 	// Hence, the buffer used for reading from the inotify file descriptor
@@ -1839,7 +1912,7 @@ static bool
 			if (errno == EINTR) {
 				continue;
 			}
-			LOG(LOG_ERR, "Aborting: read: %m");
+			PFLOG(LOG_ERR, "Aborting: read: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
@@ -1850,26 +1923,6 @@ static bool
 		if (len <= 0) {
 			break;
 		}
-
-		// NOTE: Because the framebuffer state is liable to have changed since our last init/reinit,
-		//       either expectedly (boot -> pickel -> nickel), or a bit more unpredictably (rotation, bitdepth change),
-		//       we'll ask FBInk to make sure it has an up-to-date fb state for each new batch of events,
-		//       so that messages will be printed properly, no matter what :).
-		//       Put everything behind our mutex to be super-safe,
-		//       since we're playing with library globals...
-		// NOTE: Even forgetting about rotation and bitdepth changes, which may not ever happen on most *vanilla* devices,
-		//       this is needed because processing is done very early by Nickel for "new" icons,
-		//       when they end up on the Home screen straight away,
-		//       (which is a given if you added at most 3 items, with the new Home screen).
-		//       Not doing a reinit would be problematic, because it's early enough that pickel is still running,
-		//       so we'd be inheriting its quirky fb setup and not Nickel's...
-		// NOTE: This was moved from inside the following loop to here, just outside of it, in order to limit locking,
-		//       but it will in fact change nothing if events aren't actually batched,
-		//       which appears to be the case in most of our use-cases...
-		pthread_mutex_lock(&ptlock);
-		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-		fbink_reinit(FBFD_AUTO, &fbinkConfig);
-		pthread_mutex_unlock(&ptlock);
 
 		// Loop over all events in the buffer
 		for (char* ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
@@ -2082,7 +2135,7 @@ static bool
 				    watch_idx);
 				if (inotify_rm_watch(fd, watchConfig[watch_idx].inotify_wd) == -1) {
 					// That's too bad, but may not be fatal, so warn only...
-					LOG(LOG_WARNING, "inotify_rm_watch: %m");
+					PFLOG(LOG_WARNING, "inotify_rm_watch: %m");
 				} else {
 					// Flag it as gone if rm was successful
 					watchConfig[watch_idx].inotify_wd = -1;
@@ -2128,7 +2181,7 @@ static bool
 							if (inotify_rm_watch(fd, watchConfig[watch_idx].inotify_wd) ==
 							    -1) {
 								// That's too bad, but may not be fatal, so warn only...
-								LOG(LOG_WARNING, "inotify_rm_watch: %m");
+								PFLOG(LOG_WARNING, "inotify_rm_watch: %m");
 							} else {
 								// It's gone!
 								watchConfig[watch_idx].inotify_wd = -1;
@@ -2147,6 +2200,543 @@ static bool
 
 	// And we have another outer loop to break, so pass that on...
 	return destroyed_wd;
+}
+
+// Handle input data from a successful IPC connection (caller breaks on true).
+static bool
+    handle_ipc(int data_fd)
+{
+	// Eh, recycle PIPE_BUF, it should be more than enough for our needs.
+	char buf[PIPE_BUF] = { 0 };
+
+	// We don't actually know the size of the input data, so, best effort here.
+	ssize_t len = xread(data_fd, buf, sizeof(buf));
+	if (len < 0) {
+		// Only actual failures are left, xread handles the rest
+		PFLOG(LOG_WARNING, "read: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
+		// Signal our polling to close the connection, don't retry, as we risk failing here again otherwise.
+		return true;
+	}
+
+	if (len == 0) {
+		// EoF, we're done, signal our polling to close the connection
+		return true;
+	}
+
+	// In the event len == sizeof(buf), truncate to ensure buf is NUL-terminated before we start playing with it.
+	// Otherwise, we zero init buf, so we're sure to end up with a NUL-terminated ASAP string.
+	buf[sizeof(buf) - 1] = '\0';
+
+	// Handle the supported commands
+	if ((strncasecmp(buf, "list", 4) == 0) || (strncasecmp(buf, "gui-list", 8) == 0)) {
+		LOG(LOG_INFO, "Processing IPC watch listing request");
+		// Discriminate gui-list
+		bool gui = (buf[0] == 'g' || buf[0] == 'G');
+
+		// Reply with a list of active watches, format is id:basename(filename):label (separated by a LF)
+		//                                             or id:basename(filename) if the watch has no label set.
+		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+			if (!watchConfig[watch_idx].is_active) {
+				continue;
+			}
+
+			// If it's a gui listing, skip hidden watches
+			if (gui && watchConfig[watch_idx].hidden) {
+				continue;
+			}
+
+			// If it has a label, add it in a third field, otherwise, don't even print the extra field separator.
+			int packet_len = 0;
+			if (*watchConfig[watch_idx].label) {
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "%hhu:%s:%s\n",
+						      watch_idx,
+						      basename(watchConfig[watch_idx].filename),
+						      watchConfig[watch_idx].label);
+			} else {
+				packet_len = snprintf(
+				    buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
+			}
+			// Make sure we reply with that in full (w/o a NUL, we're not done yet) to the client.
+			if (send_in_full(data_fd, buf, (size_t)(packet_len)) < 0) {
+				// Only actual failures are left, so we're pretty much done
+				if (errno == EPIPE) {
+					PFLOG(LOG_WARNING, "Client closed the connection early");
+				} else {
+					PFLOG(LOG_WARNING, "write: %m");
+					fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+				}
+				// Don't retry on write failures, just signal our polling to close the connection
+				return true;
+			}
+			// NOTE: In debug mode, add a delay to test handling of replies split across multiple reads in clients...
+#ifdef DEBUG
+			const struct timespec zzz = { 0L, 250000000L };
+			nanosleep(&zzz, NULL);
+#endif
+		}
+		// Now that we're done, send a final NUL, just to be nice.
+		buf[0] = '\0';
+		if (send_in_full(data_fd, buf, 1U) < 0) {
+			// Only actual failures are left, so we're pretty much done
+			if (errno == EPIPE) {
+				PFLOG(LOG_WARNING, "Client closed the connection early");
+			} else {
+				PFLOG(LOG_WARNING, "write: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			}
+			// Don't retry on write failures, just signal our polling to close the connection
+			return true;
+		}
+	} else if ((strncmp(buf, "start", 5) == 0) || (strncmp(buf, "force-start", 11) == 0) ||
+		   (strncmp(buf, "trigger", 7) == 0) || (strncmp(buf, "force-trigger", 13) == 0)) {
+		// Discriminate force-*
+		bool force = (buf[0] == 'f');
+		// Discriminate trigger from start
+		bool trigger = (force ? buf[6] == 't' : buf[0] == 't');
+		// Pull the actual id out of there. Could have went with strtok, too.
+		uint8_t watch_id                       = WATCH_MAX;
+		char    watch_basename[CFG_SZ_MAX + 1] = { 0 };
+		errno                                  = 0;
+		int n                                  = 0;
+		if (force) {
+			if (trigger) {
+				n = sscanf(buf, "force-trigger:%" CFG_SZ_MAX_STR "s", watch_basename);
+			} else {
+				n = sscanf(buf, "force-start:%hhu", &watch_id);
+			}
+		} else {
+			if (trigger) {
+				n = sscanf(buf, "trigger:%" CFG_SZ_MAX_STR "s", watch_basename);
+			} else {
+				n = sscanf(buf, "start:%hhu", &watch_id);
+			}
+		}
+		// We'll add a courtesy reply with the status
+		// NOTE: Actually replying something is *mandatory* in our little IPC "protocol",
+		//       as failing to get a reply in time is the only way a client can figure out that KFMon
+		//       is already busy with a previous IPC connection...
+		int packet_len = 0;
+		if (n == 1) {
+			// Got it! Now check if it's valid...
+			bool found_watch_idx = false;
+			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
+				// Needs to be an active watch.
+				// As NickelMenu can only honor the startup listing,
+				// we may genuinely be asked to start now inactive watches.
+				if (!watchConfig[watch_idx].is_active) {
+					continue;
+				}
+
+				if (trigger) {
+					// trigger looks up by basename(filename)
+					if (strcmp(basename(watchConfig[watch_idx].filename), watch_basename) == 0) {
+						found_watch_idx = true;
+						watch_id        = watch_idx;
+						break;
+					}
+				} else {
+					// start looks up by watch_idx
+					if (watch_id == watch_idx) {
+						found_watch_idx = true;
+						break;
+					}
+				}
+			}
+			if (!found_watch_idx) {
+				// Invalid or inactive watch, can't do anything.
+				if (trigger) {
+					LOG(LOG_WARNING,
+					    "Received a request to %strigger an invalid watch '%s'",
+					    force ? "force " : "",
+					    watch_basename);
+				} else {
+					LOG(LOG_WARNING,
+					    "Received a request to %sstart an invalid watch idx %hhu",
+					    force ? "force " : "",
+					    watch_id);
+				}
+				packet_len = snprintf(buf, sizeof(buf), "ERR_INVALID_ID\n");
+			} else {
+				// Go ahead, we thankfully have a few less sanity checks to deal with than handle_events,
+				// because no SQL ;).
+				if (trigger) {
+					LOG(LOG_INFO,
+					    "Processing IPC request to %strigger watch '%s'",
+					    force ? "force " : "",
+					    watch_basename);
+				} else {
+					LOG(LOG_INFO,
+					    "Processing IPC request to %sstart watch idx %hhu",
+					    force ? "force " : "",
+					    watch_id);
+				}
+
+				// See handle_events for the logic behind spawn blocking & co.
+				bool is_watch_spawned;
+				bool is_blocker_spawned;
+				pthread_mutex_lock(&ptlock);
+				is_watch_spawned   = is_watch_already_spawned(watch_id);
+				is_blocker_spawned = is_blocker_running();
+				pthread_mutex_unlock(&ptlock);
+				bool is_spawn_blocked = are_spawns_blocked();
+
+				// Can't force something that is itself a spawn blocker...
+				if (force && watchConfig[watch_id].block_spawns) {
+					LOG(LOG_NOTICE,
+					    "Dropping the force flag, as the requested watch is a spawn blocker");
+					force = false;
+				}
+
+				// NOTE: force ignores is_blocker_spawned and is_spawn_blocked
+				if ((force && !is_watch_spawned) ||
+				    (!force && !is_watch_spawned && !is_blocker_spawned && !is_spawn_blocked)) {
+					// Skipping the SQL checks implies we don't need the "may still be processing"
+					// logic, either ;).
+					LOG(LOG_INFO,
+					    "Preparing to spawn %s for watch idx %hhu . . .",
+					    watchConfig[watch_id].action,
+					    watch_id);
+					if (watchConfig[watch_id].block_spawns) {
+						LOG(LOG_NOTICE,
+						    "%s is flagged as a spawn blocker, it will prevent *any* event from triggering a spawn while it is still running!",
+						    watchConfig[watch_id].action);
+					}
+					// We're using execvp()...
+					char* const cmd[] = { watchConfig[watch_id].action, NULL };
+					spawn(cmd, watch_id);
+					packet_len = snprintf(buf, sizeof(buf), "OK\n");
+				} else {
+					if (is_watch_spawned) {
+						pid_t spid;
+						pthread_mutex_lock(&ptlock);
+						spid = get_spawn_pid_for_watch(watch_id);
+						pthread_mutex_unlock(&ptlock);
+
+						LOG(LOG_INFO,
+						    "As watch idx %hhu (%s) still has a spawned process (%ld -> %s) running, we won't be spawning another instance of it!",
+						    watch_id,
+						    watchConfig[watch_id].filename,
+						    (long) spid,
+						    watchConfig[watch_id].action);
+						fbink_printf(FBFD_AUTO,
+							     NULL,
+							     &fbinkConfig,
+							     "[KFMon] Not spawning %s: still running!",
+							     basename(watchConfig[watch_id].action));
+						packet_len = snprintf(buf, sizeof(buf), "WARN_ALREADY_RUNNING\n");
+					} else if (!force && is_blocker_spawned) {
+						LOG(LOG_INFO,
+						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
+						fbink_printf(FBFD_AUTO,
+							     NULL,
+							     &fbinkConfig,
+							     "[KFMon] Not spawning %s: blocked!",
+							     basename(watchConfig[watch_id].action));
+						packet_len = snprintf(buf, sizeof(buf), "WARN_SPAWN_BLOCKED\n");
+					} else if (!force && is_spawn_blocked) {
+						LOG(LOG_INFO,
+						    "As the global spawn inhibiter flag is present, we won't be spawning anything!");
+						fbink_printf(FBFD_AUTO,
+							     NULL,
+							     &fbinkConfig,
+							     "[KFMon] Not spawning %s: inhibited!",
+							     basename(watchConfig[watch_id].action));
+						packet_len = snprintf(buf, sizeof(buf), "WARN_SPAWN_INHIBITED\n");
+					}
+				}
+			}
+		} else if (errno != 0) {
+			PFLOG(LOG_WARNING, "sscanf: %m");
+			fbink_print(FBFD_AUTO, "[KFMon] sscanf failed ?!", &fbinkConfig);
+			if (trigger) {
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "ERR_REALLY_MALFORMED_CMD\nExpected format is %strigger:name\n",
+						      force ? "force-" : "");
+			} else {
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "ERR_REALLY_MALFORMED_CMD\nExpected format is %sstart:id\n",
+						      force ? "force-" : "");
+			}
+		} else {
+			if (trigger) {
+				LOG(LOG_WARNING, "Malformed trigger command: %.*s", (int) len, buf);
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "ERR_MALFORMED_CMD\nExpected format is %strigger:name\n",
+						      force ? "force-" : "");
+			} else {
+				LOG(LOG_WARNING, "Malformed start command: %.*s", (int) len, buf);
+				packet_len = snprintf(buf,
+						      sizeof(buf),
+						      "ERR_MALFORMED_CMD\nExpected format is %sstart:id\n",
+						      force ? "force-" : "");
+			}
+		}
+
+		// Reply with the status (w/ NUL)
+		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Only actual failures are left, so we're pretty much done
+			if (errno == EPIPE) {
+				PFLOG(LOG_WARNING, "Client closed the connection early");
+			} else {
+				PFLOG(LOG_WARNING, "write: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			}
+			// Don't retry on write failures, just signal our polling to close the connection
+			return true;
+		}
+	} else {
+		LOG(LOG_WARNING, "Received an invalid/unsupported %zd bytes IPC command: %.*s", len, (int) len, buf);
+		// Reply with a list of valid commands, that should be good enough, no need for a full fledged help command.
+		int packet_len = snprintf(
+		    buf,
+		    sizeof(buf),
+		    "ERR_INVALID_CMD\nComma separated list of valid commands: list, gui-list, start, force-start, trigger, force-trigger\n");
+
+		// w/ NUL
+		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Only actual failures are left, so we're pretty much done
+			if (errno == EPIPE) {
+				PFLOG(LOG_WARNING, "Client closed the connection early");
+			} else {
+				PFLOG(LOG_WARNING, "write: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+			}
+			// Don't retry on write failures, just signal our polling to close the connection
+			return true;
+		}
+	}
+
+	// Client still has something to say?
+	return false;
+}
+
+// Dirty little helper to pull the command name for a specific PID from procfs
+// Inspired by https://gist.github.com/fclairamb/a16a4237c46440bdb172
+static void
+    get_process_name(const pid_t pid, char* name)
+{
+	char procfile[PATH_MAX];
+	snprintf(procfile, sizeof(procfile), "/proc/%ld/comm", (long) pid);
+	FILE* f = fopen(procfile, "r");
+	if (f) {
+		size_t size = fread(name, sizeof(*procfile), sizeof(procfile), f);
+		if (size > 0) {
+			// NUL terminate
+			name[size - 1U] = '\0';
+		}
+		fclose(f);
+	} else {
+		// comm is 16 bytes
+		str5cpy(name, 16, "<!>", 16, TRUNC);
+	}
+}
+
+// Do the getpwuid_r dance and then just store the name
+// NOTE: name is 32 bytes
+static void
+    get_user_name(const uid_t uid, char* name)
+{
+	size_t   bufsize;
+	long int rc = sysconf(_SC_GETPW_R_SIZE_MAX);
+	if (rc == -1) {
+		// That's the usual value on Linux
+		bufsize = 1024U;
+	} else {
+		bufsize = (size_t) rc;
+	}
+	char* buf = alloca(bufsize);
+
+	struct passwd  pwd;
+	struct passwd* result;
+	int            s = getpwuid_r(uid, &pwd, buf, bufsize, &result);
+	if (result == NULL) {
+		if (s == 0) {
+			// Not found, use the UID...
+			snprintf(name, 32, "%ld", (long) uid);
+		} else {
+			errno = s;
+			PFLOG(LOG_WARNING, "getpwnam_r: %m");
+			str5cpy(name, 32, "<!>", 32, TRUNC);
+		}
+	} else {
+		str5cpy(name, 32, pwd.pw_name, 32, TRUNC);
+	}
+}
+
+// Do the getgrgid_r dance and then just store the name
+// NOTE: name is 32 bytes
+static void
+    get_group_name(const gid_t gid, char* name)
+{
+	size_t   bufsize;
+	long int rc = sysconf(_SC_GETGR_R_SIZE_MAX);
+	if (rc == -1) {
+		// That's the usual value on Linux
+		bufsize = 1024U;
+	} else {
+		bufsize = (size_t) rc;
+	}
+	char* buf = alloca(bufsize);
+
+	struct group  grp;
+	struct group* result;
+	int           s = getgrgid_r(gid, &grp, buf, bufsize, &result);
+	if (result == NULL) {
+		if (s == 0) {
+			// Not found, use the GID...
+			snprintf(name, 32, "%ld", (long) gid);
+		} else {
+			errno = s;
+			PFLOG(LOG_WARNING, "getgrgid_r: %m");
+			str5cpy(name, 32, "<!>", 32, TRUNC);
+		}
+	} else {
+		str5cpy(name, 32, grp.gr_name, 32, TRUNC);
+	}
+}
+
+// Handle a connection attempt on socket 'conn_fd'.
+static void
+    handle_connection(int conn_fd)
+{
+	// Much like handle_events, we need to ensure fb state is consistent...
+	pthread_mutex_lock(&ptlock);
+	// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+	fbink_reinit(FBFD_AUTO, &fbinkConfig);
+	pthread_mutex_unlock(&ptlock);
+
+	int data_fd = -1;
+	// NOTE: The data fd doesn't inherit the connection socket's flags on Linux.
+	do {
+		data_fd = accept(conn_fd, NULL, NULL);
+	} while (data_fd == -1 && errno == EINTR);
+	if (data_fd == -1) {
+		if (errno == EAGAIN || errno == ECONNABORTED) {
+			// Return early, and let the socket polling trigger a retry or wait for the next connection.
+			// NOTE: That seems to be the right call for ECONNABORTED, too.
+			//       c.f., Go's Accept() wrapper in src/internal/poll/fd_unix.go
+			return;
+		}
+		PFLOG(LOG_ERR, "Aborting: accept: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] accept failed ?!", &fbinkConfig);
+		exit(EXIT_FAILURE);
+	}
+	// We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
+	// NOTE: We have to do that manually, because despite what the man page says, accept4 isn't implemented on Mk. 5 kernels
+	int fdflags = fcntl(data_fd, F_GETFD, 0);
+	if (fdflags == -1) {
+		PFLOG(LOG_WARNING, "getfd fcntl: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		goto cleanup;
+	}
+	if (fcntl(data_fd, F_SETFD, fdflags | FD_CLOEXEC) == -1) {
+		PFLOG(LOG_WARNING, "setfd fcntl: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		goto cleanup;
+	}
+	int flflags = fcntl(data_fd, F_GETFL, 0);
+	if (flflags == -1) {
+		PFLOG(LOG_WARNING, "getfl fcntl: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		goto cleanup;
+	}
+	if (fcntl(data_fd, F_SETFL, flflags | O_NONBLOCK) == -1) {
+		PFLOG(LOG_WARNING, "setfl fcntl: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		goto cleanup;
+	}
+
+	// We'll want to log some information about the client
+	// c.f., https://github.com/troydhanson/network/tree/master/unixdomain/03.pass-pid
+	struct ucred ucred;
+	socklen_t    len = sizeof(ucred);
+	if (getsockopt(data_fd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) == -1) {
+		PFLOG(LOG_WARNING, "getsockopt: %m");
+		fbink_print(FBFD_AUTO, "[KFMon] getsockopt failed ?!", &fbinkConfig);
+		goto cleanup;
+	}
+	// Pull the command name from procfs
+	// NOTE: comm is 16 bytes on Linux
+	char pname[16] = { 0 };
+	get_process_name(ucred.pid, pname);
+	// Lookup UID & GID
+	// NOTE: Both fields are 32 bytes on Linux
+	char uname[32] = { 0 };
+	get_user_name(ucred.uid, uname);
+	char gname[32] = { 0 };
+	get_group_name(ucred.gid, gname);
+
+	// And now we have fancy logging :)
+	LOG(LOG_INFO,
+	    "Handling incoming IPC connection from PID %ld (%s) by user %s:%s",
+	    (long) ucred.pid,
+	    pname,
+	    uname,
+	    gname);
+
+	struct pollfd pfd = { 0 };
+	// Data socket
+	pfd.fd     = data_fd;
+	pfd.events = POLLIN;
+
+	// Wait for data, for a few 15s windows, in order to drop inactive connections after a while
+	size_t retry = 0U;
+	while (1) {
+		int poll_num = poll(&pfd, 1, 15 * 1000);
+		if (poll_num == -1) {
+			if (errno == EINTR) {
+				continue;
+			}
+			PFLOG(LOG_WARNING, "poll: %m");
+			fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
+			goto early_close;
+		}
+
+		if (poll_num > 0) {
+			// Don't even *try* to deal with a connection that was closed by the client,
+			// as we wouldn't be able to reply to it in handle_ipc (NOSIGNAL send on closed socket -> EPIPE),
+			// just close it on our end, too, and move on.
+			// NOTE: Said client should already have reported a timeout waiting for our reply,
+			//       so we don't even try to drain its command, and just forget about it.
+			//       On the upside, that prevents said command from being triggered after a random delay.
+			if (pfd.revents & POLLHUP) {
+				PFLOG(LOG_NOTICE, "Client closed the IPC connection");
+				goto early_close;
+			}
+
+			// There's data to be read!
+			if (pfd.revents & POLLIN) {
+				if (handle_ipc(data_fd)) {
+					// We've successfully handled all input data, we're done!
+					break;
+				}
+			}
+		}
+
+		if (poll_num == 0) {
+			// Timed out, increase the retry counter
+			retry++;
+		}
+
+		// Drop the axe after 60s.
+		if (retry >= 4) {
+			LOG(LOG_NOTICE, "Dropping inactive IPC connection");
+			goto early_close;
+		}
+	}
+
+early_close:
+	// We're done, close the data connection
+	LOG(LOG_INFO, "Closing IPC connection from PID %ld (%s) by user %s:%s", (long) ucred.pid, pname, uname, gname);
+
+cleanup:
+	close(data_fd);
 }
 
 // Handle SQLite logging on error
@@ -2168,14 +2758,12 @@ static void
 int
     main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
-	int           fd;
-	int           poll_num;
-	struct pollfd pfd;
+	int fd = -1;
 
 	// Make sure we're running at a neutral niceness
 	// (e.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
-		LOG(LOG_ERR, "Aborting: setpriority: %m");
+		PFLOG(LOG_ERR, "Aborting: setpriority: %m");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2211,7 +2799,7 @@ int
 				close(fd);
 			}
 		} else {
-			LOG(LOG_ERR, "Failed to redirect stderr to /dev/null (open: %m), aborting!");
+			PFLOG(LOG_ERR, "Failed to redirect stderr to /dev/null (open: %m), aborting!");
 			exit(EXIT_FAILURE);
 		}
 
@@ -2241,6 +2829,34 @@ int
 		exit(EXIT_FAILURE);
 	}
 
+	// Setup the IPC socket
+	int conn_fd = -1;
+	// NOTE: We want it non-blocking because we handle incoming connections via poll,
+	//       and CLOEXEC not to pollute our spawns.
+	if ((conn_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
+		PFLOG(LOG_ERR, "Failed to create IPC socket (socket: %m), aborting!");
+		exit(EXIT_FAILURE);
+	}
+
+	struct sockaddr_un sock_name = { 0 };
+	sock_name.sun_family         = AF_UNIX;
+	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
+
+	// Although we should never trip an existing socket, unlink it first, just to be safe
+	unlink(KFMON_IPC_SOCKET);
+	if (bind(conn_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1) {
+		PFLOG(LOG_ERR, "Failed to bind IPC socket (bind: %m), aborting!");
+		exit(EXIT_FAILURE);
+	}
+
+	// NOTE: We only accept a single client, as we can only serve 'em one by one anyway.
+	//       Be aware that, in practice, the kernel will round that up, which means that you can successfully connect,
+	//       send a request, but only get a reply whenever we actually get to it...
+	if (listen(conn_fd, 1) == -1) {
+		PFLOG(LOG_ERR, "Failed to listen to IPC socket (listen: %m), aborting!");
+		exit(EXIT_FAILURE);
+	}
+
 	// NOTE: Because of course we can't have nice things, at this point,
 	//       Nickel hasn't finished setting up the fb to its liking. To be fair, it hasn't even started yet ;).
 	//       On most devices, the fb is probably in a weird rotation and/or bitdepth at this point.
@@ -2264,6 +2880,13 @@ int
 	while (1) {
 		LOG(LOG_INFO, "Beginning the main loop.");
 
+		// Here, on subsequent iterations, we might be printing stuff *before* handle_events or handle_connection,
+		// (mainly in error-ish codepaths), so we need to check the fb state right now, too...
+		pthread_mutex_lock(&ptlock);
+		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
+		fbink_reinit(FBFD_AUTO, &fbinkConfig);
+		pthread_mutex_unlock(&ptlock);
+
 		// Make sure our target partition is mounted
 		if (!is_target_mounted()) {
 			LOG(LOG_INFO, "%s isn't mounted, waiting for it to be . . .", KFMON_TARGET_MOUNTPOINT);
@@ -2285,7 +2908,7 @@ int
 		LOG(LOG_INFO, "Initializing inotify.");
 		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
-			LOG(LOG_ERR, "Aborting: inotify_init1: %m");
+			PFLOG(LOG_ERR, "Aborting: inotify_init1: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbinkConfig);
 			exit(EXIT_FAILURE);
 		}
@@ -2316,7 +2939,7 @@ int
 			watchConfig[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watchConfig[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watchConfig[watch_idx].inotify_wd == -1) {
-				LOG(LOG_WARNING, "inotify_add_watch: %m");
+				PFLOG(LOG_WARNING, "inotify_add_watch: %m");
 				LOG(LOG_WARNING, "Cannot watch '%s', discarding it!", watchConfig[watch_idx].filename);
 				fbink_printf(FBFD_AUTO,
 					     NULL,
@@ -2353,31 +2976,41 @@ int
 			}
 		}
 
+		struct pollfd pfds[2] = { 0 };
+		nfds_t        nfds    = 2;
 		// Inotify input
-		pfd.fd     = fd;
-		pfd.events = POLLIN;
+		pfds[0].fd     = fd;
+		pfds[0].events = POLLIN;
+		// Connection socket
+		pfds[1].fd     = conn_fd;
+		pfds[1].events = POLLIN;
 
 		// Wait for events
 		LOG(LOG_INFO, "Listening for events.");
 		while (1) {
-			poll_num = poll(&pfd, 1, -1);
+			int poll_num = poll(pfds, nfds, -1);
 			if (poll_num == -1) {
 				if (errno == EINTR) {
 					continue;
 				}
-				LOG(LOG_ERR, "Aborting: poll: %m");
+				PFLOG(LOG_ERR, "Aborting: poll: %m");
 				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
 				exit(EXIT_FAILURE);
 			}
 
 			if (poll_num > 0) {
-				if (pfd.revents & POLLIN) {
+				if (pfds[0].revents & POLLIN) {
 					// Inotify events are available
 					if (handle_events(fd)) {
 						// Go back to the main loop if we exited early (because a watch was
 						// destroyed automatically after an unmount or an unlink, for instance)
 						break;
 					}
+				}
+
+				if (pfds[1].revents & POLLIN) {
+					// There was a new connection attempt
+					handle_connection(conn_fd);
 				}
 			}
 		}
@@ -2387,6 +3020,9 @@ int
 		close(fd);
 	}
 
+	// Close the IPC connection socket. Unreachable.
+	close(conn_fd);
+	unlink(KFMON_IPC_SOCKET);
 	// Release SQLite resources. Also unreachable ;p.
 	sqlite3_shutdown();
 	// Why, yes, this is unreachable! Good thing it's also optional ;).

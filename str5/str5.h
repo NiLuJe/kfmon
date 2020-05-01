@@ -1,7 +1,7 @@
 /*	@(#)	str5.h	*/
 /*
  *	v 2.0, 2016/05, Eric Sanchis <eric.sanchis@iut-rodez.fr>
- *	GNU LGPL
+ *	SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 #ifndef _STR5_H
@@ -10,16 +10,16 @@
 
 #include <string.h>
 
-#define TRUNC 0   /* truncation allowed */
+#define TRUNC   0 /* truncation allowed */
 #define NOTRUNC 1 /* truncation not allowed */
 
 #define OKNOTRUNC 0 /* copy/concatenation performed without truncation */
-#define OKTRUNC 1   /* copy/concatenation performed with truncation */
+#define OKTRUNC   1 /* copy/concatenation performed with truncation */
 
 #define EDSTPAR -1 /* Error : bad dst parameters */
 #define ESRCPAR -2 /* Error : bad src parameters */
 #define EMODPAR -3 /* Error : bad mode parameter */
-#define ETRUNC -4  /* Error : not enough space to copy/concatenate and truncation not allowed */
+#define ETRUNC  -4 /* Error : not enough space to copy/concatenate and truncation not allowed */
 
 int str5cpy(char* restrict dst, size_t dstsize, const char* restrict src, size_t nb, size_t mode);
 
