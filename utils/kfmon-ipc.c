@@ -27,6 +27,7 @@
 #endif
 
 #include "../openssh/atomicio.h"
+#include "../str5/str5.h"
 #include <errno.h>
 #include <linux/limits.h>
 #include <stdbool.h>
@@ -164,7 +165,7 @@ int
 
 	struct sockaddr_un sock_name = { 0 };
 	sock_name.sun_family         = AF_UNIX;
-	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
+	str5cpy(sock_name.sun_path, sizeof(sock_name.sun_path), KFMON_IPC_SOCKET, sizeof(sock_name.sun_path), TRUNC);
 
 	// Connect to IPC socket, retrying safely on EINTR (c.f., http://www.madore.org/~david/computers/connect-intr.html)
 	while (connect(data_fd, (const struct sockaddr*) &sock_name, sizeof(sock_name)) == -1 && errno != EISCONN) {

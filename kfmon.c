@@ -2839,7 +2839,7 @@ int
 
 	struct sockaddr_un sock_name = { 0 };
 	sock_name.sun_family         = AF_UNIX;
-	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
+	str5cpy(sock_name.sun_path, sizeof(sock_name.sun_path), KFMON_IPC_SOCKET, sizeof(sock_name.sun_path), TRUNC);
 
 	// Although we should never trip an existing socket, unlink it first, just to be safe
 	unlink(KFMON_IPC_SOCKET);
