@@ -185,8 +185,8 @@ shim: | outdir
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/shim$(BINEXT) utils/shim.c
 	$(STRIP) --strip-unneeded $(OUT_DIR)/shim
 
-kfmon-ipc: | outdir $(SSH_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/kfmon-ipc$(BINEXT) utils/kfmon-ipc.c $(SSH_OBJS)
+kfmon-ipc: | outdir $(STR5_OBJS) $(SSH_OBJS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/kfmon-ipc$(BINEXT) utils/kfmon-ipc.c $(STR5_OBJS) $(SSH_OBJS)
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon-ipc
 
 strip: all
