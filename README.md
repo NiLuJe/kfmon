@@ -168,7 +168,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
     Note that the "[One Click Packages](#one-click-packages)" [installers](https://github.com/NiLuJe/kfmon/blob/43f43c0d2570bab87d3e0736d297cb699c326178/tools/install.sh#L85-L97) take care of handling that setting automatically ;).
     
 -   KFMon 1.4.0 introduced an IPC mechanism, allowing interaction (be it listing available actions, or triggering them) with KFMon from the outside world (be it scripts or even a GUI frontend).  
-    Communication is done over an Unix socket, see [kfmon_ipc.c](/utils/kfmon-ipc.c) for a basic C implementation, which ships with every KFMon installation.  
+    Communication is done over a Unix socket, see [kfmon_ipc.c](/utils/kfmon-ipc.c) for a basic C implementation, which ships with every KFMon installation.  
     Just run `kfmon-ipc` in a shell, or use it as part of a shell pipeline, e.g., `echo "list" | kfmon-ipc 2>/dev/null`. KFMon will reply with usage information if you send an invalid or malformed command.
 
 <!-- kate: indent-mode cstyle; indent-width 4; replace-tabs on; remove-trailing-spaces none; -->

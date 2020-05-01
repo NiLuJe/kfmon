@@ -49,6 +49,7 @@ ssize_t
 	}
 
 	while (1) {
+		// Flawfinder: ignore
 		ssize_t nr = read(fd, buf, len);
 		if (nr < 0) {
 			if (errno == EINTR) {
@@ -108,6 +109,7 @@ ssize_t
 	char*  s   = buf;
 	size_t pos = 0U;
 	while (len > pos) {
+		// Flawfinder: ignore
 		ssize_t nr = read(fd, s + pos, len - pos);
 		switch (nr) {
 			case -1:

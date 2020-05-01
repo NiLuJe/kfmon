@@ -2225,7 +2225,7 @@ static bool
 	}
 
 	// In the event len == sizeof(buf), truncate to ensure buf is NUL-terminated before we start playing with it.
-	// Otherwise, we zero init buf, so we're sure to end up with a NUL-terminated ASAP string.
+	// Otherwise, we zero init buf, so we're sure to end up with a string that was NUL-terminated ASAP.
 	buf[sizeof(buf) - 1] = '\0';
 
 	// Handle the supported commands
@@ -2758,8 +2758,6 @@ static void
 int
     main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
-	int fd = -1;
-
 	// Make sure we're running at a neutral niceness
 	// (e.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
@@ -2792,6 +2790,7 @@ int
 	// Squish stderr if we want to log to the syslog...
 	// (can't do that w/ the rest in daemonize, since we don't have our config yet at that point)
 	if (daemonConfig.use_syslog) {
+		int fd;
 		// Redirect stderr (which is now actually our log file) to /dev/null
 		if ((fd = open("/dev/null", O_RDWR)) != -1) {
 			dup2(fd, fileno(stderr));
@@ -2840,7 +2839,7 @@ int
 
 	struct sockaddr_un sock_name = { 0 };
 	sock_name.sun_family         = AF_UNIX;
-	strncpy(sock_name.sun_path, KFMON_IPC_SOCKET, sizeof(sock_name.sun_path) - 1);
+	str5cpy(sock_name.sun_path, sizeof(sock_name.sun_path), KFMON_IPC_SOCKET, sizeof(sock_name.sun_path), TRUNC);
 
 	// Although we should never trip an existing socket, unlink it first, just to be safe
 	unlink(KFMON_IPC_SOCKET);
@@ -2906,7 +2905,7 @@ int
 
 		// Create the file descriptor for accessing the inotify API
 		LOG(LOG_INFO, "Initializing inotify.");
-		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+		int fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
 			PFLOG(LOG_ERR, "Aborting: inotify_init1: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbinkConfig);
