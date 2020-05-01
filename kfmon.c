@@ -2758,8 +2758,6 @@ static void
 int
     main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
-	int fd = -1;
-
 	// Make sure we're running at a neutral niceness
 	// (e.g., being launched via udev would leave us with a negative nice value).
 	if (setpriority(PRIO_PROCESS, 0, 0) == -1) {
@@ -2792,6 +2790,7 @@ int
 	// Squish stderr if we want to log to the syslog...
 	// (can't do that w/ the rest in daemonize, since we don't have our config yet at that point)
 	if (daemonConfig.use_syslog) {
+		int fd;
 		// Redirect stderr (which is now actually our log file) to /dev/null
 		if ((fd = open("/dev/null", O_RDWR)) != -1) {
 			dup2(fd, fileno(stderr));
@@ -2906,7 +2905,7 @@ int
 
 		// Create the file descriptor for accessing the inotify API
 		LOG(LOG_INFO, "Initializing inotify.");
-		fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+		int fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
 			PFLOG(LOG_ERR, "Aborting: inotify_init1: %m");
 			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbinkConfig);
