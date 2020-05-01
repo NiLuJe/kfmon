@@ -2225,7 +2225,7 @@ static bool
 	}
 
 	// In the event len == sizeof(buf), truncate to ensure buf is NUL-terminated before we start playing with it.
-	// Otherwise, we zero init buf, so we're sure to end up with a NUL-terminated ASAP string.
+	// Otherwise, we zero init buf, so we're sure to end up with a string that was NUL-terminated ASAP.
 	buf[sizeof(buf) - 1] = '\0';
 
 	// Handle the supported commands
