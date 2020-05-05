@@ -228,7 +228,7 @@ static void
 			// NOTE: We have to hide this behind a slightly crappy check, because this runs during load_config,
 			//       at which point FBInk is not yet initialized...
 			if (fbinkConfig.row != 0) {
-				fbink_print(FBFD_AUTO, "[KFMon] Userstore unavailable, aborting!", &fbinkConfig);
+				fbink_print(FBFD_AUTO, "[KFMon] Internal storage unavailable, bye!", &fbinkConfig);
 			}
 			exit(EXIT_FAILURE);
 		}
