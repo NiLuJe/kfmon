@@ -2950,7 +2950,7 @@ int
 					// Only account for ENOENT, though ;) (i.e., filename is gone).
 					LOG(LOG_NOTICE,
 					    "Setup an IPC-only watch for '%s' @ index %hhu.",
-					    watchConfig[watch_idx].filename,
+					    basename(watchConfig[watch_idx].filename),
 					    watch_idx);
 				} else {
 					PFLOG(LOG_WARNING, "inotify_add_watch: %m");
