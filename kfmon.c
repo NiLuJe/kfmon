@@ -1057,6 +1057,10 @@ static int
 									    basename(watchConfig[watch_idx].filename),
 									    basename(watchConfig[watch_idx].action),
 									    p->fts_name);
+
+									// Don't forget to flag it as a keeper...
+									new_watch_list[new_watch_count++] =
+									    (int8_t) watch_idx;
 								} else {
 									// Validate what was parsed, and merge it if it's sane!
 									if (validate_and_merge_watch_config(&cur_watch,
