@@ -170,5 +170,9 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 -   KFMon 1.4.0 introduced an IPC mechanism, allowing interaction (be it listing available actions, or triggering them) with KFMon from the outside world (be it scripts or even a GUI frontend).  
     Communication is done over a Unix socket, see [kfmon_ipc.c](/utils/kfmon-ipc.c) for a basic C implementation, which ships with every KFMon installation.  
     Just run `kfmon-ipc` in a shell, or use it as part of a shell pipeline, e.g., `echo "list" | kfmon-ipc 2>/dev/null`. KFMon will reply with usage information if you send an invalid or malformed command.
+    
+-   For proper IPC behavior, the basename of *every* watch filename key should be *unique*. KFMon already makes sur the canonical paths are.
+
+-   Since v1.4.1, you can now make a config IPC-only by deleting the trigger image (i.e., what *filename* points to). The actual *filename* entry in the config still *has to* exist, and be unique, though.
 
 <!-- kate: indent-mode cstyle; indent-width 4; replace-tabs on; remove-trailing-spaces none; -->
