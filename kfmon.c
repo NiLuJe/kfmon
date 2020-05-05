@@ -492,7 +492,8 @@ static bool
 	} else {
 		// Make sure we're not trying to set multiple watches on the same file...
 		// (because that would only actually register the first one parsed).
-		uint8_t matches = 0U;
+		uint8_t matches  = 0U;
+		uint8_t bmatches = 0U;
 		for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 			// Only relevant for active watches
 			if (!watchConfig[watch_idx].is_active) {
@@ -502,10 +503,21 @@ static bool
 			if (strcmp(pconfig->filename, watchConfig[watch_idx].filename) == 0) {
 				matches++;
 			}
+
+			// Check the basename, too, for IPC...
+			if (strcmp(basename(pconfig->filename), basename(watchConfig[watch_idx].filename)) == 0) {
+				bmatches++;
+			}
 		}
 		// As we're not yet flagged active, we won't loop over ourselves ;).
 		if (matches >= 1U) {
 			LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
+			sane = false;
+		}
+		if (bmatches >= 1U) {
+			LOG(LOG_WARNING,
+			    "Tried to setup multiple watches on files with an identical basename: '%s'!",
+			    basename(pconfig->filename));
 			sane = false;
 		}
 	}
@@ -552,7 +564,8 @@ static bool
 		if (strcmp(pconfig->filename, watchConfig[target_idx].filename) != 0) {
 			// Make sure we're not trying to set multiple watches on the same file...
 			// (because that would only actually register the first one parsed).
-			uint8_t matches = 0U;
+			uint8_t matches  = 0U;
+			uint8_t bmatches = 0U;
 			for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 				// Only relevant for active watches
 				if (!watchConfig[watch_idx].is_active) {
@@ -567,12 +580,24 @@ static bool
 				if (strcmp(pconfig->filename, watchConfig[watch_idx].filename) == 0) {
 					matches++;
 				}
+
+				// Check basename, too, for IPC...
+				if (strcmp(basename(pconfig->filename), basename(watchConfig[watch_idx].filename)) == 0) {
+					bmatches++;
+				}
 			}
 			// We explicitly make sure not to loop over ourselves ;).
 			if (matches >= 1U) {
 				LOG(LOG_WARNING, "Tried to setup multiple watches on file '%s'!", pconfig->filename);
 				sane = false;
-			} else {
+			}
+			if (bmatches >= 1U) {
+				LOG(LOG_WARNING,
+				    "Tried to setup multiple watches on files with an identical basename: '%s'!",
+				    basename(pconfig->filename));
+				sane = false;
+			}
+			if (sane) {
 				// Filename changed, and it was updated to something sane, update our target watch!
 				// NOTE: Forgo error checking, as this has already gone through an input validation pass.
 				str5cpy(
