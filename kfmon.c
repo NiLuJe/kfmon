@@ -2942,34 +2942,49 @@ int
 			watchConfig[watch_idx].inotify_wd =
 			    inotify_add_watch(fd, watchConfig[watch_idx].filename, IN_OPEN | IN_CLOSE);
 			if (watchConfig[watch_idx].inotify_wd == -1) {
-				PFLOG(LOG_WARNING, "inotify_add_watch: %m");
-				LOG(LOG_WARNING, "Cannot watch '%s', discarding it!", watchConfig[watch_idx].filename);
-				fbink_printf(FBFD_AUTO,
-					     NULL,
-					     &fbinkConfig,
-					     "[KFMon] Failed to watch %s!",
-					     basename(watchConfig[watch_idx].filename));
-				// NOTE: We used to abort entirely in case even one target file couldn't be watched,
-				//       but that was a bit harsh ;).
-				//       Since the inotify watch couldn't be setup,
-				//       there's no way for this to cause trouble down the road,
-				//       and this allows the user to fix it during an USBMS session instead of having to reboot.
-
-				// If that watch isn't currently running, clear it entirely!
-				pthread_mutex_lock(&ptlock);
-				bool is_watch_spawned = is_watch_already_spawned(watch_idx);
-				pthread_mutex_unlock(&ptlock);
-				if (is_watch_spawned) {
-					LOG(LOG_WARNING,
-					    "Cannot release watch slot %hhu (%s => %s), as it's currently running!",
-					    watch_idx,
-					    basename(watchConfig[watch_idx].filename),
-					    basename(watchConfig[watch_idx].action));
+				// NOTE: Allow running without an actual inotify watch, keeping the action IPC only...
+				//       We could limit this behavior to !hidden watches, or hide it behind another config flag,
+				//       but it's harmless enough to do it unconditionally ;).
+				//       The watch will be released properly if the *config* file gets removed.
+				if (errno == ENOENT) {
+					// Only account for ENOENT, though ;) (i.e., filename is gone).
+					LOG(LOG_NOTICE,
+					    "Setup an IPC-only watch for '%s' @ index %hhu.",
+					    watchConfig[watch_idx].filename,
+					    watch_idx);
 				} else {
-					watchConfig[watch_idx] = (const WatchConfig){ 0 };
-					// NOTE: This should essentially come down to:
-					//memset(&watchConfig[watch_idx], 0, sizeof(WatchConfig));
-					LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
+					PFLOG(LOG_WARNING, "inotify_add_watch: %m");
+					LOG(LOG_WARNING,
+					    "Cannot watch '%s', discarding it!",
+					    watchConfig[watch_idx].filename);
+					fbink_printf(FBFD_AUTO,
+						     NULL,
+						     &fbinkConfig,
+						     "[KFMon] Failed to watch %s!",
+						     basename(watchConfig[watch_idx].filename));
+					// NOTE: We used to abort entirely in case even one target file couldn't be watched,
+					//       but that was a bit harsh ;).
+					//       Since the inotify watch couldn't be setup,
+					//       there's no way for this to cause trouble down the road,
+					//       and this allows the user to fix it during an USBMS session,
+					//       instead of having to reboot.
+
+					// If that watch isn't currently running, clear it entirely!
+					pthread_mutex_lock(&ptlock);
+					bool is_watch_spawned = is_watch_already_spawned(watch_idx);
+					pthread_mutex_unlock(&ptlock);
+					if (is_watch_spawned) {
+						LOG(LOG_WARNING,
+						    "Cannot release watch slot %hhu (%s => %s), as it's currently running!",
+						    watch_idx,
+						    basename(watchConfig[watch_idx].filename),
+						    basename(watchConfig[watch_idx].action));
+					} else {
+						watchConfig[watch_idx] = (const WatchConfig){ 0 };
+						// NOTE: This should essentially come down to:
+						//memset(&watchConfig[watch_idx], 0, sizeof(WatchConfig));
+						LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
+					}
 				}
 			} else {
 				LOG(LOG_NOTICE,
