@@ -283,7 +283,7 @@ static int
 		return -EINVAL;
 	}
 
-	// Make sure there isn't a loss of precision on this arch when casting explictly
+	// Make sure there isn't a loss of precision on this arch when casting explicitly
 	if ((unsigned short int) val != val) {
 		LOG(LOG_WARNING, "Loss of precision when casting value '%lu' to an unsigned short int.", val);
 		return -EINVAL;
@@ -1554,7 +1554,7 @@ static void
     init_fbink_config(void)
 {
 	// NOTE: The struct is zero-initialized, so we only tweak what's non-default
-	//       (the defaults are explictly designed to always be 0 for this very purpose).
+	//       (the defaults are explicitly designed to always be 0 for this very purpose).
 	fbinkConfig.row         = -5;
 	fbinkConfig.is_centered = true;
 	fbinkConfig.is_padded   = true;
@@ -2174,7 +2174,7 @@ static bool
 			}
 		}
 
-		// If we caught an unmount, explain why we don't explictly have to tear down our watches
+		// If we caught an unmount, explain why we don't explicitly have to tear down our watches
 		if (was_unmounted) {
 			LOG(LOG_INFO, "Unmount detected, nothing to do, all watches will naturally get destroyed.");
 		}
