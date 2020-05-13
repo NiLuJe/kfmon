@@ -48,6 +48,24 @@ if kfmon_package is None:
 # We'll be doing as much as possible through the GitHub API, possibly authenticated
 gh = Github(os.getenv("GH_API_ACCESS_TOK"))
 
+# Get the latest NickelMenu release
+print("* Looking for the latest NickelMenu release . . .")
+nickelmenu = gh.get_repo("geek1011/NickelMenu")
+latest_nickelmenu = nickelmenu.get_latest_release()
+nickelmenu_version = latest_nickelmenu.tag_name
+nickelmenu_url = None
+print("Looking at NickelMenu {} ...".format(nickelmenu_version))
+# Loop over assets until we find the KoboRoot tarball ;)
+for asset in latest_nickelmenu.get_assets():
+	if asset.name == "KoboRoot.tgz":
+		nickelmenu_url = asset.browser_download_url
+		break
+
+if nickelmenu_url is None:
+	raise SystemExit("Couldn't find the latest NickelMenu package!")
+latest_nickelmenu = None
+nickelmenu = None
+
 # Get the latest Plato release
 print("* Looking for the latest Plato release . . .")
 plato = gh.get_repo("baskerville/plato")
@@ -139,7 +157,7 @@ koreader_nightly_url = "{}{}/koreader-kobo-{}.zip".format(koreader_nightly_url, 
 koreader_nightly_version = koreader_nightly_version.split("-g")[0]
 
 # Recap what we found
-print("\nKOReader Release {}:\n{}\nKOReader Nightly {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(koreader_version, koreader_url, koreader_nightly_version, koreader_nightly_url, plato_version, plato_main_url, plato_scripts_url))
+print("\nNickelMenu: {}\n{}\n\nKOReader Release {}:\n{}\nKOReader Nightly {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(nickelmenu_version, nickelmenu_url, koreader_version, koreader_url, koreader_nightly_version, koreader_nightly_url, plato_version, plato_main_url, plato_scripts_url))
 gh = None
 
 # Do we want to use KOReader stable or nightly?
@@ -153,6 +171,42 @@ if len(sys.argv) > 1:
 tmpdir = Path(gettempdir())
 t = Path(tmpdir / "KFMon")
 t.mkdir(parents=True, exist_ok=True)
+
+# Start with NickelMenu, because we'll merge it into KFMon's KoboRoot
+print("* Downloading NickelMenu")
+nm = Path(t / "NickelMenu")
+nm.mkdir(parents=True, exist_ok=True)
+nm_main = Path(nm / "NickelMenu.tgz")
+with requests.get(nickelmenu_url, stream=True) as r:
+	if r.status_code != 200:
+		raise SystemExit("Couldn't download the latest NickelMenu release!")
+	# We'll restore its mtime later...
+	nickelmenu_date = mktime(parsedate(r.headers["Last-Modified"]))
+	clen = int(r.headers.get("Content-Length", 0))
+	wrote = 0
+	with nm_main.open(mode="w+b") as f:
+		with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+			for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
+				written = f.write(data)
+				wrote += written
+				pbar.update(written)
+	if clen != 0 and wrote != clen:
+		raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
+
+# Unpack both KFMon & NM
+print("* Merging NickelMenu with KFMon")
+shutil.unpack_archive(kfmon_package, nm)
+# Merge both KoboRoot tarballs...
+nm_kobo = Path(nm / "KOBOROOT")
+shutil.unpack_archive(nm / ".kobo/KoboRoot.tgz", nm_kobo)
+shutil.unpack_archive(nm_main, nm_kobo)
+merged_koboroot = Path(nm / "KoboRoot")
+shutil.make_archive(merged_koboroot, format="gztar", root_dir=nm_kobo, base_dir=".", owner="root", group="root", logger=logger)
+# Update to the actual filename created by make_archive
+merged_koboroot = merged_koboroot.with_name("KoboRoot.tar.gz")
+
+# Where the NickelMenu config shards live
+nm_cfg = Path("nm")
 
 # Start with Plato
 print("\n* Creating a one-click package for Plato . . .")
@@ -198,6 +252,13 @@ shutil.unpack_archive(kfmon_package, pl)
 # Filter out KOReader config & icons
 Path(pl / ".adds/kfmon/config/koreader.ini").unlink()
 Path(pl / "koreader.png").unlink()
+# Use the KFMon + NM KoboRoot
+shutil.copyfile(merged_koboroot, pl / ".kobo/KoboRoot.tgz")
+# Add the relevant NM configs
+nm_dir = Path(pl / ".adds/nm")
+nm_dir.mkdir(parents=True, exist_ok=True)
+shutil.copy2(nm_cfg / "kfmon", nm_dir / "kfmon")
+shutil.copy2(nm_cfg / "plato", nm_dir / "plato")
 
 # Then stage Plato (start with the scripts, since it'll create the required folders for us)
 shutil.unpack_archive(pl_scripts, pl)
@@ -247,6 +308,13 @@ shutil.unpack_archive(kfmon_package, ko)
 Path(ko / ".adds/kfmon/config/plato.ini").unlink()
 Path(ko / "icons/plato.png").unlink()
 Path(ko / "icons").rmdir()
+# Use the KFMon + NM KoboRoot
+shutil.copyfile(merged_koboroot, ko / ".kobo/KoboRoot.tgz")
+# Add the relevant NM configs
+nm_dir = Path(ko / ".adds/nm")
+nm_dir.mkdir(parents=True, exist_ok=True)
+shutil.copy2(nm_cfg / "kfmon", nm_dir / "kfmon")
+shutil.copy2(nm_cfg / "koreader", nm_dir / "koreader")
 
 # Then stage KOReader
 shutil.unpack_archive(ko_main, ko / ".adds")
@@ -274,6 +342,14 @@ pk = Path(t / "Both")
 # Stage KFMon first
 print("* Staging it . . .")
 shutil.unpack_archive(kfmon_package, pk)
+# Use the KFMon + NM KoboRoot
+shutil.copyfile(merged_koboroot, pk / ".kobo/KoboRoot.tgz")
+# Add the relevant NM configs
+nm_dir = Path(pk / ".adds/nm")
+nm_dir.mkdir(parents=True, exist_ok=True)
+shutil.copy2(nm_cfg / "kfmon", nm_dir / "kfmon")
+shutil.copy2(nm_cfg / "koreader", nm_dir / "koreader")
+shutil.copy2(nm_cfg / "plato", nm_dir / "plato")
 # Then Plato
 shutil.unpack_archive(pl_scripts, pk)
 shutil.unpack_archive(pl_main, pk / ".adds/plato")
@@ -295,6 +371,8 @@ os.utime(pk_zip, times=(kfmon_date, kfmon_date))
 # Cleanup behind us
 shutil.rmtree(pk)
 pk = None
+shutil.rmtree(nm)
+nm = None
 
 # Final cleanup
 ko_main.unlink()
