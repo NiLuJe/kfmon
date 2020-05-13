@@ -1,6 +1,6 @@
 You'll find here links to so called [B]"one-click"[/B] install packages for both [url=https://github.com/koreader/koreader]KOReader[/url] & [url=https://github.com/baskerville/plato]Plato[/url].
 This is primarily aimed at brand new users, with the goal of getting things to work in the most fool-proof manner possible, by simply unpacking a single ZIP archive in the root of your Kobo eReader over USB.
-To make this possible, these packages bundle [url=https://github.com/NiLuJe/kfmon]KFMon[/url].
+To make this possible, these packages bundle [url=https://github.com/NiLuJe/kfmon]KFMon[/url] & [url=https://www.mobileread.com/forums/showthread.php?t=329525]NickelMenu[/url].
 
 For existing users, if you're happy with your current setup, by all means, carry on! ;). Launchers are, by design, mutually exclusive: between fmon & KFMon, only the one installed [i]last[/i] will be active, but where KSM is concerned, KSM will [i]always[/i] take precedence, so this is [b]NOT[/b] designed for KSM users.
 If you're curious as to what this actually [I]does[/I] to original KOreader/Plato packages, the gory details are [url=https://github.com/NiLuJe/kfmon/blob/master/tools/one-click.py]all here[/url]!
@@ -16,7 +16,7 @@ As mentioned earlier, the installation instructions are dead simple:
 [*] [COLOR="Red"][B]NOTE:[/B][/COLOR] On FW >= 4.17, you'll need to [url=https://github.com/NiLuJe/kfmon/blob/812b7dc46eef92772c8a5f756a92a54e1c7f6c37/tools/install.sh#L85-L99]prevent Nickel from scanning *nix hidden folders[/url].
 [*] Eject & unplug your device. The Kobo software should then appear to be processing a book, before restarting to process an update.
    NOTE: If it [I]doesn't[/I] attempt to reboot, that's a sure thing something went wrong in the previous step (hint: see the NOTE).
-[*] Once your device has finished rebooting, you should simply be able to tap on the KOReader or Plato icon in your Home or your Library to launch it!
+[*] Once your device has finished rebooting, you should simply be able to tap on the KOReader or Plato icon in your Home or your Library to launch it, or via the new entries added to the Home's main menu!
 [/LIST]
 
 [B]NOTE:[/B] Something that bears repeating from [url=https://github.com/NiLuJe/kfmon#things-to-watch-out-for]KFMon's FAQ[/url]: a FW update will [i]disable[/i] it, so you'll have to reinstall it after a FW update in order to be able to launch stuff again. You can either use these packages or the standalone [url=https://www.mobileread.com/forums/showthread.php?t=274231]KFMon[/url] package.

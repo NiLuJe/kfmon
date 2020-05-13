@@ -167,7 +167,7 @@ Optionally, you might also want to restore a vanilla version of `/etc/init.d/on-
 -   Since FW 4.17, Nickel *will* index content found in *nix hidden directories by default. Thankfully, this behavior is [configurable](https://www.mobileread.com/forums/showpost.php?p=3892463&postcount=10).  
     Note that the "[One Click Packages](#one-click-packages)" [installers](https://github.com/NiLuJe/kfmon/blob/43f43c0d2570bab87d3e0736d297cb699c326178/tools/install.sh#L85-L97) take care of handling that setting automatically ;).
     
--   KFMon 1.4.0 introduced an IPC mechanism, allowing interaction (be it listing available actions, or triggering them) with KFMon from the outside world (be it scripts or even a GUI frontend).  
+-   KFMon 1.4.0 introduced an IPC mechanism, allowing interaction (be it listing available actions, or triggering them) with KFMon from the outside world (be it scripts or even a GUI frontend, like [NickelMenu](https://www.mobileread.com/forums/showthread.php?t=329525)).  
     Communication is done over a Unix socket, see [kfmon_ipc.c](/utils/kfmon-ipc.c) for a basic C implementation, which ships with every KFMon installation.  
     Just run `kfmon-ipc` in a shell, or use it as part of a shell pipeline, e.g., `echo "list" | kfmon-ipc 2>/dev/null`. KFMon will reply with usage information if you send an invalid or malformed command.
     
