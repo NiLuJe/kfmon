@@ -1,0 +1,6 @@
+# Launch Plato via KFMon
+menu_item : main : Plato : kfmon     : plato.png
+
+# Launch Plato directly via NM
+#menu_item : main : Plato : cmd_spawn : quiet : exec /mnt/onboard/.adds/plato/plato.sh
+

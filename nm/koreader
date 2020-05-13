@@ -1,0 +1,6 @@
+# Launch KOReader via KFMon
+menu_item : main : KOReader : kfmon     : koreader.png
+
+# Launch KOReader directly via NM (>= KOReader 2020.05)
+#menu_item : main : KOReader : cmd_spawn : quiet : exec /mnt/onboard/.adds/koreader/koreader.sh
+
