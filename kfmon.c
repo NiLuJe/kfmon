@@ -2657,7 +2657,10 @@ static void
 		exit(EXIT_FAILURE);
 	}
 	// We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
-	// NOTE: We have to do that manually, because despite what the man page says, accept4 isn't implemented on Mk. 5 kernels
+	// NOTE: We have to do that manually, because it wasn't implemented yet on Mk. 5 kernels...
+	//       (The manpage mentions 2.6.28, but that's the *first* implementation (i.e., on x86).
+	//       On arm, it was only implemented in 2.6.36 (Mk. 5 run on 2.6.35.3)...
+	//       c.f., ports/sysdeps/unix/sysv/linux/arm/kernel-features.h @ glibc).
 	int fdflags = fcntl(data_fd, F_GETFD, 0);
 	if (fdflags == -1) {
 		PFLOG(LOG_WARNING, "getfd fcntl: %m");
