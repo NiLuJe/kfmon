@@ -71,25 +71,15 @@ print("* Looking for the latest Plato release . . .")
 plato = gh.get_repo("baskerville/plato")
 latest_plato = plato.get_latest_release()
 plato_version = latest_plato.tag_name
-# As an added quirk, a release isn't guaranteed to ship a script package, if it doesn't need to.
-# So walk backwards through releases until we find one...
-plato_main_url = None
-plato_scripts_url = None
-for release in plato.get_releases():
-	version = release.tag_name
-	print("Looking at Plato {} ...".format(version))
-	# We want both the main Plato package, as well as the launcher scripts
-	for asset in release.get_assets():
-		if plato_main_url is None and asset.name == "plato-{}.zip".format(version):
-			plato_main_url = asset.browser_download_url
-		if plato_scripts_url is None and asset.name == "plato-launcher-fmon-{}.zip".format(version):
-			plato_scripts_url = asset.browser_download_url
-	# If we've got both packages, we're done!
-	if plato_main_url is not None and plato_scripts_url is not None:
+plato_url = None
+print("Looking at Plato {} ...".format(plato_version))
+for asset in latest_plato.get_assets():
+	if asset.name == "plato-{}.zip".format(plato_version):
+		plato_url = asset.browser_download_url
 		break
 
-if plato_main_url is None and plato_scripts_url is None:
-	raise SystemExit("Couldn't find the latest Plato packages!")
+if plato_url is None:
+	raise SystemExit("Couldn't find the latest Plato package!")
 latest_plato = None
 plato = None
 
@@ -157,7 +147,7 @@ koreader_nightly_url = "{}{}/koreader-kobo-{}.zip".format(koreader_nightly_url, 
 koreader_nightly_version = koreader_nightly_version.split("-g")[0]
 
 # Recap what we found
-print("\nNickelMenu: {}\n{}\n\nKOReader Release {}:\n{}\nKOReader Nightly {}:\n{}\n\nPlato {}:\nMain: {}\nScripts: {}\n".format(nickelmenu_version, nickelmenu_url, koreader_version, koreader_url, koreader_nightly_version, koreader_nightly_url, plato_version, plato_main_url, plato_scripts_url))
+print("\nNickelMenu: {}\n{}\n\nKOReader Release {}:\n{}\nKOReader Nightly {}:\n{}\n\nPlato {}:\n{}\n".format(nickelmenu_version, nickelmenu_url, koreader_version, koreader_url, koreader_nightly_version, koreader_nightly_url, plato_version, plato_url))
 gh = None
 
 # Do we want to use KOReader stable or nightly?
@@ -216,7 +206,7 @@ pl = Path(t / "Plato")
 # Download both packages...
 print("* Downloading original package")
 pl_main = Path(t / "Plato.zip")
-with requests.get(plato_main_url, stream=True) as r:
+with requests.get(plato_url, stream=True) as r:
 	if r.status_code != 200:
 		raise SystemExit("Couldn't download the latest Plato release!")
 	# We'll restore its mtime later...
@@ -224,20 +214,6 @@ with requests.get(plato_main_url, stream=True) as r:
 	clen = int(r.headers.get("Content-Length", 0))
 	wrote = 0
 	with pl_main.open(mode="w+b") as f:
-		with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-			for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
-				written = f.write(data)
-				wrote += written
-				pbar.update(written)
-	if clen != 0 and wrote != clen:
-		raise SystemExit("Wrote {} bytes to disk instead of the {} expected!".format(wrote, clen))
-pl_scripts = Path(t / "Plato-Scripts.zip")
-with requests.get(plato_scripts_url, stream=True) as r:
-	if r.status_code != 200:
-		raise SystemExit("Couldn't download the latest Plato scripts package!")
-	clen = int(r.headers.get("Content-Length", 0))
-	wrote = 0
-	with pl_scripts.open(mode="w+b") as f:
 		with tqdm(total=clen, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
 			for data in r.iter_content(chunk_size=DEFAULT_BUFFER_SIZE):
 				written = f.write(data)
@@ -260,9 +236,10 @@ nm_dir.mkdir(parents=True, exist_ok=True)
 shutil.copy2(nm_cfg / "kfmon", nm_dir / "kfmon")
 shutil.copy2(nm_cfg / "plato", nm_dir / "plato")
 
-# Then stage Plato (start with the scripts, since it'll create the required folders for us)
-shutil.unpack_archive(pl_scripts, pl)
-shutil.unpack_archive(pl_main, pl / ".adds/plato")
+# Then stage Plato
+pl_dir = Path(pl / ".adds/plato")
+pl_dir.mkdir(parents=True, exist_ok=True)
+shutil.unpack_archive(pl_main, pl_dir)
 
 # Finally, zip it up!
 print("* Bundling it . . .")
@@ -351,8 +328,9 @@ shutil.copy2(nm_cfg / "kfmon", nm_dir / "kfmon")
 shutil.copy2(nm_cfg / "koreader", nm_dir / "koreader")
 shutil.copy2(nm_cfg / "plato", nm_dir / "plato")
 # Then Plato
-shutil.unpack_archive(pl_scripts, pk)
-shutil.unpack_archive(pl_main, pk / ".adds/plato")
+pl_dir = Path(pk / ".adds/plato")
+pl_dir.mkdir(parents=True, exist_ok=True)
+shutil.unpack_archive(pl_main, pl_dir)
 # Then KOReader
 shutil.unpack_archive(ko_main, pk / ".adds")
 # Filter out some extraneous stuff
@@ -376,7 +354,6 @@ nm = None
 
 # Final cleanup
 ko_main.unlink()
-pl_scripts.unlink()
 pl_main.unlink()
 
 # Print a recap
