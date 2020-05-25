@@ -1,4 +1,5 @@
 # Launch Plato via KFMon
+# NOTE: .adds/nm/kfmon will generate this automatically
 menu_item : main : Plato : kfmon     : plato.png
 
 # Launch Plato directly via NM

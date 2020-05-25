@@ -1,4 +1,5 @@
 # Launch KOReader via KFMon
+# NOTE: .adds/nm/kfmon will generate this automatically
 menu_item : main : KOReader : kfmon     : koreader.png
 
 # Launch KOReader directly via NM (>= KOReader 2020.05)

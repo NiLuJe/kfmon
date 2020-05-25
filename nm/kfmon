@@ -1,3 +1,3 @@
-# Automagic gui-list via NickelMenu
+# Automatically populate NickelMenu with active KFMon watches
 
-# Pending https://github.com/geek1011/NickelMenu/issues/4
+#generator : main : kfmon
