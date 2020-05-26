@@ -14,7 +14,7 @@ rm -f "/usr/bin/kfmon-ipc"
 
 # NOTE: Delete our own icons & configs, but leave whatever else the user might have created alone.
 #       List based on what the full OCP deploys.
-for my_file in ".adds/kfmon/config/kfmon.ini" ".adds/kfmon/config/kfmon-log.ini" ".adds/kfmon/config/koreader.ini" ".adds/kfmon/config/plato.ini" ".adds/kfmon/bin/kfmon-printlog.sh" ".adds/kfmon/log/kfmon_dump.log" ".adds/nm/kfmon" ".adds/nm/koreader" ".adds/nm/plato" "icons/plato.png" "koreader.png" "kfmon.png" ; do
+for my_file in ".adds/kfmon/config/kfmon.ini" ".adds/kfmon/config/kfmon-log.ini" ".adds/kfmon/config/koreader.ini" ".adds/kfmon/config/plato.ini" ".adds/kfmon/bin/kfmon-printlog.sh" ".adds/kfmon/log/kfmon_dump.log" ".adds/nm/kfmon" ".adds/nm/koreader" ".adds/nm/plato" ".adds/nm/doc" "icons/plato.png" "koreader.png" "kfmon.png" ; do
 	my_file="/mnt/onboard/${my_file}"
 	[ -f "${my_file}" ] && rm -f "${my_file}"
 done
