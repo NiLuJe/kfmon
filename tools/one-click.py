@@ -243,7 +243,7 @@ shutil.unpack_archive(pl_main, pl_dir)
 
 # Finally, zip it up!
 print("* Bundling it . . .")
-pl_basename = "Plato-{}".format(plato_version)
+pl_basename = "OCP-Plato-{}".format(plato_version)
 pl_zip = Path(t / pl_basename)
 shutil.make_archive(pl_zip, format="zip", root_dir=pl, base_dir=".", logger=logger)
 # And restore Plato's original mtime...
@@ -301,7 +301,7 @@ Path(ko / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
 print("* Bundling it . . .")
-ko_basename = "KOReader-{}".format(koreader_version)
+ko_basename = "OCP-KOReader-{}".format(koreader_version)
 ko_zip = Path(t / ko_basename)
 shutil.make_archive(ko_zip, format="zip", root_dir=ko, base_dir=".", logger=logger)
 # And restore KOReader's original mtime...
@@ -339,7 +339,7 @@ Path(pk / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
 print("* Bundling it . . .")
-pk_basename = "Plato-{}_KOReader-{}".format(plato_version, koreader_version)
+pk_basename = "OCP-Plato-{}_KOReader-{}".format(plato_version, koreader_version)
 pk_zip = Path(t / pk_basename)
 shutil.make_archive(pk_zip, format="zip", root_dir=pk, base_dir=".", logger=logger)
 # And restore KFMon's original mtime...

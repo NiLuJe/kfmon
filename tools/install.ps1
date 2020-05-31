@@ -36,7 +36,9 @@ if (-NOT (Test-Path $KOBO_DIR)) {
 }
 
 # Ask the user what they want to install...
-$VALID_GLOBS=@("KOReader-v*.zip", "Plato-*.zip", "KFMon-v*.zip", "KFMon-Uninstaller*.zip")
+# NOTE: Case is a joy on Windows (https://github.com/PowerShell/PowerShell/issues/7578),
+#       so we simply prefix our package names to avoid accepting stock packages here...
+$VALID_GLOBS=@("OCP-KOReader-v*.zip", "OCP-Plato-*.zip", "KFMon-v*.zip", "KFMon-Uninstaller*.zip")
 $AVAILABLE_PKGS=@()
 foreach ($pat in $VALID_GLOBS) {
 	foreach ($file in Get-ChildItem -File -Name $pat) {

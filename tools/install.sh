@@ -80,7 +80,7 @@ recap_failure() {
 
 # Ask the user what they want to install...
 AVAILABLE_PKGS=()
-for file in KOReader-v*.zip Plato-*.zip KFMon-v*.zip KFMon-Uninstaller.zip ; do
+for file in OCP-KOReader-v*.zip OCP-Plato-*.zip KFMon-v*.zip KFMon-Uninstaller.zip ; do
 	[[ -f "${file}" ]] && AVAILABLE_PKGS+=("${file}")
 done
 

@@ -196,13 +196,13 @@ EOF
 
 	# And then the MR thread...
 	case "${file##*/}" in
-		Plato-*_KOReader-v*.zip )
+		OCP-Plato-*_KOReader-v*.zip )
 			mr_file="BOTH"
 		;;
-		KOReader-v*.zip )
+		OCP-KOReader-v*.zip )
 			mr_file="KOREADER"
 		;;
-		Plato-*.zip )
+		OCP-Plato-*.zip )
 			mr_file="PLATO"
 		;;
 		* )
