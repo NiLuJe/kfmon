@@ -1,3 +1,3 @@
 # Automatically populate NickelMenu with active KFMon watches
 
-#generator : main : kfmon
+generator : main : kfmon
