@@ -604,7 +604,7 @@ static bool
 				    watchConfig[target_idx].filename, CFG_SZ_MAX, pconfig->filename, CFG_SZ_MAX, NOTRUNC);
 				updated = true;
 				LOG(LOG_NOTICE,
-				    "Updated filename to %s for watch config @ index %hhu",
+				    "Updated filename to '%s' for watch config @ index %hhu",
 				    watchConfig[target_idx].filename,
 				    target_idx);
 			}
@@ -618,7 +618,7 @@ static bool
 			str5cpy(watchConfig[target_idx].action, CFG_SZ_MAX, pconfig->action, CFG_SZ_MAX, NOTRUNC);
 			updated = true;
 			LOG(LOG_NOTICE,
-			    "Updated action to %s for watch config @ index %hhu",
+			    "Updated action to '%s' for watch config @ index %hhu",
 			    watchConfig[target_idx].action,
 			    target_idx);
 		}
@@ -629,7 +629,7 @@ static bool
 		str5cpy(watchConfig[target_idx].label, CFG_SZ_MAX, pconfig->label, CFG_SZ_MAX, TRUNC);
 		updated = true;
 		LOG(LOG_NOTICE,
-		    "Updated label to %s for watch config @ index %hhu",
+		    "Updated label to '%s' for watch config @ index %hhu",
 		    watchConfig[target_idx].label,
 		    target_idx);
 	}
@@ -684,7 +684,7 @@ static bool
 				str5cpy(watchConfig[target_idx].db_title, DB_SZ_MAX, pconfig->db_title, DB_SZ_MAX, TRUNC);
 				updated = true;
 				LOG(LOG_NOTICE,
-				    "Updated db_title to %s for watch config @ index %hhu",
+				    "Updated db_title to '%s' for watch config @ index %hhu",
 				    watchConfig[target_idx].db_title,
 				    target_idx);
 			}
@@ -698,7 +698,7 @@ static bool
 				    watchConfig[target_idx].db_author, DB_SZ_MAX, pconfig->db_author, DB_SZ_MAX, TRUNC);
 				updated = true;
 				LOG(LOG_NOTICE,
-				    "Updated db_author to %s for watch config @ index %hhu",
+				    "Updated db_author to '%s' for watch config @ index %hhu",
 				    watchConfig[target_idx].db_author,
 				    target_idx);
 			}
@@ -712,7 +712,7 @@ static bool
 				    watchConfig[target_idx].db_comment, DB_SZ_MAX, pconfig->db_comment, DB_SZ_MAX, TRUNC);
 				updated = true;
 				LOG(LOG_NOTICE,
-				    "Updated db_comment to %s for watch config @ index %hhu",
+				    "Updated db_comment to '%s' for watch config @ index %hhu",
 				    watchConfig[target_idx].db_comment,
 				    target_idx);
 			}
