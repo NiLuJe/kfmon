@@ -5,6 +5,8 @@ Alternatively, I've also come up with small scripts to automate the process some
 [*] They'll only behave properly with a *single* Kobo plugged to the computer. Running 'em with *no* Kobo plugged in is safe, running 'em with multiple Kobos may lead to unexpected behavior: it may be handled sanely, but it might not.
 [*] On macOS, this doesn't protect you from some of its stupid [url=https://www.mobileread.com/forums/showpost.php?p=3724649&postcount=96]"Quality of Life"[/url] features. Of particular interest here, Safari and its tendency to do stupid things with ZIP archives. If you don't want to change your Safari settings, you'll have to fish out the original ZIP archive from your Trash.
 [*] Most browsers will treat the Windows script as a text file, so you'll have to [i]Right Click[/i] > [i]Save Link As[/i] [COLOR="Grey"](or [i]Download Linked File[/i] in Safari)[/COLOR] on the link to download it.
+[*] Every OS allows you to eject an USB device safely, without having to unplug it. Always do that. Only unplug it as a last resort.
+[*] Don't download the packages onto the device itself, that's unnecessary, and may actually complicate matters on Linux & macOS.
 [/LIST]
 
 With that out of the way, here's what this is supposed to automate: figuring out where the Kobo is mounted, asking you to confirm what you want to install, and properly unpacking the right archive. This will also automatically prevent Nickel from scanning *nix hidden folders on FW 4.17+.
@@ -21,7 +23,7 @@ Onwards!
    That should look like this:
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168964][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168964&thumb=1[/img][/url]
 [*] Follow the on-screen instructions.
-[*] Eject & unplug your Kobo, watch it process & reboot :).
+[*] Safely eject your Kobo, watch it process & reboot :).
 [/LIST]
 
 [SIZE="4"][b][u][COLOR="RoyalBlue"]macOS:[/COLOR][/u][/b][/SIZE]
@@ -33,7 +35,7 @@ Onwards!
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168975][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168975&thumb=1[/img][/url]
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168977][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168977&thumb=1[/img][/url]
 [*] Follow the on-screen instructions. Close the window when it's done.
-[*] Eject & unplug your Kobo, watch it process & reboot :).
+[*] Safely eject your Kobo, watch it process & reboot :).
 [/LIST]
 
 [SIZE="4"][b][u][COLOR="RoyalBlue"]Linux:[/COLOR][/u][/b][/SIZE]
@@ -44,7 +46,7 @@ Onwards!
    Here's how it looks like on KDE:
 [url=https://www.mobileread.com/forums/attachment.php?attachmentid=168968][img]https://www.mobileread.com/forums/attachment.php?attachmentid=168968&thumb=1[/img][/url]
 [*] Follow the on-screen instructions. Close the window when it's done.
-[*] Eject & unplug your Kobo, watch it process & reboot :).
+[*] Safely eject your Kobo, watch it process & reboot :).
 [/LIST]
 
 And that's it! For reference, here's how the script's output could look like:
