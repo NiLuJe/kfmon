@@ -255,6 +255,7 @@ static int    watch_handler(void*, const char* restrict, const char* restrict, c
 static bool   validate_watch_config(void*);
 static bool   validate_and_merge_watch_config(void*, uint8_t);
 static int8_t get_next_available_watch_entry(void);
+static int    fts_alphasort(const FTSENT**, const FTSENT**);
 static int    load_config(void);
 static int    update_watch_configs(void);
 // Make our config global, because I'm terrible at C.

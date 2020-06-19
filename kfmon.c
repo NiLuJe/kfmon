@@ -742,6 +742,15 @@ static int8_t
 	return -1;
 }
 
+// Mimic scandir's alphasort
+static int
+    fts_alphasort(const FTSENT** a, const FTSENT** b)
+{
+	// NOTE: alphasort actually uses strcoll now, but this is Kobo, locales are broken anyway, so, strcmp is The Way.
+	//	 Or strverscmp is we wanted natural sorting, which we don't really need here ;).
+	return strcmp((*a)->fts_name, (*b)->fts_name);
+}
+
 // Load our config files...
 static int
     load_config(void)
@@ -766,8 +775,8 @@ static int
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	FTS* restrict ftsp;
-	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
-	    NULL) {
+	if ((ftsp = fts_open(
+		 cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, &fts_alphasort)) == NULL) {
 		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
@@ -946,8 +955,8 @@ static int
 
 	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
 	FTS* restrict ftsp;
-	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, NULL)) ==
-	    NULL) {
+	if ((ftsp = fts_open(
+		 cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, &fts_alphasort)) == NULL) {
 		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
