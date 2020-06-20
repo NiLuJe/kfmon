@@ -253,7 +253,7 @@ static int    strtobool(const char* restrict, bool* restrict);
 static int    daemon_handler(void*, const char* restrict, const char* restrict, const char* restrict);
 static int    watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
 static bool   validate_watch_config(void*);
-static bool   validate_and_merge_watch_config(void*, uint8_t);
+static bool   validate_and_merge_watch_config(void*, uint8_t, bool*);
 static int8_t get_next_available_watch_entry(void);
 static int    fts_alphasort(const FTSENT**, const FTSENT**);
 static int    load_config(void);

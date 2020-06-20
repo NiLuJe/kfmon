@@ -549,7 +549,7 @@ static bool
 
 // Validate a watch config, and merge it to its final location if it's sane and updated
 static bool
-    validate_and_merge_watch_config(void* user, uint8_t target_idx)
+    validate_and_merge_watch_config(void* user, uint8_t target_idx, bool* was_updated)
 {
 	WatchConfig* restrict pconfig = (WatchConfig*) user;
 
@@ -725,6 +725,8 @@ static bool
 			     &fbinkConfig,
 			     "[KFMon] Updated the watch on %s",
 			     basename(watchConfig[target_idx].filename));
+		// Notify the caller
+		*was_updated = true;
 	}
 
 	return sane;
@@ -938,7 +940,7 @@ static int
 	return rval;
 }
 
-// Check if watch cofigs have been added/removed/updated...
+// Check if watch configs have been added/removed/updated...
 static int
     update_watch_configs(void)
 {
@@ -974,6 +976,8 @@ static int
 	// NOTE: Init to -1 because 0 is a valid watch index ;).
 	int8_t  new_watch_list[] = { [0 ... WATCH_MAX - 1] = -1 };
 	uint8_t new_watch_count  = 0U;
+	// If there was a meaningful update, we'll update the IPC socket's mtime as a hint to clients that new data is available.
+	bool notify_update = false;
 
 	FTSENT* restrict p;
 	while ((p = fts_read(ftsp)) != NULL) {
@@ -1067,6 +1071,9 @@ static int
 										    "[KFMon] Setup a new watch on %s",
 										    basename(
 											watchConfig[watch_idx].filename));
+
+										// New stuff!
+										notify_update = true;
 									} else {
 										LOG(LOG_WARNING,
 										    "New watch config file '%s' is not valid, it will be discarded!",
@@ -1096,13 +1103,20 @@ static int
 									new_watch_list[new_watch_count++] =
 									    (int8_t) watch_idx;
 								} else {
+									bool was_updated = false;
 									// Validate what was parsed, and merge it if it's sane!
-									if (validate_and_merge_watch_config(&cur_watch,
-													    watch_idx)) {
+									if (validate_and_merge_watch_config(
+										&cur_watch, watch_idx, &was_updated)) {
 										// NOTE: validate_and_merge takes care of both
 										//       logging and updating the watch data
 										new_watch_list[new_watch_count++] =
 										    (int8_t) watch_idx;
+
+										// Updated stuff!
+										if (was_updated) {
+											notify_update = true;
+										}
+
 									} else {
 										LOG(LOG_CRIT,
 										    "Updated watch config file '%s' is not valid, it will be discarded!",
@@ -1123,6 +1137,9 @@ static int
 										LOG(LOG_NOTICE,
 										    "Released watch slot %hhu.",
 										    watch_idx);
+
+										// Less stuff!
+										notify_update = true;
 									}
 								}
 							}
@@ -1169,6 +1186,18 @@ static int
 
 			watchConfig[watch_idx] = (const WatchConfig){ 0 };
 			LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
+
+			// Stale stuff!
+			notify_update = true;
+		}
+	}
+
+	// There were meaningful updates, update the IPC socket's mtime!
+	if (notify_update) {
+		// Leave atime alone, update mtime to now
+		const struct timespec times[2] = { { 0, UTIME_OMIT }, { 0, UTIME_NOW } };
+		if (utimensat(0, KFMON_IPC_SOCKET, times, 0) == -1) {
+			PFLOG(LOG_WARNING, "utimensat: %m");
 		}
 	}
 
