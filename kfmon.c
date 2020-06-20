@@ -201,7 +201,7 @@ static void
     wait_for_target_mountpoint(void)
 {
 	// c.f., https://stackoverflow.com/questions/5070801
-	int           mfd   = open("/proc/mounts", O_RDONLY);
+	int           mfd   = open("/proc/mounts", O_RDONLY | O_CLOEXEC);
 	struct pollfd pfd   = { 0 };
 	pfd.fd              = mfd;
 	pfd.events          = POLLERR | POLLPRI;
@@ -2629,7 +2629,7 @@ static void
 {
 	char procfile[PATH_MAX];
 	snprintf(procfile, sizeof(procfile), "/proc/%ld/comm", (long) pid);
-	FILE* f = fopen(procfile, "r");
+	FILE* f = fopen(procfile, "re");
 	if (f) {
 		size_t size = fread(name, sizeof(*procfile), sizeof(procfile), f);
 		if (size > 0) {
@@ -2964,6 +2964,22 @@ int
 		PFLOG(LOG_ERR, "Failed to listen to IPC socket (listen: %m), aborting!");
 		exit(EXIT_FAILURE);
 	}
+
+	// Now that we're properly up, write a pidfile
+	int pid_fd = -1;
+	if ((pid_fd = open(KFMON_PID_FILE, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666)) == -1) {
+		PFLOG(LOG_ERR, "Failed to open pidfile (open: %m), aborting!");
+		exit(EXIT_FAILURE);
+	}
+	// Inspired by busybox's write_pidfile
+	char pid_buf[sizeof(int) * 3 + 2];
+	int  pid_len = snprintf(pid_buf, sizeof(pid_buf), "%ld\n", (long) getpid());
+	// w/o NUL
+	if (write_in_full(pid_fd, pid_buf, (size_t)(pid_len)) < 0) {
+		PFLOG(LOG_ERR, "Failed to write pidfile (write: %m), aborting!");
+		exit(EXIT_FAILURE);
+	}
+	close(pid_fd);
 
 	// NOTE: Because of course we can't have nice things, at this point,
 	//       Nickel hasn't finished setting up the fb to its liking. To be fair, it hasn't even started yet ;).

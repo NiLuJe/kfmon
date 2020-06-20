@@ -86,6 +86,9 @@ extern const char* sqlite3ErrName(int);
 #	define KFMON_CONFIGPATH "/home/niluje/Kindle/Staging/kfmon"
 #endif
 
+// Path to our pidfile
+#define KFMON_PID_FILE "/var/run/kfmon.pid"
+
 // Path to our IPC Unix socket
 #define KFMON_IPC_SOCKET "/tmp/kfmon-ipc.ctl"
 
