@@ -1,8 +1,54 @@
 #!/bin/sh
 
+# Check if arg is an int
+is_integer()
+{
+	# Cheap trick ;)
+	[ "${1}" -eq "${1}" ] 2>/dev/null
+	return $?
+}
+
 # Launch KFMon if it isn't already running...
+KFMON_PID_FILE="/var/run/kfmon.pid"
+KFMON_PID=""
+SHOULD_START_KFMON="maybe"
 KFMON_LOG="/usr/local/kfmon/kfmon.log"
-if ! pkill -0 kfmon ; then
+
+if [ -f "${KFMON_PID_FILE}" ] ; then
+	# Get pid from the pidfile
+	IFS= read -r KFMON_PID < "${KFMON_PID_FILE}"
+
+	# Check if it's a valid PID
+	if is_integer "${KFMON_PID}" ; then
+		# Check if it's still up and actually KFMon
+		if [ -d "/proc/${KFMON_PID}" ] ; then
+			# Still up...
+			IFS= read -r pid_comm < "/proc/${KFMON_PID}/comm"
+
+			if [ "${pid_comm}" = "kfmon" ] ; then
+				# It's up, it's kfmon, we're good!
+				SHOULD_START_KFMON="false"
+			fi
+		fi
+	fi
+
+	# Double-check if there's a running "kfmon" process even if the pidfile check failed...
+	if [ "${SHOULD_START_KFMON}" = "maybe" ] ; then
+		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] PIDFILE check didn't pan out, falling back to explicit process table walk (PIDFILE: ${KFMON_PID:-N/A} | PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
+		if pkill -0 kfmon ; then
+			# Something named kfmon appears to already be running...
+			SHOULD_START_KFMON="false"
+		else
+			# Despite the pidfile checks not panning out, assume we need to start...
+			SHOULD_START_KFMON="true"
+		fi
+	fi
+else
+	# No pidfile, we can start!
+	SHOULD_START_KFMON="true"
+fi
+
+if [ "${SHOULD_START_KFMON}" = "true" ] ; then
 	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Starting KFMon . . ." >> "${KFMON_LOG}"
 	KFMON_BIN="/usr/local/kfmon/bin/kfmon"
 	if [ -x "${KFMON_BIN}" ] ; then
@@ -15,7 +61,7 @@ if ! pkill -0 kfmon ; then
 else
 	# NOTE: I'm sometimes seeing wonky behavior after an update, where we trip the "already running" check when we actually *do* need to be launched...
 	#       Possibly due to the specific timing at which on-animator runs around updates?
-	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] KFMon is already running (PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
+	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] KFMon is already running (PIDFILE: ${KFMON_PID:-N/A} | PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
 fi
 
 # Optionally, ditch the pickel progress bar for FBInk's, for shit'n giggles.
