@@ -46,6 +46,12 @@ if [ -f "${KFMON_PID_FILE}" ] ; then
 else
 	# No pidfile, we can start!
 	SHOULD_START_KFMON="true"
+
+	# Unless something named kfmon appears to already be running...
+	if pkill -0 kfmon ; then
+		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] Found a running kfmon process despite a lack of pidfile?! (PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
+		SHOULD_START_KFMON="false"
+	fi
 fi
 
 if [ "${SHOULD_START_KFMON}" = "true" ] ; then
