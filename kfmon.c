@@ -2332,8 +2332,8 @@ static bool
 				if (errno == EPIPE) {
 					PFLOG(LOG_WARNING, "Client closed the connection early");
 				} else {
-					PFLOG(LOG_WARNING, "write: %m");
-					fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+					PFLOG(LOG_WARNING, "send: %m");
+					fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
 				}
 				// Don't retry on write failures, just signal our polling to close the connection
 				return true;
@@ -2351,8 +2351,8 @@ static bool
 			if (errno == EPIPE) {
 				PFLOG(LOG_WARNING, "Client closed the connection early");
 			} else {
-				PFLOG(LOG_WARNING, "write: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+				PFLOG(LOG_WARNING, "send: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
 			}
 			// Don't retry on write failures, just signal our polling to close the connection
 			return true;
@@ -2551,8 +2551,47 @@ static bool
 			if (errno == EPIPE) {
 				PFLOG(LOG_WARNING, "Client closed the connection early");
 			} else {
-				PFLOG(LOG_WARNING, "write: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+				PFLOG(LOG_WARNING, "send: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
+			}
+			// Don't retry on write failures, just signal our polling to close the connection
+			return true;
+		}
+	} else if (strncasecmp(buf, "version", 7) == 0) {
+		// Reply with KFMon's short version string.
+		int packet_len = snprintf(buf, sizeof(buf), "KFMon %s\n", KFMON_VERSION);
+
+		// w/ NUL
+		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Only actual failures are left, so we're pretty much done
+			if (errno == EPIPE) {
+				PFLOG(LOG_WARNING, "Client closed the connection early");
+			} else {
+				PFLOG(LOG_WARNING, "send: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
+			}
+			// Don't retry on write failures, just signal our polling to close the connection
+			return true;
+		}
+	} else if (strncasecmp(buf, "full-version", 12) == 0) {
+		// Reply with the full KFMon/SQLite/FBink version string.
+		int packet_len = snprintf(buf,
+					  sizeof(buf),
+					  "KFMon %s (%s) | Using SQLite %s (built against %s) | With FBInk %s\n",
+					  KFMON_VERSION,
+					  KFMON_TIMESTAMP,
+					  sqlite3_libversion(),
+					  SQLITE_VERSION,
+					  fbink_version());
+
+		// w/ NUL
+		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+			// Only actual failures are left, so we're pretty much done
+			if (errno == EPIPE) {
+				PFLOG(LOG_WARNING, "Client closed the connection early");
+			} else {
+				PFLOG(LOG_WARNING, "send: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
 			}
 			// Don't retry on write failures, just signal our polling to close the connection
 			return true;
@@ -2563,7 +2602,7 @@ static bool
 		int packet_len = snprintf(
 		    buf,
 		    sizeof(buf),
-		    "ERR_INVALID_CMD\nComma separated list of valid commands: list, gui-list, start, force-start, trigger, force-trigger\n");
+		    "ERR_INVALID_CMD\nComma separated list of valid commands: version, full-version, list, gui-list, start, force-start, trigger, force-trigger\n");
 
 		// w/ NUL
 		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
@@ -2571,8 +2610,8 @@ static bool
 			if (errno == EPIPE) {
 				PFLOG(LOG_WARNING, "Client closed the connection early");
 			} else {
-				PFLOG(LOG_WARNING, "write: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] write failed ?!", &fbinkConfig);
+				PFLOG(LOG_WARNING, "send: %m");
+				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
 			}
 			// Don't retry on write failures, just signal our polling to close the connection
 			return true;
