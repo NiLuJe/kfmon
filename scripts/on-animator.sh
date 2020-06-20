@@ -20,11 +20,11 @@ if [ -f "${KFMON_PID_FILE}" ] ; then
 
 	# Check if it's a valid PID
 	if is_integer "${KFMON_PID}" ; then
-		# Check if it's still up and actually KFMon
+		# Check if it's still up...
 		if [ -d "/proc/${KFMON_PID}" ] ; then
-			# Still up...
 			IFS= read -r pid_comm < "/proc/${KFMON_PID}/comm"
 
+			# Check if it's still actually KFMon...
 			if [ "${pid_comm}" = "kfmon" ] ; then
 				# It's up, it's kfmon, we're good!
 				SHOULD_START_KFMON="false"
@@ -32,14 +32,14 @@ if [ -f "${KFMON_PID_FILE}" ] ; then
 		fi
 	fi
 
-	# Double-check if there's a running "kfmon" process even if the pidfile check failed...
+	# Double-check if there's a running "kfmon" process if the pidfile check failed...
 	if [ "${SHOULD_START_KFMON}" = "maybe" ] ; then
-		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] PIDFILE check didn't pan out, falling back to explicit process table walk (PIDFILE: ${KFMON_PID:-N/A} | PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
+		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] Checking the pidfile was inconclusive, falling back to explicit process table walk (PIDFILE: ${KFMON_PID:-N/A} | PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
 		if pkill -0 kfmon ; then
 			# Something named kfmon appears to already be running...
 			SHOULD_START_KFMON="false"
 		else
-			# Despite the pidfile checks not panning out, assume we need to start...
+			# Despite the pidfile check not panning out, no running instance was found, assume we need to start...
 			SHOULD_START_KFMON="true"
 		fi
 	fi
@@ -49,7 +49,7 @@ else
 
 	# Unless something named kfmon appears to already be running...
 	if pkill -0 kfmon ; then
-		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] Found a running kfmon process despite a lack of pidfile?! (PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
+		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [WARN] [PID: $$] Found a running kfmon process despite a lack of pidfile (PID: $(pidof kfmon || echo 'N/A'))!" >> "${KFMON_LOG}"
 		SHOULD_START_KFMON="false"
 	fi
 fi
