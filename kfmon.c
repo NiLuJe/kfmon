@@ -2966,20 +2966,14 @@ int
 	}
 
 	// Now that we're properly up, write a pidfile
-	int pid_fd = -1;
-	if ((pid_fd = open(KFMON_PID_FILE, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666)) == -1) {
-		PFLOG(LOG_ERR, "Failed to open pidfile (open: %m), aborting!");
+	FILE* pid_f = fopen(KFMON_PID_FILE, "we");
+	if (pid_f) {
+		fprintf(pid_f, "%ld\n", (long) getpid());
+		fclose(pid_f);
+	} else {
+		PFLOG(LOG_ERR, "Failed to open pidfile (fopen: %m), aborting!");
 		exit(EXIT_FAILURE);
 	}
-	// Inspired by busybox's write_pidfile
-	char pid_buf[sizeof(int) * 3 + 2];
-	int  pid_len = snprintf(pid_buf, sizeof(pid_buf), "%ld\n", (long) getpid());
-	// w/o NUL
-	if (write_in_full(pid_fd, pid_buf, (size_t)(pid_len)) < 0) {
-		PFLOG(LOG_ERR, "Failed to write pidfile (write: %m), aborting!");
-		exit(EXIT_FAILURE);
-	}
-	close(pid_fd);
 
 	// NOTE: Because of course we can't have nice things, at this point,
 	//       Nickel hasn't finished setting up the fb to its liking. To be fair, it hasn't even started yet ;).
