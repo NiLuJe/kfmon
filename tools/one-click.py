@@ -50,7 +50,7 @@ gh = Github(os.getenv("GH_API_ACCESS_TOK"))
 
 # Get the latest NickelMenu release
 print("* Looking for the latest NickelMenu release . . .")
-nickelmenu = gh.get_repo("geek1011/NickelMenu")
+nickelmenu = gh.get_repo("pgaskin/NickelMenu")
 latest_nickelmenu = nickelmenu.get_latest_release()
 nickelmenu_version = latest_nickelmenu.tag_name
 nickelmenu_url = None
