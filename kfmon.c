@@ -767,10 +767,10 @@ static int
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
 	// We only need to walk a single directory...
-#pragma GCC diagnostic   push
-#pragma GCC diagnostic   ignored "-Wunknown-pragmas"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
-#pragma GCC diagnostic   ignored "-Wdiscarded-qualifiers"
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
@@ -947,10 +947,10 @@ static int
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
 	// We only need to walk a single directory...
-#pragma GCC diagnostic   push
-#pragma GCC diagnostic   ignored "-Wunknown-pragmas"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
-#pragma GCC diagnostic   ignored "-Wdiscarded-qualifiers"
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
