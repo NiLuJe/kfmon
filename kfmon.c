@@ -1992,14 +1992,12 @@ static bool
 		}
 
 		// Loop over all events in the buffer
-		for (char* ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
+		for (char* ptr = buf; ptr < buf + len; ptr += sizeof(*event) + event->len) {
 			// NOTE: This trips -Wcast-align on ARM, but should be safe nonetheless ;).
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
 			event = (const struct inotify_event*) ptr;
 #pragma GCC diagnostic pop
-			// NOTE: This *may* be a viable alternative, but don't hold me to that.
-			// memcpy(&event, &ptr, sizeof(struct inotify_event *));
 
 			// Identify which of our target file we've caught an event for...
 			uint8_t watch_idx       = 0U;
