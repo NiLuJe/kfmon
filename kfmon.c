@@ -2275,7 +2275,7 @@ static bool
 	char buf[PIPE_BUF] = { 0 };
 
 	// We don't actually know the size of the input data, so, best effort here.
-	ssize_t len = xread(data_fd, buf, sizeof(buf));
+	ssize_t len = xread(data_fd, buf, sizeof(buf) - 1U);
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		PFLOG(LOG_WARNING, "read: %m");
@@ -2288,10 +2288,6 @@ static bool
 		// EoF, we're done, signal our polling to close the connection
 		return true;
 	}
-
-	// In the event len == sizeof(buf), truncate to ensure buf is NUL-terminated before we start playing with it.
-	// Otherwise, we zero init buf, so we're sure to end up with a string that was NUL-terminated ASAP.
-	buf[sizeof(buf) - 1] = '\0';
 
 	// Handle the supported commands
 	if ((strncasecmp(buf, "list", 4) == 0) || (strncasecmp(buf, "gui-list", 8) == 0)) {

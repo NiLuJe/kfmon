@@ -113,7 +113,7 @@ static bool
 	char buf[PIPE_BUF] = { 0 };
 
 	// We don't actually know the size of the reply, so, best effort here.
-	ssize_t len = xread(data_fd, buf, sizeof(buf));
+	ssize_t len = xread(data_fd, buf, sizeof(buf) - 1U);
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		fprintf(stderr, "[%s] Aborting: read: %m!\n", __PRETTY_FUNCTION__);
@@ -124,12 +124,6 @@ static bool
 	if (len == 0) {
 		return false;
 	}
-
-	// In the event len == sizeof(buf), truncate to ensure buf is NUL-terminated before we start playing with it.
-	// Otherwise, we zero init buf, so we're sure to end up with a NUL-terminated ASAP string.
-	// NOTE: Here, we only do a fixed-length printf, so this is technically unneeded/harmful,
-	//       as we effectively no longer need this to be NUL-terminated.
-	//buf[sizeof(buf) - 1] = '\0';
 
 	// Then print it!
 	fprintf(stderr, "<<< Got a reply:\n");
