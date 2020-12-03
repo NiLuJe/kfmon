@@ -2623,15 +2623,15 @@ static void
 	snprintf(procfile, sizeof(procfile), "/proc/%ld/comm", (long) pid);
 	FILE* f = fopen(procfile, "re");
 	if (f) {
-		size_t size = fread(name, sizeof(*name), 16, f);
+		size_t size = fread(name, sizeof(*name), 16U, f);
 		if (size > 0) {
 			// NUL terminate
-			name[size - 1U] = '\0';
+			name[16U - 1U] = '\0';
 		}
 		fclose(f);
 	} else {
 		// comm is 16 bytes
-		str5cpy(name, 16, "<!>", 16, TRUNC);
+		str5cpy(name, 16U, "<!>", 16U, TRUNC);
 	}
 }
 
