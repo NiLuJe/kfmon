@@ -2623,10 +2623,15 @@ static void
 	snprintf(procfile, sizeof(procfile), "/proc/%ld/comm", (long) pid);
 	FILE* f = fopen(procfile, "re");
 	if (f) {
-		size_t size = fread(name, sizeof(*name), 16U, f);
+		size_t size = fread(name, sizeof(*name), 16U - 1U, f);
 		if (size > 0) {
+			// Strip trailing LF
+			if (name[size - 1U] == '\n') {
+				name[size - 1U] = '\0';
+			}
 			// NUL terminate
-			name[16U - 1U] = '\0';
+			char* end = name + size;
+			*end      = '\0';
 		}
 		fclose(f);
 	} else {
