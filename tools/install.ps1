@@ -85,7 +85,7 @@ $KOBO_CONF=$KOBO_DIR + "\Kobo" + "\Kobo eReader.conf"
 
 
 [FeatureSettings]
-ExcludeSyncFolders=\\.(?!kobo|adobe).*?
+ExcludeSyncFolders=(\\.(?!kobo|adobe).*?|([^.][^/]*/)+\\..+)
 
 '@ | Add-Content -NoNewline -Path $KOBO_CONF
 
