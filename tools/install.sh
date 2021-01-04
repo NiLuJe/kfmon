@@ -117,6 +117,7 @@ SELECTED_PACKAGE="${AVAILABLE_PKGS[${j}]}"
 #       We'll enforce the "legacy" behavior of basically ignoring non-default hidden directories.
 #       c.f., https://www.mobileread.com/forums/showpost.php?p=3892463&postcount=10
 #          &  https://www.mobileread.com/forums/showpost.php?p=3894033&postcount=70
+#          &  https://www.mobileread.com/forums/showpost.php?p=4076372&postcount=452
 # NOTE: We can simply push a (potentially) duplicate section + entry at the end of the file,
 #       QSettings will do the right thing, that is, pick up this new key, use it,
 #       and save everything in the right place without leaving duplicates around.
