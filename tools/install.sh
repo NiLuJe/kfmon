@@ -125,7 +125,7 @@ echo "* Preventing Nickel from scanning hidden directories . . ."
 cat >> "${KOBO_CONFIG}" <<-\EoM
 
 	[FeatureSettings]
-	ExcludeSyncFolders=(\\.(?!kobo|adobe).*?|([^.][^/]*/)+\\..+)
+	ExcludeSyncFolders=(\\.(?!kobo|adobe).+|([^.][^/]*/)+\\..+)
 EoM
 
 # Check for a cat failure, as unlikely as it might be (permissions?)...
@@ -137,7 +137,7 @@ if [[ ${ret} -ne 0 ]] ; then
 fi
 
 # Double-check that it was updated, in case of gremlins attack...
-if ! grep -Fq 'ExcludeSyncFolders=(\\.(?!kobo|adobe).*?|([^.][^/]*/)+\\..+)' "${KOBO_CONFIG}" ; then
+if ! grep -Fq 'ExcludeSyncFolders=(\\.(?!kobo|adobe).+|([^.][^/]*/)+\\..+)' "${KOBO_CONFIG}" ; then
 	echo "* Installation FAILED: Nickel config update was ineffective o_O !"
 	echo "* No permanent changes have been made."
 	exit 255
