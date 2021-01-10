@@ -55,27 +55,32 @@ if ($AVAILABLE_PKGS.Length -eq 0) {
 	Exit 1
 }
 
-Write-Host("* Here are the available packages:")
-for ($i = 0; $i -lt $AVAILABLE_PKGS.Length; $i++) {
-	Write-Host([string]$i + ": " + $AVAILABLE_PKGS[$i])
+function Write-PackageOptions {
+	Write-Host("`r`n* Here are the available packages:")
+	for ($i = 0; $i -lt $AVAILABLE_PKGS.Length; $i++) {
+		Write-Host([string]$i + ": " + $AVAILABLE_PKGS[$i])
+	}
+	Write-Host("`r`n")
 }
 
-$j = Read-Host -Prompt "* Enter the number corresponding to the one you want to install"
+Write-PackageOptions
 
-# Check if that was a sane reply...
-# Try to cast to an int first...
-$j = [int]$j
-# And check if that was successful.
-if (-NOT ($j -is [int])) {
-	Write-Host("That wasn't a number!")
-	Read-Host -Prompt "* No changes were made! Press Enter to exit"
-	Exit 1
-}
-
-if ($j -lt 0 -OR $j -ge $AVAILABLE_PKGS.Length) {
-	Write-Host("That number was out of range!")
-	Read-Host -Prompt "* No changes were made! Press Enter to exit"
-	Exit 1
+#Loop input until a valid option is selected.
+# Byte type is signed, so negative numbers won't cast, and variables aren't assigned if a cast fails
+# Valid byte values are tested against size of $AVAILABLE_PKGS
+# $j is used in local logic for tests and feedback
+# loop exits when a valid option is assigned to $PKG_INDEX which is used later
+while ( -not (Get-Variable -Name PKG_INDEX -ErrorAction SilentlyContinue)) { 
+	try {
+		[byte]$j = Read-Host -Prompt "* Enter the number corresponding to the one you want to install" 
+	} catch {}
+	if ( -not (Get-Variable -Name j -ErrorAction SilentlyContinue) -or ($j -ge $AVAILABLE_PKGS.Length)) {
+		Write-Host("`r`n")
+		Write-Warning("Please select a number from the list")
+		Write-PackageOptions
+	} else {
+		$PKG_INDEX = $j
+	}
 }
 
 # Prevent Nickel from scanning hidden *nix directories (FW 4.17+)
@@ -90,16 +95,16 @@ ExcludeSyncFolders=(\\.(?!kobo|adobe).+|([^.][^/]*/)+\\..+)
 '@ | Add-Content -NoNewline -Path $KOBO_CONF
 
 # We've got a Kobo, we've got a package, let's go!
-if ($AVAILABLE_PKGS[$j] -eq "KFMon-Uninstaller.zip") {
+if ($AVAILABLE_PKGS[$PKG_INDEX] -eq "KFMon-Uninstaller.zip") {
 	Write-Host("* Uninstalling KFMon . . .")
 	$KOBO_DEST=$KOBO_DIR
-	#Write-Host("Expand-Archive " + $AVAILABLE_PKGS[$j] + " -DestinationPath " + $KOBO_DEST + " -Force")
-	Expand-Archive $AVAILABLE_PKGS[$j] -DestinationPath $KOBO_DEST -Force
+	#Write-Host("Expand-Archive " + $AVAILABLE_PKGS[$PKG_INDEX] + " -DestinationPath " + $KOBO_DEST + " -Force")
+	Expand-Archive $AVAILABLE_PKGS[$PKG_INDEX] -DestinationPath $KOBO_DEST -Force
 } else {
-	Write-Host("* Installing " + $AVAILABLE_PKGS[$j] + " . . .")
+	Write-Host("* Installing " + $AVAILABLE_PKGS[$PKG_INDEX] + " . . .")
 	$KOBO_DEST=$KOBO_MOUNTPOINT + ":\"
-	#Write-Host("Expand-Archive " + $AVAILABLE_PKGS[$j] + " -DestinationPath " + $KOBO_DEST + " -Force")
-	Expand-Archive $AVAILABLE_PKGS[$j] -DestinationPath $KOBO_DEST -Force
+	#Write-Host("Expand-Archive " + $AVAILABLE_PKGS[$PKG_INDEX] + " -DestinationPath " + $KOBO_DEST + " -Force")
+	Expand-Archive $AVAILABLE_PKGS[$PKG_INDEX] -DestinationPath $KOBO_DEST -Force
 }
 
 # Much like in the error paths, draw a final prompt so that the window stays up...
