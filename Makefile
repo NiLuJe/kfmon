@@ -302,6 +302,7 @@ sqlite.built:
 	--disable-editline \
 	--disable-readline \
 	--disable-tcl \
+	--disable-math \
 	--enable-tempstore=yes \
 	--disable-releasemode && \
 	$(MAKE) sqlite3.h libsqlite3.la
