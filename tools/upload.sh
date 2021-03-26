@@ -60,6 +60,7 @@ cd /tmp/KFMon
 cp -pv "${SCRIPTS_BASE_DIR}/KFMON_PUB_BB" ./
 cp -pv "${SCRIPTS_BASE_DIR}/install.sh" ./
 cp -pv "${SCRIPTS_BASE_DIR}/install.ps1" ./
+cp -pv "${SCRIPTS_BASE_DIR}"/../KFMon-v*.zip ./
 
 # Upload!
 echo "* Uploading . . ."
@@ -205,6 +206,9 @@ EOF
 		OCP-Plato-*.zip )
 			mr_file="PLATO"
 		;;
+		KFMon-*.zip )
+			mr_file="KFMON"
+		;;
 		* )
 			echo "Unknown file for ${file##*/} !!"
 			exit 1
@@ -212,7 +216,9 @@ EOF
 	esac
 
 	# Do the actual substitution...
-	sed -e "s~%${mr_file}%~[url=${BASE_URL}/${file}]${file##*/}[/url]  [B]|[/B]  [I]${moddate}[/I]  [B]|[/B]  ${size}  [B]|[/B]  [COLOR=\"DimGray\"]${checksum}[/COLOR]~" -i KFMON_PUB_BB
+	if [[ "${mr_file}" != "KFMON" ]] ; then
+		sed -e "s~%${mr_file}%~[url=${BASE_URL}/${file}]${file##*/}[/url]  [B]|[/B]  [I]${moddate}[/I]  [B]|[/B]  ${size}  [B]|[/B]  [COLOR=\"DimGray\"]${checksum}[/COLOR]~" -i KFMON_PUB_BB
+	fi
 done
 
 cat >> kfmon.html << EOF
@@ -249,13 +255,9 @@ swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_mac_install.zip
 # Mirror Windows script, too
 swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} install.ps1
 
-# And mirror the KFMon build used, too
-cp -av ../Kobo/KFMon-*.zip ./KFMon.zip
-swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} KFMon.zip
-
 # Clean it up...
 echo "* Cleanup . . ."
-rm -rfv ./kfmon.html ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command ./install.ps1 ./KFMon.zip
+rm -rfv ./kfmon.html ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command ./install.ps1
 
 # Go back
 # shellcheck disable=SC2103
