@@ -5,6 +5,17 @@
 ##
 
 #
+## Helper functions
+#
+
+# Check if arg is an int
+is_integer() {
+	# Cheap trick ;)
+	[ "${1}" -eq "${1}" ] 2>/dev/null
+	return $?
+}
+
+#
 ## Load my PCS credentials, and script settings
 #
 
@@ -200,12 +211,17 @@ for file in *.zip ; do
 	# And the BLAKE2B checksum
 	b2bchecksum="$(b2sum "${file}" | cut -f1 -d ' ')"
 	# Pull the package name out of the filename
-	name="$(echo "${file##*/}" | sed -re 's/^([[:alpha:]234\-]*?)-([[:digit:]vN\.]*?).*?$/\1/')"
+	name="$(echo "${file##*/}" | sed -re 's/^(OCP-)?([[:alpha:]\-]*?)-([[:digit:]v\.]*?).*?$/\2/')"
 	# Pull the version out of the filename
-	version="$(echo "${file##*/}" | sed -re 's/^([[:alpha:]234\-]*?)-([[:digit:]vN\.]*?).*?$/\2/')"
-	# Pull the revision out of the filename, if there is one
-	revision="$(echo "${file##*/}" | sed -re 's/^.*?-r([[:digit:]]*?)\..*?$/\1/')"
-	is_integer "${revision}" || revision="-1"
+	version="$(echo "${file##*/}" | sed -re 's/^(OCP-)([[:alpha:]\-]*?)-([[:digit:]v\.]*?).*?$/\3/')"
+
+	# Stupid exceptions...
+	case "${file##*/}" in
+		OCP-Plato-*_KOReader-v*.zip )
+			name="Both"
+			version="N/A"
+		;;
+	esac
 
 	# File
 	cat >> kfmon.html << EOF
@@ -219,7 +235,7 @@ EOF
 			"path": "${file}",
 			"mimetype": "${mimetype}",
 			"date": ${rawmoddate},
-			"revision": ${revision},
+			"revision": -1,
 			"size": ${rawsize},
 			"MD5": "${checksum}",
 			"BLAKE2B": "${b2bchecksum}"
