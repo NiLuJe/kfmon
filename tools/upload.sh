@@ -249,9 +249,13 @@ swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfm_mac_install.zip
 # Mirror Windows script, too
 swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} install.ps1
 
+# And mirror the KFMon build used, too
+cp -av ../Kobo/KFMon-*.zip ./KFMon.zip
+swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} KFMon.zip
+
 # Clean it up...
 echo "* Cleanup . . ."
-rm -rfv ./kfmon.html ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command ./install.ps1
+rm -rfv ./kfmon.html ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command ./install.ps1 ./KFMon.zip
 
 # Go back
 # shellcheck disable=SC2103
