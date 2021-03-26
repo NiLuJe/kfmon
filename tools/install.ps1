@@ -65,7 +65,7 @@ function Write-PackageOptions {
 
 Write-PackageOptions
 
-#Loop input until a valid option is selected.
+# Loop input until a valid option is selected.
 # Byte type is signed, so negative numbers won't cast, and variables aren't assigned if a cast fails
 # Valid byte values are tested against size of $AVAILABLE_PKGS
 # $j is used in local logic for tests and feedback
