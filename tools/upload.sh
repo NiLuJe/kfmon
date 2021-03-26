@@ -211,9 +211,9 @@ for file in *.zip ; do
 	# And the BLAKE2B checksum
 	b2bchecksum="$(b2sum "${file}" | cut -f1 -d ' ')"
 	# Pull the package name out of the filename
-	name="$(echo "${file##*/}" | sed -re 's/^(OCP-)?([[:alpha:]\-]*?)-([[:digit:]v\.]*?)\..*?$/\2/')"
+	name="$(echo "${file##*/}" | sed -re 's/^(OCP-)?([[:alpha:]\-]*?)-([[:digit:]a-fgv\.\-]*?).*?\.zip$/\2/')"
 	# Pull the version out of the filename
-	version="$(echo "${file##*/}" | sed -re 's/^(OCP-)?([[:alpha:]\-]*?)-([[:digit:]v\.]*?)\..*?$/\3/')"
+	version="$(echo "${file##*/}" | sed -re 's/^(OCP-)?([[:alpha:]\-]*?)-([[:digit:]a-fgv\.\-]*?).*?\.zip$/\3/')"
 
 	# Stupid exceptions...
 	case "${file##*/}" in
