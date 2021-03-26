@@ -71,7 +71,7 @@ cd /tmp/KFMon
 cp -pv "${SCRIPTS_BASE_DIR}/KFMON_PUB_BB" ./
 cp -pv "${SCRIPTS_BASE_DIR}/install.sh" ./
 cp -pv "${SCRIPTS_BASE_DIR}/install.ps1" ./
-cp -pv "${SCRIPTS_BASE_DIR}"/../KFMon-v*.zip ./
+cp -pv "${SCRIPTS_BASE_DIR}"/../Kobo/KFMon-v*.zip ./
 
 # Upload!
 echo "* Uploading . . ."
