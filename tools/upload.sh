@@ -163,6 +163,13 @@ cat >> kfmon.html << EOF
 		<tr><td class="n">Kobo One-Click Install Packages</td><td class="m">- &nbsp;</td><td class="s">- &nbsp;</td><td class="t">Directory</td><td class="c">- &nbsp;</td></tr>
 EOF
 
+# And a JSON manifest...
+cat > manifest.json << EOF
+{
+	"Storage_URL": "${BASE_URL}",
+	"OCP": [
+EOF
+
 for file in *.zip ; do
 	# Check if the upload was successful...
 	until curl --output /dev/null --silent --head --fail "${BASE_URL}/${file}" ; do
@@ -177,7 +184,8 @@ for file in *.zip ; do
 	# Get the mimetype
 	mimetype="$(mimetype -b "${file}")"
 	# Get the modification date
-	moddate="$(date -d "@$(stat -c "%Y" "${file}")" +"%Y-%b-%d %H:%M:%S")"
+	rawmoddate="$(stat -c "%Y" "${file}")"
+	moddate="$(date -d "@${rawmoddate}" +"%Y-%b-%d %H:%M:%S")"
 	# Get the file size
 	rawsize="$(stat -c "%s" "${file}")"
 	if [[ ${rawsize} -ge 1048576 ]] ; then
@@ -187,12 +195,35 @@ for file in *.zip ; do
 	else
 		size="${rawsize}.0B"
 	fi
-	# Get the md5 checksum
-	checksum="$(md5sum "${file}" | awk '{print $1}')"
+	# Get the MD5 checksum
+	checksum="$(md5sum "${file}" | cut -f1 -d ' ')"
+	# And the BLAKE2B checksum
+	b2bchecksum="$(b2sum "${file}" | cut -f1 -d ' ')"
+	# Pull the package name out of the filename
+	name="$(echo "${file##*/}" | sed -re 's/^([[:alpha:]234\-]*?)-([[:digit:]vN\.]*?).*?$/\1/')"
+	# Pull the version out of the filename
+	version="$(echo "${file##*/}" | sed -re 's/^([[:alpha:]234\-]*?)-([[:digit:]vN\.]*?).*?$/\2/')"
+	# Pull the revision out of the filename, if there is one
+	revision="$(echo "${file##*/}" | sed -re 's/^.*?-r([[:digit:]]*?)\..*?$/\1/')"
+	is_integer "${revision}" || revision="-1"
 
 	# File
 	cat >> kfmon.html << EOF
 		<tr><td class="n"><a href="${BASE_URL}/${file}" rel="nofollow">${file##*/}</a></td><td class="m">${moddate}</td><td class="s">${size}</td><td class="t">${mimetype}</td><td class="c">${checksum}</td></tr>
+EOF
+	cat >> manifest.json << EOF
+		{
+			"name": "${name}",
+			"version": "${version}",
+			"filename": "${file##*/}",
+			"path": "${file}",
+			"mimetype": "${mimetype}",
+			"date": ${rawmoddate},
+			"revision": ${revision},
+			"size": ${rawsize},
+			"MD5": "${checksum}",
+			"BLAKE2B": "${b2bchecksum}"
+		},
 EOF
 
 	# And then the MR thread...
@@ -234,13 +265,21 @@ cat >> kfmon.html << EOF
 </html>
 EOF
 
+# Can't have trailing commas in JSON...
+sed -i '$ d' manifest.json
+cat >> manifest.json << EOF
+		}
+	]
+}
+EOF
+
 # The MR thread, too...
 sed -e "s~%LASTUPDATED%~Last updated on $(date -R)~" -i KFMON_PUB_BB
 
 # Upload it!
 echo "* Uploading index . . ."
 # Push it to the cloud...
-swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfmon.html
+swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} kfmon.html manifest.json
 
 # Handle the *nix install helper script, which we zip up to preserve the exec bit...
 echo "* Uploading install scripts . . ."
@@ -257,7 +296,7 @@ swift upload --retries=5 --object-threads=2 ${ST_CONTAINER} install.ps1
 
 # Clean it up...
 echo "* Cleanup . . ."
-rm -rfv ./kfmon.html ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command ./install.ps1
+rm -rfv ./kfmon.html ./manifest.json ./kfm_nix_install.zip ./install.sh ./kfm_mac_install.zip ./install.command ./install.ps1
 
 # Go back
 # shellcheck disable=SC2103
