@@ -154,7 +154,7 @@ extern const char* sqlite3ErrName(int);
 	})
 
 // Max length of a text metadata entry in the database (title, author, comment)
-#define DB_SZ_MAX 128
+#define DB_SZ_MAX      128
 // Max filepath length we bother to handle
 // NOTE: PATH_MAX is usually set to 4096, which is fairly overkill here...
 //       On the other hand, _POSIX_PATH_MAX is always set to 256,
@@ -172,7 +172,7 @@ extern const char* sqlite3ErrName(int);
 //       whose default line buffer is 200 bytes. If we chop the NUL, the CR/LF, the key and the equal sign,
 //       that would actually leave us somewhere around 186 bytes.
 //       Just chop that down to 128 for symmetry, and we'll warn in case user input doesn't fit.
-#define CFG_SZ_MAX 128
+#define CFG_SZ_MAX     128
 // For sscanf
 #define CFG_SZ_MAX_STR "128"
 
@@ -213,7 +213,7 @@ typedef struct
 // As well as issue #2 for details of past failures w/ a SIGCHLD handler
 struct process_table
 {
-	pid_t spawn_pids[WATCH_MAX];
+	pid_t  spawn_pids[WATCH_MAX];
 	// NOTE: Needs to be signed because we use -1 as a special value meaning 'available'.
 	int8_t spawn_watchids[WATCH_MAX];
 } PT;    // lgtm [cpp/short-global-name]
@@ -251,16 +251,16 @@ static const char* get_log_prefix(int) __attribute__((const));
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static int    strtoul_hu(const char*, unsigned short int* restrict);
-static int    strtobool(const char* restrict, bool* restrict);
-static int    daemon_handler(void*, const char* restrict, const char* restrict, const char* restrict);
-static int    watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
-static bool   validate_watch_config(void*);
-static bool   validate_and_merge_watch_config(void*, uint8_t, bool*);
-static int8_t get_next_available_watch_entry(void);
-static int    fts_alphasort(const FTSENT**, const FTSENT**);
-static int    load_config(void);
-static int    update_watch_configs(void);
+static int             strtoul_hu(const char*, unsigned short int* restrict);
+static int             strtobool(const char* restrict, bool* restrict);
+static int             daemon_handler(void*, const char* restrict, const char* restrict, const char* restrict);
+static int             watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
+static bool            validate_watch_config(void*);
+static bool            validate_and_merge_watch_config(void*, uint8_t, bool*);
+static int8_t          get_next_available_watch_entry(void);
+static int             fts_alphasort(const FTSENT**, const FTSENT**);
+static int             load_config(void);
+static int             update_watch_configs(void);
 // Make our config global, because I'm terrible at C.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-braces"

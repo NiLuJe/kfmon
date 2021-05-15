@@ -86,7 +86,7 @@ static int
 	// Redirect stderr to our logfile
 	// NOTE: We do need O_APPEND (as opposed to simply calling lseek(fd, 0, SEEK_END) after open),
 	//       because auxiliary scripts *may* also append to this log file ;).
-	int flags = O_WRONLY | O_CREAT | O_APPEND;
+	int         flags = O_WRONLY | O_CREAT | O_APPEND;
 	// Check if we need to truncate our log because it has grown too much...
 	struct stat st;
 	if ((stat(KFMON_LOGFILE, &st) == 0) && (S_ISREG(st.st_mode))) {
@@ -134,8 +134,8 @@ static char*
 static char*
     get_current_time(void)
 {
-	static struct tm    local_tm = { 0 };
-	struct tm* restrict lt       = get_localtime(&local_tm);
+	static struct tm local_tm = { 0 };
+	struct tm* restrict lt    = get_localtime(&local_tm);
 
 	static char sz_time[22];
 
@@ -178,9 +178,9 @@ static bool
     is_target_mounted(void)
 {
 	// c.f., http://program-nix.blogspot.com/2008/08/c-language-check-filesystem-is-mounted.html
-	FILE* restrict          mtab       = NULL;
-	struct mntent* restrict part       = NULL;
-	bool                    is_mounted = false;
+	FILE* restrict mtab          = NULL;
+	struct mntent* restrict part = NULL;
+	bool is_mounted              = false;
 
 	if ((mtab = setmntent("/proc/mounts", "r")) != NULL) {
 		while ((part = getmntent(mtab)) != NULL) {
@@ -793,7 +793,7 @@ static int
 	}
 
 	// Until something goes wrong...
-	int rval = EXIT_SUCCESS;
+	int     rval        = EXIT_SUCCESS;
 	// Keep track of how many watches we've set up
 	uint8_t watch_count = 0U;
 
@@ -977,7 +977,7 @@ static int
 	int8_t  new_watch_list[] = { [0 ... WATCH_MAX - 1] = -1 };
 	uint8_t new_watch_count  = 0U;
 	// If there was a meaningful update, we'll update the IPC socket's mtime as a hint to clients that new data is available.
-	bool notify_update = false;
+	bool    notify_update    = false;
 
 	FTSENT* restrict p;
 	while ((p = fts_read(ftsp)) != NULL) {
@@ -1664,7 +1664,7 @@ static void*
 			clock_gettime(CLOCK_MONOTONIC_RAW, &now);
 			// NOTE: We should be okay not using difftime on Linux (We're using a monotonic clock, time_t is int64_t).
 			if (exitcode != 0 && (now.tv_sec - then.tv_sec) <= 1) {
-				char buf[256];
+				char        buf[256];
 				// NOTE: We *know* we'll be using the GNU, glibc >= 2.13 version of strerror_r
 				// NOTE: Even if it's not entirely clear from the manpage, printf's %m *is* thread-safe,
 				//       c.f., stdio-common/vfprintf.c:962 (it's using strerror_r).
@@ -2321,7 +2321,7 @@ static bool
 				    buf, sizeof(buf), "%hhu:%s\n", watch_idx, basename(watchConfig[watch_idx].filename));
 			}
 			// Make sure we reply with that in full (w/o a NUL, we're not done yet) to the client.
-			if (send_in_full(data_fd, buf, (size_t)(packet_len)) < 0) {
+			if (send_in_full(data_fd, buf, (size_t) (packet_len)) < 0) {
 				// Only actual failures are left, so we're pretty much done
 				if (errno == EPIPE) {
 					PFLOG(LOG_WARNING, "Client closed the connection early");
@@ -2354,9 +2354,9 @@ static bool
 	} else if ((strncmp(buf, "start", 5) == 0) || (strncmp(buf, "force-start", 11) == 0) ||
 		   (strncmp(buf, "trigger", 7) == 0) || (strncmp(buf, "force-trigger", 13) == 0)) {
 		// Discriminate force-*
-		bool force = (buf[0] == 'f');
+		bool    force                          = (buf[0] == 'f');
 		// Discriminate trigger from start
-		bool trigger = (force ? buf[6] == 't' : buf[0] == 't');
+		bool    trigger                        = (force ? buf[6] == 't' : buf[0] == 't');
 		// Pull the actual id out of there. Could have went with strtok, too.
 		uint8_t watch_id                       = WATCH_MAX;
 		char    watch_basename[CFG_SZ_MAX + 1] = { 0 };
@@ -2538,7 +2538,7 @@ static bool
 		}
 
 		// Reply with the status (w/ NUL)
-		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+		if (send_in_full(data_fd, buf, (size_t) (packet_len + 1)) < 0) {
 			// Only actual failures are left, so we're pretty much done
 			if (errno == EPIPE) {
 				PFLOG(LOG_WARNING, "Client closed the connection early");
@@ -2554,7 +2554,7 @@ static bool
 		int packet_len = snprintf(buf, sizeof(buf), "KFMon %s\n", KFMON_VERSION);
 
 		// w/ NUL
-		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+		if (send_in_full(data_fd, buf, (size_t) (packet_len + 1)) < 0) {
 			// Only actual failures are left, so we're pretty much done
 			if (errno == EPIPE) {
 				PFLOG(LOG_WARNING, "Client closed the connection early");
@@ -2577,7 +2577,7 @@ static bool
 					  fbink_version());
 
 		// w/ NUL
-		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+		if (send_in_full(data_fd, buf, (size_t) (packet_len + 1)) < 0) {
 			// Only actual failures are left, so we're pretty much done
 			if (errno == EPIPE) {
 				PFLOG(LOG_WARNING, "Client closed the connection early");
@@ -2597,7 +2597,7 @@ static bool
 		    "ERR_INVALID_CMD\nComma separated list of valid commands: version, full-version, list, gui-list, start, force-start, trigger, force-trigger\n");
 
 		// w/ NUL
-		if (send_in_full(data_fd, buf, (size_t)(packet_len + 1)) < 0) {
+		if (send_in_full(data_fd, buf, (size_t) (packet_len + 1)) < 0) {
 			// Only actual failures are left, so we're pretty much done
 			if (errno == EPIPE) {
 				PFLOG(LOG_WARNING, "Client closed the connection early");
@@ -2788,8 +2788,8 @@ static void
 
 	struct pollfd pfd = { 0 };
 	// Data socket
-	pfd.fd     = data_fd;
-	pfd.events = POLLIN;
+	pfd.fd            = data_fd;
+	pfd.events        = POLLIN;
 
 	// Wait for data, for a few 15s windows, in order to drop inactive connections after a while
 	size_t retry = 0U;
@@ -3109,11 +3109,11 @@ int
 		struct pollfd pfds[2] = { 0 };
 		nfds_t        nfds    = 2;
 		// Inotify input
-		pfds[0].fd     = fd;
-		pfds[0].events = POLLIN;
+		pfds[0].fd            = fd;
+		pfds[0].events        = POLLIN;
 		// Connection socket
-		pfds[1].fd     = conn_fd;
-		pfds[1].events = POLLIN;
+		pfds[1].fd            = conn_fd;
+		pfds[1].events        = POLLIN;
 
 		// Wait for events
 		LOG(LOG_INFO, "Listening for events.");
