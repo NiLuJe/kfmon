@@ -1588,6 +1588,8 @@ static void
 	if (daemonConfig.use_syslog) {
 		fbinkConfig.to_syslog = true;
 	}
+	// Enforce DU, mainly for sunxi's sake
+	fbinkConfig.wfm_mode = WFM_DU;
 }
 
 // Wait for a specific child process to die, and reap it (runs in a dedicated thread per spawn).
