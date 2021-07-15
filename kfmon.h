@@ -251,23 +251,55 @@ static const char* get_log_prefix(int) __attribute__((const));
 static bool is_target_mounted(void);
 static void wait_for_target_mountpoint(void);
 
-static int             strtoul_hu(const char*, unsigned short int* restrict);
-static int             strtobool(const char* restrict, bool* restrict);
-static int             daemon_handler(void*, const char* restrict, const char* restrict, const char* restrict);
-static int             watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
-static bool            validate_watch_config(void*);
-static bool            validate_and_merge_watch_config(void*, uint8_t, bool*);
-static int8_t          get_next_available_watch_entry(void);
-static int             fts_alphasort(const FTSENT**, const FTSENT**);
-static int             load_config(void);
-static int             update_watch_configs(void);
+static int    strtoul_hu(const char*, unsigned short int* restrict);
+static int    strtobool(const char* restrict, bool* restrict);
+static int    daemon_handler(void*, const char* restrict, const char* restrict, const char* restrict);
+static int    watch_handler(void*, const char* restrict, const char* restrict, const char* restrict);
+static bool   validate_watch_config(void*);
+static bool   validate_and_merge_watch_config(void*, uint8_t, bool*);
+static int8_t get_next_available_watch_entry(void);
+static int    fts_alphasort(const FTSENT**, const FTSENT**);
+static int    load_config(void);
+static int    update_watch_configs(void);
 // Make our config global, because I'm terrible at C.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-braces"
-DaemonConfig           daemonConfig           = { 0 };
-WatchConfig            watchConfig[WATCH_MAX] = { 0 };
-FBInkConfig            fbinkConfig            = { 0 };
-#pragma GCC diagnostic push
+DaemonConfig  daemonConfig           = { 0 };
+WatchConfig   watchConfig[WATCH_MAX] = { 0 };
+FBInkConfig   fbinkConfig            = { 0 };
+FBInkState    fbinkState             = { 0 };
+
+// NOTE: We want to bracket our refreshes in "pen" mode on sunxi (c.f., FBInk/#64 for more details),
+//       so handle the switcheroo in a macro to avoid code duplication...
+#define FB_PRINT(msg)                                                                                                    \
+	({                                                                                                               \
+		if (fbinkState.is_sunxi) {                                                                               \
+			int fbfd = fbink_open();                                                                         \
+			fbink_toggle_sunxi_ntx_pen_mode(fbfd, true);                                                     \
+                                                                                                                         \
+			fbink_print(fbfd, msg, &fbinkConfig);                                                            \
+                                                                                                                         \
+			fbink_toggle_sunxi_ntx_pen_mode(fbfd, false);                                                    \
+                                                                                                                         \
+			fbink_close(fbfd);                                                                               \
+		} else {                                                                                                 \
+			fbink_print(FBFD_AUTO, msg, &fbinkConfig);                                                       \
+		}                                                                                                        \
+	})
+
+#define FB_PRINTF(fmt, ...)                                                                                              \
+	({                                                                                                               \
+		if (fbinkState.is_sunxi) {                                                                               \
+			int fbfd = fbink_open();                                                                         \
+			fbink_toggle_sunxi_ntx_pen_mode(fbfd, true);                                                     \
+                                                                                                                         \
+			fbink_printf(fbfd, NULL, &fbinkConfig, fmt, ##__VA_ARGS__);                                      \
+                                                                                                                         \
+			fbink_toggle_sunxi_ntx_pen_mode(fbfd, false);                                                    \
+                                                                                                                         \
+			fbink_close(fbfd);                                                                               \
+		} else {                                                                                                 \
+			fbink_printf(FBFD_AUTO, NULL, &fbinkConfig, fmt, ##__VA_ARGS__);                                 \
+		}                                                                                                        \
+	})
 
 static unsigned int qhash(const unsigned char* restrict, size_t);
 static bool         is_target_processed(uint8_t, bool);

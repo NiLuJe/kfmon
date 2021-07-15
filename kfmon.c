@@ -228,7 +228,7 @@ static void
 			// NOTE: We have to hide this behind a slightly crappy check, because this runs during load_config,
 			//       at which point FBInk is not yet initialized...
 			if (fbinkConfig.row != 0) {
-				fbink_print(FBFD_AUTO, "[KFMon] Internal storage unavailable, bye!", &fbinkConfig);
+				FB_PRINT("[KFMon] Internal storage unavailable, bye!");
 			}
 			exit(EXIT_FAILURE);
 		}
@@ -720,11 +720,7 @@ static bool
 	}
 
 	if (sane && updated) {
-		fbink_printf(FBFD_AUTO,
-			     NULL,
-			     &fbinkConfig,
-			     "[KFMon] Updated the watch on %s",
-			     basename(watchConfig[target_idx].filename));
+		FB_PRINTF("[KFMon] Updated the watch on %s", basename(watchConfig[target_idx].filename));
 		// Notify the caller
 		*was_updated = true;
 	}
@@ -1064,10 +1060,7 @@ static int
 										new_watch_list[new_watch_count++] =
 										    (int8_t) watch_idx;
 
-										fbink_printf(
-										    FBFD_AUTO,
-										    NULL,
-										    &fbinkConfig,
+										FB_PRINTF(
 										    "[KFMon] Setup a new watch on %s",
 										    basename(
 											watchConfig[watch_idx].filename));
@@ -1122,10 +1115,7 @@ static int
 										    "Updated watch config file '%s' is not valid, it will be discarded!",
 										    p->fts_name);
 
-										fbink_printf(
-										    FBFD_AUTO,
-										    NULL,
-										    &fbinkConfig,
+										FB_PRINTF(
 										    "[KFMon] Dropped the watch on %s!",
 										    basename(
 											watchConfig[watch_idx].filename));
@@ -1178,11 +1168,7 @@ static int
 			    basename(watchConfig[watch_idx].filename),
 			    basename(watchConfig[watch_idx].action));
 
-			fbink_printf(FBFD_AUTO,
-				     NULL,
-				     &fbinkConfig,
-				     "[KFMon] Dropped the watch on %s!",
-				     basename(watchConfig[watch_idx].filename));
+			FB_PRINTF("[KFMon] Dropped the watch on %s!", basename(watchConfig[watch_idx].filename));
 
 			watchConfig[watch_idx] = (const WatchConfig){ 0 };
 			LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
@@ -1676,12 +1662,7 @@ static void*
 				    get_current_time_r(&local_tm, sz_time, sizeof(sz_time)),
 				    (long) tid,
 				    sz_error);
-				fbink_printf(FBFD_AUTO,
-					     NULL,
-					     &fbinkConfig,
-					     "[KFMon] PID %ld exited unexpectedly: %d!",
-					     (long) cpid,
-					     exitcode);
+				FB_PRINTF("[KFMon] PID %ld exited unexpectedly: %d!", (long) cpid, exitcode);
 			}
 		} else if (WIFSIGNALED(wstatus)) {
 			// NOTE: strsignal is not thread safe... Use psignal instead.
@@ -1696,12 +1677,7 @@ static void*
 			    (long) cpid,
 			    watch_idx,
 			    sigcode);
-			fbink_printf(FBFD_AUTO,
-				     NULL,
-				     &fbinkConfig,
-				     "[KFMon] PID %ld was killed by signal %d!",
-				     (long) cpid,
-				     sigcode);
+			FB_PRINTF("[KFMon] PID %ld was killed by signal %d!", (long) cpid, sigcode);
 			if (daemonConfig.use_syslog) {
 				// NOTE: No strsignal means no human-readable interpretation of the signal w/ syslog
 				//       (the %m token only works for errno)...
@@ -1734,7 +1710,7 @@ static pid_t
 	if (pid < 0) {
 		// Fork failed?
 		PFLOG(LOG_ERR, "Aborting: fork: %m");
-		fbink_print(FBFD_AUTO, "[KFMon] fork failed ?!", &fbinkConfig);
+		FB_PRINT("[KFMon] fork failed ?!");
 		exit(EXIT_FAILURE);
 	} else if (pid == 0) {
 		// Sweet child o' mine!
@@ -1777,7 +1753,7 @@ static pid_t
 			LOG(LOG_ERR,
 			    "Failed to find an available entry in our process table for pid %ld, aborting!",
 			    (long) pid);
-			fbink_print(FBFD_AUTO, "[KFMon] Can't spawn any more processes!", &fbinkConfig);
+			FB_PRINT("[KFMon] Can't spawn any more processes!");
 			exit(EXIT_FAILURE);
 		} else {
 			pthread_mutex_lock(&ptlock);
@@ -1797,11 +1773,7 @@ static pid_t
 			    watchConfig[watch_idx].action,
 			    watch_idx);
 			if (daemonConfig.with_notifications) {
-				fbink_printf(FBFD_AUTO,
-					     NULL,
-					     &fbinkConfig,
-					     "[KFMon] Launched %s :)",
-					     basename(watchConfig[watch_idx].action));
+				FB_PRINTF("[KFMon] Launched %s :)", basename(watchConfig[watch_idx].action));
 			}
 			// NOTE: We achieve reaping in a non-blocking way by doing the reaping from a dedicated thread
 			//       for every spawn...
@@ -1810,7 +1782,7 @@ static pid_t
 			uint8_t*  arg = malloc(sizeof(*arg));
 			if (arg == NULL) {
 				LOG(LOG_ERR, "Couldn't allocate memory for thread arg, aborting!");
-				fbink_print(FBFD_AUTO, "[KFMon] OOM ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] OOM ?!");
 				exit(EXIT_FAILURE);
 			}
 			*arg = (uint8_t) i;
@@ -1821,12 +1793,12 @@ static pid_t
 			pthread_attr_t attr;
 			if (pthread_attr_init(&attr) != 0) {
 				PFLOG(LOG_ERR, "Aborting: pthread_attr_init: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_init failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] pthread_attr_init failed ?!");
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
 				PFLOG(LOG_ERR, "Aborting: pthread_attr_setdetachstate: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setdetachstate failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] pthread_attr_setdetachstate failed ?!");
 				exit(EXIT_FAILURE);
 			}
 
@@ -1837,12 +1809,12 @@ static pid_t
 			if (pthread_attr_setstacksize(
 				&attr, MAX((1U * 1024U * 1024U) / 2U, (sizeof(void*) * 1024U * 1024U) / 8U)) != 0) {
 				PFLOG(LOG_ERR, "Aborting: pthread_attr_setstacksize: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_setstacksize failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] pthread_attr_setstacksize failed ?!");
 				exit(EXIT_FAILURE);
 			}
 			if (pthread_create(&rthread, &attr, reaper_thread, arg) != 0) {
 				PFLOG(LOG_ERR, "Aborting: pthread_create: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_create failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] pthread_create failed ?!");
 				exit(EXIT_FAILURE);
 			}
 
@@ -1851,13 +1823,13 @@ static pid_t
 			snprintf(thname, sizeof(thname), "Reap:%ld", (long) pid);
 			if (pthread_setname_np(rthread, thname) != 0) {
 				PFLOG(LOG_ERR, "Aborting: pthread_setname_np: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_setname_np failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] pthread_setname_np failed ?!");
 				exit(EXIT_FAILURE);
 			}
 
 			if (pthread_attr_destroy(&attr) != 0) {
 				PFLOG(LOG_ERR, "Aborting: pthread_attr_destroy: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] pthread_attr_destroy failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] pthread_attr_destroy failed ?!");
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -1980,7 +1952,7 @@ static bool
 				continue;
 			}
 			PFLOG(LOG_ERR, "Aborting: read: %m");
-			fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
+			FB_PRINT("[KFMon] read failed ?!");
 			exit(EXIT_FAILURE);
 		}
 
@@ -2111,11 +2083,8 @@ static bool
 						LOG(LOG_NOTICE,
 						    "Target icon '%s' might not have been fully processed by Nickel yet, don't launch anything.",
 						    watchConfig[watch_idx].filename);
-						fbink_printf(FBFD_AUTO,
-							     NULL,
-							     &fbinkConfig,
-							     "[KFMon] Not spawning %s: still processing!",
-							     basename(watchConfig[watch_idx].action));
+						FB_PRINTF("[KFMon] Not spawning %s: still processing!",
+							  basename(watchConfig[watch_idx].action));
 						// NOTE: That, or we hit a SQLITE_BUSY timeout on OPEN,
 						//       which tripped our 'pending processing' check.
 						// NOTE: The first time we encounter a not-yet processed file on close,
@@ -2142,27 +2111,18 @@ static bool
 						    watchConfig[watch_idx].filename,
 						    (long) spid,
 						    watchConfig[watch_idx].action);
-						fbink_printf(FBFD_AUTO,
-							     NULL,
-							     &fbinkConfig,
-							     "[KFMon] Not spawning %s: still running!",
-							     basename(watchConfig[watch_idx].action));
+						FB_PRINTF("[KFMon] Not spawning %s: still running!",
+							  basename(watchConfig[watch_idx].action));
 					} else if (is_blocker_spawned) {
 						LOG(LOG_INFO,
 						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
-						fbink_printf(FBFD_AUTO,
-							     NULL,
-							     &fbinkConfig,
-							     "[KFMon] Not spawning %s: blocked!",
-							     basename(watchConfig[watch_idx].action));
+						FB_PRINTF("[KFMon] Not spawning %s: blocked!",
+							  basename(watchConfig[watch_idx].action));
 					} else if (is_spawn_blocked) {
 						LOG(LOG_INFO,
 						    "As the global spawn inhibiter flag is present, we won't be spawning anything!");
-						fbink_printf(FBFD_AUTO,
-							     NULL,
-							     &fbinkConfig,
-							     "[KFMon] Not spawning %s: inhibited!",
-							     basename(watchConfig[watch_idx].action));
+						FB_PRINTF("[KFMon] Not spawning %s: inhibited!",
+							  basename(watchConfig[watch_idx].action));
 					}
 				}
 			}
@@ -2279,7 +2239,7 @@ static bool
 	if (len < 0) {
 		// Only actual failures are left, xread handles the rest
 		PFLOG(LOG_WARNING, "read: %m");
-		fbink_print(FBFD_AUTO, "[KFMon] read failed ?!", &fbinkConfig);
+		FB_PRINT("[KFMon] read failed ?!");
 		// Signal our polling to close the connection, don't retry, as we risk failing here again otherwise.
 		return true;
 	}
@@ -2327,7 +2287,7 @@ static bool
 					PFLOG(LOG_WARNING, "Client closed the connection early");
 				} else {
 					PFLOG(LOG_WARNING, "send: %m");
-					fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
+					FB_PRINT("[KFMon] send failed ?!");
 				}
 				// Don't retry on write failures, just signal our polling to close the connection
 				return true;
@@ -2346,7 +2306,7 @@ static bool
 				PFLOG(LOG_WARNING, "Client closed the connection early");
 			} else {
 				PFLOG(LOG_WARNING, "send: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] send failed ?!");
 			}
 			// Don't retry on write failures, just signal our polling to close the connection
 			return true;
@@ -2480,36 +2440,27 @@ static bool
 						    watchConfig[watch_id].filename,
 						    (long) spid,
 						    watchConfig[watch_id].action);
-						fbink_printf(FBFD_AUTO,
-							     NULL,
-							     &fbinkConfig,
-							     "[KFMon] Not spawning %s: still running!",
-							     basename(watchConfig[watch_id].action));
+						FB_PRINTF("[KFMon] Not spawning %s: still running!",
+							  basename(watchConfig[watch_id].action));
 						packet_len = snprintf(buf, sizeof(buf), "WARN_ALREADY_RUNNING\n");
 					} else if (!force && is_blocker_spawned) {
 						LOG(LOG_INFO,
 						    "As a spawn blocker process is currently running, we won't be spawning anything else to prevent unwanted behavior!");
-						fbink_printf(FBFD_AUTO,
-							     NULL,
-							     &fbinkConfig,
-							     "[KFMon] Not spawning %s: blocked!",
-							     basename(watchConfig[watch_id].action));
+						FB_PRINTF("[KFMon] Not spawning %s: blocked!",
+							  basename(watchConfig[watch_id].action));
 						packet_len = snprintf(buf, sizeof(buf), "WARN_SPAWN_BLOCKED\n");
 					} else if (!force && is_spawn_blocked) {
 						LOG(LOG_INFO,
 						    "As the global spawn inhibiter flag is present, we won't be spawning anything!");
-						fbink_printf(FBFD_AUTO,
-							     NULL,
-							     &fbinkConfig,
-							     "[KFMon] Not spawning %s: inhibited!",
-							     basename(watchConfig[watch_id].action));
+						FB_PRINTF("[KFMon] Not spawning %s: inhibited!",
+							  basename(watchConfig[watch_id].action));
 						packet_len = snprintf(buf, sizeof(buf), "WARN_SPAWN_INHIBITED\n");
 					}
 				}
 			}
 		} else if (errno != 0) {
 			PFLOG(LOG_WARNING, "sscanf: %m");
-			fbink_print(FBFD_AUTO, "[KFMon] sscanf failed ?!", &fbinkConfig);
+			FB_PRINT("[KFMon] sscanf failed ?!");
 			if (trigger) {
 				packet_len = snprintf(buf,
 						      sizeof(buf),
@@ -2544,7 +2495,7 @@ static bool
 				PFLOG(LOG_WARNING, "Client closed the connection early");
 			} else {
 				PFLOG(LOG_WARNING, "send: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] send failed ?!");
 			}
 			// Don't retry on write failures, just signal our polling to close the connection
 			return true;
@@ -2560,7 +2511,7 @@ static bool
 				PFLOG(LOG_WARNING, "Client closed the connection early");
 			} else {
 				PFLOG(LOG_WARNING, "send: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] send failed ?!");
 			}
 			// Don't retry on write failures, just signal our polling to close the connection
 			return true;
@@ -2583,7 +2534,7 @@ static bool
 				PFLOG(LOG_WARNING, "Client closed the connection early");
 			} else {
 				PFLOG(LOG_WARNING, "send: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] send failed ?!");
 			}
 			// Don't retry on write failures, just signal our polling to close the connection
 			return true;
@@ -2603,7 +2554,7 @@ static bool
 				PFLOG(LOG_WARNING, "Client closed the connection early");
 			} else {
 				PFLOG(LOG_WARNING, "send: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] send failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] send failed ?!");
 			}
 			// Don't retry on write failures, just signal our polling to close the connection
 			return true;
@@ -2727,7 +2678,7 @@ static void
 			return;
 		}
 		PFLOG(LOG_ERR, "Aborting: accept: %m");
-		fbink_print(FBFD_AUTO, "[KFMon] accept failed ?!", &fbinkConfig);
+		FB_PRINT("[KFMon] accept failed ?!");
 		exit(EXIT_FAILURE);
 	}
 	// We'll also be poll'ing it, so we want it non-blocking, and CLOEXEC.
@@ -2738,23 +2689,23 @@ static void
 	int fdflags = fcntl(data_fd, F_GETFD, 0);
 	if (fdflags == -1) {
 		PFLOG(LOG_WARNING, "getfd fcntl: %m");
-		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		FB_PRINT("[KFMon] fcntl failed ?!");
 		goto cleanup;
 	}
 	if (fcntl(data_fd, F_SETFD, fdflags | FD_CLOEXEC) == -1) {
 		PFLOG(LOG_WARNING, "setfd fcntl: %m");
-		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		FB_PRINT("[KFMon] fcntl failed ?!");
 		goto cleanup;
 	}
 	int flflags = fcntl(data_fd, F_GETFL, 0);
 	if (flflags == -1) {
 		PFLOG(LOG_WARNING, "getfl fcntl: %m");
-		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		FB_PRINT("[KFMon] fcntl failed ?!");
 		goto cleanup;
 	}
 	if (fcntl(data_fd, F_SETFL, flflags | O_NONBLOCK) == -1) {
 		PFLOG(LOG_WARNING, "setfl fcntl: %m");
-		fbink_print(FBFD_AUTO, "[KFMon] fcntl failed ?!", &fbinkConfig);
+		FB_PRINT("[KFMon] fcntl failed ?!");
 		goto cleanup;
 	}
 
@@ -2764,7 +2715,7 @@ static void
 	socklen_t    len = sizeof(ucred);
 	if (getsockopt(data_fd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) == -1) {
 		PFLOG(LOG_WARNING, "getsockopt: %m");
-		fbink_print(FBFD_AUTO, "[KFMon] getsockopt failed ?!", &fbinkConfig);
+		FB_PRINT("[KFMon] getsockopt failed ?!");
 		goto cleanup;
 	}
 	// Pull the command name from procfs
@@ -2800,7 +2751,7 @@ static void
 				continue;
 			}
 			PFLOG(LOG_WARNING, "poll: %m");
-			fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
+			FB_PRINT("[KFMon] poll failed ?!");
 			goto early_close;
 		}
 
@@ -2923,6 +2874,9 @@ int
 		LOG(LOG_ERR, "Failed to initialize FBInk, aborting!");
 		exit(EXIT_FAILURE);
 	}
+	// We'll also need the state to handle device detection.
+	// That's the only thing we need it for, which is why we don't refresh it on reinit.
+	fbink_get_state(&fbinkConfig, &fbinkState);
 
 	// Initialize SQLite
 	if (sqlite3_config(SQLITE_CONFIG_LOG, sql_errorlogcb, NULL) != SQLITE_OK) {
@@ -2988,7 +2942,7 @@ int
 	// NOTE: To get up to date info, we'll reinit on each new batch of inotify events we catch,
 	//       thus ensuring we'll always have an accurate snapshot of the fb state before printing messages.
 	if (daemonConfig.with_notifications) {
-		fbink_print(FBFD_AUTO, "[KFMon] Successfully initialized. :)", &fbinkConfig);
+		FB_PRINT("[KFMon] Successfully initialized. :)");
 	}
 
 	// We pretty much want to loop forever...
@@ -3015,7 +2969,7 @@ int
 		//       On the upside, this ensures the update codepath will see some action, and isn't completely broken ;).
 		if (update_watch_configs() == -1) {
 			LOG(LOG_ERR, "Failed to check watch configs for updates, aborting!");
-			fbink_print(FBFD_AUTO, "[KFMon] Failed to update watch configs!", &fbinkConfig);
+			FB_PRINT("[KFMon] Failed to update watch configs!");
 			exit(EXIT_FAILURE);
 		}
 
@@ -3024,7 +2978,7 @@ int
 		int fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
 		if (fd == -1) {
 			PFLOG(LOG_ERR, "Aborting: inotify_init1: %m");
-			fbink_print(FBFD_AUTO, "[KFMon] Failed to initialize inotify!", &fbinkConfig);
+			FB_PRINT("[KFMon] Failed to initialize inotify!");
 			exit(EXIT_FAILURE);
 		}
 
@@ -3069,11 +3023,8 @@ int
 					LOG(LOG_WARNING,
 					    "Cannot watch '%s', discarding it!",
 					    watchConfig[watch_idx].filename);
-					fbink_printf(FBFD_AUTO,
-						     NULL,
-						     &fbinkConfig,
-						     "[KFMon] Failed to watch %s!",
-						     basename(watchConfig[watch_idx].filename));
+					FB_PRINTF("[KFMon] Failed to watch %s!",
+						  basename(watchConfig[watch_idx].filename));
 					// NOTE: We used to abort entirely in case even one target file couldn't be watched,
 					//       but that was a bit harsh ;).
 					//       Since the inotify watch couldn't be setup,
@@ -3124,7 +3075,7 @@ int
 					continue;
 				}
 				PFLOG(LOG_ERR, "Aborting: poll: %m");
-				fbink_print(FBFD_AUTO, "[KFMon] poll failed ?!", &fbinkConfig);
+				FB_PRINT("[KFMon] poll failed ?!");
 				exit(EXIT_FAILURE);
 			}
 
