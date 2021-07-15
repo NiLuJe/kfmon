@@ -36,7 +36,7 @@ else
 endif
 
 # We need our bundled FBInk ;).
-LIBS+=-l:libfbink.a
+LIBS+=-l:libfbink.a -l:libi2c.a
 
 # NOTE: Remember to use gdb -ex 'set follow-fork-mode child' to debug, since we fork like wild bunnies...
 ifdef DEBUG
@@ -125,9 +125,9 @@ endif
 
 # And pick up FBInk, too.
 ifdef DEBUG
-	EXTRA_LDFLAGS+=-LFBInk/Debug
+	EXTRA_LDFLAGS+=-LFBInk/Debug -LFBInk/libi2c-staged/lib
 else
-	EXTRA_LDFLAGS+=-LFBInk/Release
+	EXTRA_LDFLAGS+=-LFBInk/Release -LFBInk/libi2c-staged/lib
 	# We already enforce that in SQLite, so, follow suit everywhere
 	EXTRA_CPPFLAGS+=-DNDEBUG
 endif
