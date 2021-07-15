@@ -34,6 +34,9 @@
 int
     main(void)
 {
+	// We can safely assume UR on sunxi...
+	setenv("FBINK_NO_GYRO", "1", 1);
+
 	// NOTE: Another viable approach to the on-animator death situation would be to make sure we get killed if our parent dies,
 	//       which is something we can achieve via a prctl flag:
 	//       prctl(PR_SET_PDEATHSIG, SIGTERM);
