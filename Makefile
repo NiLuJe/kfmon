@@ -332,7 +332,7 @@ debug: sqlite.built
 
 fbinkclean:
 	cd FBInk && \
-	$(MAKE) clean
+	$(MAKE) distclean
 
 sqliteclean:
 	cd sqlite && \
