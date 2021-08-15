@@ -19,7 +19,7 @@ As mentioned earlier, the installation instructions are dead simple:
 [*] Once your device has finished rebooting, you should simply be able to tap on the KOReader or Plato icon in your Home or your Library to launch it, or via the new entries added to the Home's main menu!
 [/LIST]
 
-[B]NOTE:[/B] Something that bears repeating from [url=https://github.com/NiLuJe/kfmon#things-to-watch-out-for]KFMon's FAQ[/url]: a FW update will [i]disable[/i] it, so you'll have to reinstall it after a FW update in order to be able to launch stuff again. You can either use these packages or the standalone [url=https://www.mobileread.com/forums/showthread.php?t=274231]KFMon[/url] package.
+[B]NOTE:[/B] Something that bears repeating from [url=https://github.com/NiLuJe/kfmon#things-to-watch-out-for]KFMon's FAQ[/url]: a FW update will [i]disable[/i] it, so you'll have to reinstall it after a FW update in order to be able to launch stuff again, which is why there's a package dedicated to that listed at the bottom of this post.
 
 [COLOR="Red"][B]NOTE:[/B][/COLOR] Another thing that bears repeating is that on FW >= 4.17, you'll probably also want to [url=https://github.com/NiLuJe/kfmon/blob/afd320d572e250315c0a0d1110cf8b1b321c4a27/tools/install.sh#L114-L130]prevent Nickel from scanning *nix hidden folders[/url]. And you'll want to tweak your config [i]before[/i] unplugging your device (i.e., before installing this; or, if you've just upgraded your FW, during the first USB connection after the update).
 
@@ -37,6 +37,7 @@ The listing follows this format:
 [*][COLOR="RoyalBlue"][B]KOReader[/B][/COLOR]  [B]|[/B]  %KOREADER%  [B]|[/B]  [url=https://www.mobileread.com/forums/forumdisplay.php?f=276]KOReader[/url]
 [*][COLOR="RoyalBlue"][B]Plato[/B][/COLOR]  [B]|[/B]  %PLATO%  [B]|[/B]  [url=https://www.mobileread.com/forums/showthread.php?t=292914]Plato[/url]
 [*][COLOR="RoyalBlue"][B]KOReader AND Plato[/B][/COLOR]  [B]|[/B]  %BOTH%  [B]|[/B]  [url=http://www.mobileread.com/forums/showthread.php?t=274231]KFMon[/url]
+[*][COLOR="RoyalBlue"][B]KFMon[/B][/COLOR] (use this after a FW update)  [B]|[/B]  %KFMON%  [B]|[/B]  [url=http://www.mobileread.com/forums/showthread.php?t=274231]KFMon[/url]
 [/LIST]
 
 [INDENT]%LASTUPDATED%[/INDENT]

@@ -263,9 +263,7 @@ EOF
 	esac
 
 	# Do the actual substitution...
-	if [[ "${mr_file}" != "KFMON" ]] ; then
-		sed -e "s~%${mr_file}%~[url=${BASE_URL}/${file}]${file##*/}[/url]  [B]|[/B]  [I]${moddate}[/I]  [B]|[/B]  ${size}  [B]|[/B]  [COLOR=\"DimGray\"]${checksum}[/COLOR]~" -i KFMON_PUB_BB
-	fi
+	sed -e "s~%${mr_file}%~[url=${BASE_URL}/${file}]${file##*/}[/url]  [B]|[/B]  [I]${moddate}[/I]  [B]|[/B]  ${size}  [B]|[/B]  [COLOR=\"DimGray\"]${checksum}[/COLOR]~" -i KFMON_PUB_BB
 done
 
 cat >> kfmon.html << EOF
