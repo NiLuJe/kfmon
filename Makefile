@@ -312,12 +312,12 @@ sqlite.built:
 ifdef NILUJE
 fbink.built:
 	cd FBInk && \
-	$(MAKE) strip LINUX=true MINIMAL=true DEBUG=$(DEBUG)
+	$(MAKE) strip LINUX=true MINIMAL=true BITMAP=true DEBUG=$(DEBUG)
 	touch fbink.built
 else
 fbink.built:
 	cd FBInk && \
-	$(MAKE) strip KOBO=true MINIMAL=true
+	$(MAKE) strip KOBO=true MINIMAL=true BITMAP=true
 	touch fbink.built
 endif
 
@@ -326,7 +326,7 @@ release: sqlite.built fbink.built shim kfmon-ipc
 
 debug: sqlite.built
 	cd FBInk && \
-	$(MAKE) debug KOBO=true MINIMAL=true
+	$(MAKE) debug KOBO=true MINIMAL=true BITMAP=true
 	touch fbink.built
 	$(MAKE) all DEBUG=true SQLITE=true
 
