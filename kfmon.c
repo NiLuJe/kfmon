@@ -2889,7 +2889,9 @@ int
 		if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_WORKBUF, &fbinkConfig) < 0) {
 			LOG(LOG_NOTICE, "Unable to force FBInk to follow the working buffer's rotation!");
 			// Shouldn't really happen, but reset to GYRO just in case...
-			fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_GYRO, &fbinkConfig);
+			if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_GYRO, &fbinkConfig) < 0) {
+				LOG(LOG_WARNING, "Failed to reset fbink_sunxi_ntx_enforce_rota to FORCE_ROTA_GYRO!");
+			}
 		}
 		// Regardless of the results, refresh the state, because we need an accurate sunxi_force_rota...
 		fbink_get_state(&fbinkConfig, &fbinkState);
