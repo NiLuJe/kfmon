@@ -1935,8 +1935,9 @@ static bool
 	//       but it will in fact change nothing if events aren't actually batched,
 	//       which appears to be the case in most of our use-cases...
 	pthread_mutex_lock(&ptlock);
-	// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-	fbink_reinit(FBFD_AUTO, &fbinkConfig);
+	if (fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0) {
+		PFLOG(LOG_WARNING, "fbink_reinit: failure");
+	}
 	pthread_mutex_unlock(&ptlock);
 
 	// Some systems cannot read integer variables if they are not properly aligned.
@@ -2666,8 +2667,9 @@ static void
 {
 	// Much like handle_events, we need to ensure fb state is consistent...
 	pthread_mutex_lock(&ptlock);
-	// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-	fbink_reinit(FBFD_AUTO, &fbinkConfig);
+	if (fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0) {
+		PFLOG(LOG_WARNING, "fbink_reinit: failure");
+	}
 	pthread_mutex_unlock(&ptlock);
 
 	int data_fd = -1;
@@ -2889,7 +2891,7 @@ int
 			// Shouldn't really happen, but reset to GYRO just in case...
 			fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_GYRO, &fbinkConfig);
 		}
-		// Regardless of the results, refresh the state
+		// Regardless of the results, refresh the state, because we need an accurate sunxi_force_rota...
 		fbink_get_state(&fbinkConfig, &fbinkState);
 	}
 
@@ -2967,8 +2969,9 @@ int
 		// Here, on subsequent iterations, we might be printing stuff *before* handle_events or handle_connection,
 		// (mainly in error-ish codepaths), so we need to check the fb state right now, too...
 		pthread_mutex_lock(&ptlock);
-		// NOTE: It went fine once, assume that'll still be the case and skip error checking...
-		fbink_reinit(FBFD_AUTO, &fbinkConfig);
+		if (fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0) {
+			PFLOG(LOG_WARNING, "fbink_reinit: failure");
+		}
 		pthread_mutex_unlock(&ptlock);
 
 		// Make sure our target partition is mounted
