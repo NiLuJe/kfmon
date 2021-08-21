@@ -301,6 +301,9 @@ FBInkState    fbinkState             = { 0 };
 		}                                                                                                        \
 	})
 
+// Cute trick from https://stackoverflow.com/a/7618231
+#define BOOL2STR(X) ({ ("false\0\0\0true" + 8 * !!(X)); })
+
 static unsigned int qhash(const unsigned char* restrict, size_t);
 static bool         is_target_processed(uint8_t, bool);
 

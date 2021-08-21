@@ -639,8 +639,8 @@ static bool
 		watchConfig[target_idx].hidden = pconfig->hidden;
 		updated                        = true;
 		LOG(LOG_NOTICE,
-		    "Updated hidden to %d for watch config @ index %hhu",
-		    watchConfig[target_idx].hidden,
+		    "Updated hidden to %s for watch config @ index %hhu",
+		    BOOL2STR(watchConfig[target_idx].hidden),
 		    target_idx);
 	}
 
@@ -649,8 +649,8 @@ static bool
 		watchConfig[target_idx].block_spawns = pconfig->block_spawns;
 		updated                              = true;
 		LOG(LOG_NOTICE,
-		    "Updated block_spawns to %d for watch config @ index %hhu",
-		    watchConfig[target_idx].block_spawns,
+		    "Updated block_spawns to %s for watch config @ index %hhu",
+		    BOOL2STR(watchConfig[target_idx].block_spawns),
 		    target_idx);
 	}
 
@@ -659,8 +659,8 @@ static bool
 		watchConfig[target_idx].skip_db_checks = pconfig->skip_db_checks;
 		updated                                = true;
 		LOG(LOG_NOTICE,
-		    "Updated skip_db_checks to %d for watch config @ index %hhu",
-		    watchConfig[target_idx].skip_db_checks,
+		    "Updated skip_db_checks to %s for watch config @ index %hhu",
+		    BOOL2STR(watchConfig[target_idx].skip_db_checks),
 		    target_idx);
 	}
 
@@ -669,8 +669,8 @@ static bool
 		watchConfig[target_idx].do_db_update = pconfig->do_db_update;
 		updated                              = true;
 		LOG(LOG_NOTICE,
-		    "Updated do_db_update to %d for watch config @ index %hhu",
-		    watchConfig[target_idx].do_db_update,
+		    "Updated do_db_update to %s for watch config @ index %hhu",
+		    BOOL2STR(watchConfig[target_idx].do_db_update),
 		    target_idx);
 	}
 
@@ -817,11 +817,11 @@ static int
 							rval = -1;
 						} else {
 							LOG(LOG_NOTICE,
-							    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%d, with_notifications=%d",
+							    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%s, with_notifications=%s",
 							    p->fts_name,
 							    daemonConfig.db_timeout,
-							    daemonConfig.use_syslog,
-							    daemonConfig.with_notifications);
+							    BOOL2STR(daemonConfig.use_syslog),
+							    BOOL2STR(daemonConfig.with_notifications));
 						}
 					} else if (strcasecmp(p->fts_name, "kfmon.user.ini") == 0) {
 						// NOTE: Skip the user config for now,
@@ -852,15 +852,15 @@ static int
 						} else {
 							if (validate_watch_config(&watchConfig[watch_count])) {
 								LOG(LOG_NOTICE,
-								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, label=%s, hidden=%d, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+								    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, label=%s, hidden=%s, block_spawns=%s, do_db_update=%s, db_title=%s, db_author=%s, db_comment=%s",
 								    watch_count,
 								    p->fts_name,
 								    watchConfig[watch_count].filename,
 								    watchConfig[watch_count].action,
 								    watchConfig[watch_count].label,
-								    watchConfig[watch_count].hidden,
-								    watchConfig[watch_count].block_spawns,
-								    watchConfig[watch_count].do_db_update,
+								    BOOL2STR(watchConfig[watch_count].hidden),
+								    BOOL2STR(watchConfig[watch_count].block_spawns),
+								    BOOL2STR(watchConfig[watch_count].do_db_update),
 								    watchConfig[watch_count].db_title,
 								    watchConfig[watch_count].db_author,
 								    watchConfig[watch_count].db_comment);
@@ -901,32 +901,32 @@ static int
 			rval = -1;
 		} else {
 			LOG(LOG_NOTICE,
-			    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%d, with_notifications=%d",
+			    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%s, with_notifications=%s",
 			    "kfmon.user.ini",
 			    daemonConfig.db_timeout,
-			    daemonConfig.use_syslog,
-			    daemonConfig.with_notifications);
+			    BOOL2STR(daemonConfig.use_syslog),
+			    BOOL2STR(daemonConfig.with_notifications));
 		}
 	}
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
-	DBGLOG("Daemon config recap: db_timeout=%hu, use_syslog=%d, with_notifications=%d",
+	DBGLOG("Daemon config recap: db_timeout=%hu, use_syslog=%s, with_notifications=%s",
 	       daemonConfig.db_timeout,
-	       daemonConfig.use_syslog,
-	       daemonConfig.with_notifications);
+	       BOOL2STR(daemonConfig.use_syslog),
+	       BOOL2STR(daemonConfig.with_notifications));
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, label=%s, hidden=%d, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: active=%s, filename=%s, action=%s, label=%s, hidden=%s, block_spawns=%s, skip_db_checks=%s, do_db_update=%s, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
-		    watchConfig[watch_idx].is_active,
+		    BOOL2STR(watchConfig[watch_idx].is_active),
 		    watchConfig[watch_idx].filename,
 		    watchConfig[watch_idx].action,
 		    watchConfig[watch_idx].label,
-		    watchConfig[watch_idx].hidden,
-		    watchConfig[watch_idx].block_spawns,
-		    watchConfig[watch_idx].skip_db_checks,
-		    watchConfig[watch_idx].do_db_update,
+		    BOOL2STR(watchConfig[watch_idx].hidden),
+		    BOOL2STR(watchConfig[watch_idx].block_spawns),
+		    BOOL2STR(watchConfig[watch_idx].skip_db_checks),
+		    BOOL2STR(watchConfig[watch_idx].do_db_update),
 		    watchConfig[watch_idx].db_title,
 		    watchConfig[watch_idx].db_author,
 		    watchConfig[watch_idx].db_comment);
@@ -1042,15 +1042,18 @@ static int
 									if (validate_watch_config(
 										&watchConfig[watch_idx])) {
 										LOG(LOG_NOTICE,
-										    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, label=%s, hidden=%d, block_spawns=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+										    "Watch config @ index %hhu loaded from '%s': filename=%s, action=%s, label=%s, hidden=%s, block_spawns=%s, do_db_update=%s, db_title=%s, db_author=%s, db_comment=%s",
 										    watch_idx,
 										    p->fts_name,
 										    watchConfig[watch_idx].filename,
 										    watchConfig[watch_idx].action,
 										    watchConfig[watch_idx].label,
-										    watchConfig[watch_idx].hidden,
-										    watchConfig[watch_idx].block_spawns,
-										    watchConfig[watch_idx].do_db_update,
+										    BOOL2STR(
+											watchConfig[watch_idx].hidden),
+										    BOOL2STR(watchConfig[watch_idx]
+												 .block_spawns),
+										    BOOL2STR(watchConfig[watch_idx]
+												 .do_db_update),
 										    watchConfig[watch_idx].db_title,
 										    watchConfig[watch_idx].db_author,
 										    watchConfig[watch_idx].db_comment);
@@ -1191,16 +1194,16 @@ static int
 	// Let's recap (including failures)...
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
-		    "Watch config @ index %hhu recap: active=%d, filename=%s, action=%s, label=%s, hidden=%d, block_spawns=%d, skip_db_checks=%d, do_db_update=%d, db_title=%s, db_author=%s, db_comment=%s",
+		    "Watch config @ index %hhu recap: active=%s, filename=%s, action=%s, label=%s, hidden=%s, block_spawns=%s, skip_db_checks=%s, do_db_update=%s, db_title=%s, db_author=%s, db_comment=%s",
 		    watch_idx,
-		    watchConfig[watch_idx].is_active,
+		    BOOL2STR(watchConfig[watch_idx].is_active),
 		    watchConfig[watch_idx].filename,
 		    watchConfig[watch_idx].action,
 		    watchConfig[watch_idx].label,
-		    watchConfig[watch_idx].hidden,
-		    watchConfig[watch_idx].block_spawns,
-		    watchConfig[watch_idx].skip_db_checks,
-		    watchConfig[watch_idx].do_db_update,
+		    BOOL2STR(watchConfig[watch_idx].hidden),
+		    BOOL2STR(watchConfig[watch_idx].block_spawns),
+		    BOOL2STR(watchConfig[watch_idx].skip_db_checks),
+		    BOOL2STR(watchConfig[watch_idx].do_db_update),
 		    watchConfig[watch_idx].db_title,
 		    watchConfig[watch_idx].db_author,
 		    watchConfig[watch_idx].db_comment);
