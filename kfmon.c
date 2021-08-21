@@ -2882,6 +2882,16 @@ int
 	// We'll also need the state to handle device detection.
 	// That's the only thing we need it for, which is why we don't refresh it on reinit.
 	fbink_get_state(&fbinkConfig, &fbinkState);
+	// On sunxi, try to follow Nickel's rotation, if we can...
+	if (fbinkState.is_sunxi && fbinkState.sunxi_has_fbdamage) {
+		if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_WORKBUF, &fbinkConfig) < 0) {
+			LOG(LOG_NOTICE, "Unable to force FBInk to follow the working buffer's rotation!");
+			// Shouldn't really happen, but reset to GYRO just in case...
+			fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_GYRO, &fbinkConfig);
+		}
+		// Regardless of the results, refresh the state
+		fbink_get_state(&fbinkConfig, &fbinkState);
+	}
 
 	// Initialize SQLite
 	if (sqlite3_config(SQLITE_CONFIG_LOG, sql_errorlogcb, NULL) != SQLITE_OK) {
