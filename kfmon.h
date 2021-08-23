@@ -288,7 +288,7 @@ FBInkState    fbinkState             = { 0 };
 
 #define FB_PRINTF(fmt, ...)                                                                                              \
 	({                                                                                                               \
-		if (fbinkState.is_sunxi) {                                                                               \
+		if (fbinkState.is_sunxi && fbinkState.sunxi_force_rota != FORCE_ROTA_WORKBUF) {                          \
 			int fbfd = fbink_open();                                                                         \
 			fbink_toggle_sunxi_ntx_pen_mode(fbfd, true);                                                     \
                                                                                                                          \
