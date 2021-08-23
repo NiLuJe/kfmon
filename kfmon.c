@@ -2581,6 +2581,7 @@ static void
 	FILE* f = fopen(procfile, "re");
 	if (f) {
 		size_t size = fread(name, sizeof(*name), 16U - 1U, f);
+		fclose(f);
 		if (size > 0) {
 			// Strip trailing LF
 			if (name[size - 1U] == '\n') {
@@ -2590,7 +2591,6 @@ static void
 			char* end = name + size;
 			*end      = '\0';
 		}
-		fclose(f);
 	} else {
 		// comm is 16 bytes
 		str5cpy(name, 16U, "<!>", 16U, TRUNC);
