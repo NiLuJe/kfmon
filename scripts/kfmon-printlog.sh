@@ -21,6 +21,8 @@ KFMON_USER_LOG="/mnt/onboard/.adds/kfmon/log/kfmon_dump.log"
 # How many lines do we want to print?
 # NOTE: Start high, we'll try to adjust it down to fit both the screen & the content later...
 LOG_LINES="40"
+# Make sure we follow nickel's rotation on sunxi
+export FBINK_FORCE_ROTA="4"
 
 # See how many lines we can actually print...
 # shellcheck disable=SC2046
