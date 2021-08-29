@@ -1935,7 +1935,7 @@ static bool
 	//       but it will in fact change nothing if events aren't actually batched,
 	//       which appears to be the case in most of our use-cases...
 	pthread_mutex_lock(&ptlock);
-	if (fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0) {
+	if (unlikely(fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0)) {
 		PFLOG(LOG_WARNING, "fbink_reinit: failure");
 	}
 	pthread_mutex_unlock(&ptlock);
@@ -2667,7 +2667,7 @@ static void
 {
 	// Much like handle_events, we need to ensure fb state is consistent...
 	pthread_mutex_lock(&ptlock);
-	if (fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0) {
+	if (unlikely(fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0)) {
 		PFLOG(LOG_WARNING, "fbink_reinit: failure");
 	}
 	pthread_mutex_unlock(&ptlock);
@@ -2976,7 +2976,7 @@ int
 		// Here, on subsequent iterations, we might be printing stuff *before* handle_events or handle_connection,
 		// (mainly in error-ish codepaths), so we need to check the fb state right now, too...
 		pthread_mutex_lock(&ptlock);
-		if (fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0) {
+		if (unlikely(fbink_reinit(FBFD_AUTO, &fbinkConfig) < 0)) {
 			PFLOG(LOG_WARNING, "fbink_reinit: failure");
 		}
 		pthread_mutex_unlock(&ptlock);

@@ -153,6 +153,10 @@ extern const char* sqlite3ErrName(int);
 		}                                                                                                        \
 	})
 
+// Likely/Unlikely branch tagging
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
 // Max length of a text metadata entry in the database (title, author, comment)
 #define DB_SZ_MAX      128
 // Max filepath length we bother to handle
