@@ -1184,7 +1184,10 @@ static int
 	// There were meaningful updates, update the IPC socket's mtime!
 	if (notify_update) {
 		// Leave atime alone, update mtime to now
-		const struct timespec times[2] = { { 0, UTIME_OMIT }, { 0, UTIME_NOW } };
+		const struct timespec times[2] = {
+			{0, UTIME_OMIT},
+                        {0,  UTIME_NOW}
+		};
 		if (utimensat(0, KFMON_IPC_SOCKET, times, 0) == -1) {
 			PFLOG(LOG_WARNING, "utimensat: %m");
 		}
