@@ -2822,6 +2822,55 @@ static void
 	}
 }
 
+static bool
+    fw_version_check(void)
+{
+	// Get the model from Nickel's version tag file...
+	FILE* fp = fopen("/mnt/onboard/.kobo/version", "re");
+	if (!fp) {
+		PFLOG(LOG_WARNING, "Couldn't find a Kobo version tag (onboard unmounted or not running on a Kobo?)!");
+		return false;
+	} else {
+		bool is_okay = false;
+
+		// NOTE: I'm not entirely sure this will always have a fixed length, so, give ourselves a bit of room...
+		//       Can't be on the stack because of strsep's signature.
+		char* buf = NULL;
+		buf       = calloc(_POSIX_PATH_MAX, sizeof(*buf));
+		if (!buf) {
+			PFLOG(LOG_WARNING, "Failed to allocate a line buffer!");
+			return false;
+		}
+
+		size_t size = fread(buf, sizeof(*buf), _POSIX_PATH_MAX - 1U, fp);
+		fclose(fp);
+		if (size > 0) {
+			// The line/file should not contain a trailing LF, but, just in case...
+			if (buf[size - 1U] == '\n') {
+				buf[size - 1U] = '\0';
+			}
+
+			// The FW version is always the third field...
+			char* line = buf;
+			char* sn   = strsep(&line, ",");
+			char* kv   = strsep(&line, ",");
+			char* fw   = strsep(&line, ",");
+
+			// Now that we've got 'em, it can't hurt to leg 'em ;).
+			PFLOG(LOG_INFO, "Running on FW %s with Linux %s", fw, kv);
+
+			// And, finally, check if we're running FW >= 4.29.18730
+			is_okay = !!(strverscmp(fw, "4.29.18730") >= 0);
+		} else {
+			PFLOG(LOG_WARNING, "Failed to read the Kobo version tag (%zu)", size);
+		}
+
+		// Get out now, we're done!
+		free(buf);
+		return is_okay;
+	}
+}
+
 int
     main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 {
@@ -2981,6 +3030,13 @@ int
 
 		// Regardless of the results, refresh the state, because we need an accurate sunxi_force_rota...
 		fbink_get_state(&fbinkConfig, &fbinkState);
+
+		// On sunxi, also check the FW version to see if we can do away with the whole "pen mode" workaround,
+		// as it's unnecessary since the Sage kernel (FW 4.29)...
+		// TODO: Actually install it on my Elipsa to check if the Elipsa got a fixed kernel ;p.
+		if (fw_version_check()) {
+			// TODO: Disable workaround.
+		}
 	}
 
 	// We pretty much want to loop forever...
