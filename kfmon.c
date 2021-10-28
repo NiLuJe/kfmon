@@ -2851,10 +2851,10 @@ static bool
 			}
 
 			// The FW version is always the third field...
-			char* line = buf;
-			char* sn   = strsep(&line, ",");
-			char* kv   = strsep(&line, ",");
-			char* fw   = strsep(&line, ",");
+			char* line                       = buf;
+			char* sn __attribute__((unused)) = strsep(&line, ",");
+			char* kv                         = strsep(&line, ",");
+			char* fw                         = strsep(&line, ",");
 
 			// Now that we've got 'em, it can't hurt to leg 'em ;).
 			PFLOG(LOG_INFO, "Running on FW %s with Linux %s", fw, kv);
