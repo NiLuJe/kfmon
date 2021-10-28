@@ -2860,6 +2860,8 @@ static bool
 			PFLOG(LOG_INFO, "Running on FW %s with Linux %s", fw, kv);
 
 			// And, finally, check if we're running FW >= 4.29.18730
+			// NOTE: strverscmp will essentially only check the final field here,
+			//       e.g., 1.0.99999 would sort as *more* recent...
 			is_okay = !!(strverscmp(fw, "4.29.18730") >= 0);
 		} else {
 			PFLOG(LOG_WARNING, "Failed to read the Kobo version tag (%zu)", size);
