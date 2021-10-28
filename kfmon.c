@@ -2887,21 +2887,10 @@ int
 	// We'll also need the state to handle device detection.
 	// That's the only thing we need it for, which is why we don't refresh it on reinit.
 	fbink_get_state(&fbinkConfig, &fbinkState);
-	// On sunxi, try to follow Nickel's rotation, if we can...
+	// On sunxi, enforce UR for the early boot welcome message.
 	if (fbinkState.is_sunxi) {
-		if (fbinkState.sunxi_has_fbdamage) {
-			if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_WORKBUF, &fbinkConfig) < 0) {
-				LOG(LOG_NOTICE, "Unable to force FBInk to follow the working buffer's rotation!");
-				// Shouldn't really happen, but reset to GYRO just in case...
-				if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_GYRO, &fbinkConfig) < 0) {
-					LOG(LOG_WARNING,
-					    "Failed to reset fbink_sunxi_ntx_enforce_rota to FORCE_ROTA_GYRO!");
-				}
-			}
-			// Regardless of the results, refresh the state, because we need an accurate sunxi_force_rota...
-			fbink_get_state(&fbinkConfig, &fbinkState);
-		} else {
-			LOG(LOG_NOTICE, "FBDamage is not available");
+		if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_UR, &fbinkConfig) < 0) {
+			LOG(LOG_WARNING, "Failed to set fbink_sunxi_ntx_enforce_rota to FORCE_ROTA_UR!");
 		}
 	}
 
@@ -2970,6 +2959,28 @@ int
 	//       thus ensuring we'll always have an accurate snapshot of the fb state before printing messages.
 	if (daemonConfig.with_notifications) {
 		FB_PRINT("[KFMon] Successfully initialized. :)");
+	}
+
+	// Now that the welcome message has been shown, on sunxi, try to follow Nickel's rotation, if we can...
+	if (fbinkState.is_sunxi) {
+		if (fbinkState.sunxi_has_fbdamage) {
+			if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_WORKBUF, &fbinkConfig) < 0) {
+				LOG(LOG_NOTICE, "Unable to force FBInk to follow the working buffer's rotation!");
+				// Shouldn't really happen, but reset to GYRO just in case...
+				if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_GYRO, &fbinkConfig) < 0) {
+					LOG(LOG_WARNING,
+					    "Failed to reset fbink_sunxi_ntx_enforce_rota to FORCE_ROTA_GYRO!");
+				}
+			}
+		} else {
+			LOG(LOG_NOTICE, "FBDamage is not available");
+			if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_GYRO, &fbinkConfig) < 0) {
+				LOG(LOG_WARNING, "Failed to reset fbink_sunxi_ntx_enforce_rota to FORCE_ROTA_GYRO!");
+			}
+		}
+
+		// Regardless of the results, refresh the state, because we need an accurate sunxi_force_rota...
+		fbink_get_state(&fbinkConfig, &fbinkState);
 	}
 
 	// We pretty much want to loop forever...
