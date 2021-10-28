@@ -270,13 +270,14 @@ DaemonConfig  daemonConfig           = { 0 };
 WatchConfig   watchConfig[WATCH_MAX] = { 0 };
 FBInkConfig   fbinkConfig            = { 0 };
 FBInkState    fbinkState             = { 0 };
+bool          need_pen_mode          = false;
 
 // NOTE: Unless we're able to tell FBInk to follow the wb's rotation (i.e., with fbdamage's help),
-//       we want to bracket our refreshes in "pen" mode on sunxi (c.f., FBInk/#64 for more details),
+//       we want to bracket our refreshes in "pen" mode on older sunxi kernels (c.f., FBInk/#64 for more details),
 //       so handle the switcheroo in a macro to avoid code duplication...
 #define FB_PRINT(msg)                                                                                                    \
 	({                                                                                                               \
-		if (fbinkState.is_sunxi && fbinkState.sunxi_force_rota != FORCE_ROTA_WORKBUF) {                          \
+		if (need_pen_mode) {                                                                                     \
 			int fbfd = fbink_open();                                                                         \
 			fbink_toggle_sunxi_ntx_pen_mode(fbfd, true);                                                     \
                                                                                                                          \
@@ -292,7 +293,7 @@ FBInkState    fbinkState             = { 0 };
 
 #define FB_PRINTF(fmt, ...)                                                                                              \
 	({                                                                                                               \
-		if (fbinkState.is_sunxi && fbinkState.sunxi_force_rota != FORCE_ROTA_WORKBUF) {                          \
+		if (need_pen_mode) {                                                                                     \
 			int fbfd = fbink_open();                                                                         \
 			fbink_toggle_sunxi_ntx_pen_mode(fbfd, true);                                                     \
                                                                                                                          \

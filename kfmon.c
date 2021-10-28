@@ -2823,7 +2823,7 @@ static void
 }
 
 static bool
-    fw_version_check(void)
+    is_fw_recent_enough(void)
 {
 	// Get the model from Nickel's version tag file...
 	FILE* fp = fopen("/mnt/onboard/.kobo/version", "re");
@@ -3036,8 +3036,11 @@ int
 		// On sunxi, also check the FW version to see if we can do away with the whole "pen mode" workaround,
 		// as it's unnecessary since the Sage kernel (FW 4.29)...
 		// TODO: Actually install it on my Elipsa to check if the Elipsa got a fixed kernel ;p.
-		if (fw_version_check()) {
-			// TODO: Disable workaround.
+		if (is_fw_recent_enough()) {
+			need_pen_mode = false;
+		} else {
+			// On older kernels, we can only do away with the workaround when we can use fbdamage...
+			need_pen_mode = !!(fbinkState.sunxi_force_rota != FORCE_ROTA_WORKBUF);
 		}
 	}
 
