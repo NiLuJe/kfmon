@@ -2852,11 +2852,11 @@ static bool
 
 			// The FW version is always the third field...
 			char* line                       = buf;
-			char* sn __attribute__((unused)) = strsep(&line, ",");
-			char* kv                         = strsep(&line, ",");
-			char* fw                         = strsep(&line, ",");
+			char* sn __attribute__((unused)) = strsep(&line, ",");    // S/N
+			char* kv                         = strsep(&line, ",");    // Kernel version
+			char* fw                         = strsep(&line, ",");    // Nickel version
 
-			// Now that we've got 'em, it can't hurt to leg 'em ;).
+			// Now that we've got 'em, it can't hurt to log 'em ;).
 			PFLOG(LOG_INFO, "Running on FW %s with Linux %s", fw, kv);
 
 			// And, finally, check if we're running FW >= 4.29.18730
