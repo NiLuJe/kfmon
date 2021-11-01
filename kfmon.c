@@ -3033,10 +3033,12 @@ int
 		// Regardless of the results, refresh the state, because we need an accurate sunxi_force_rota...
 		fbink_get_state(&fbinkConfig, &fbinkState);
 
-		// On sunxi, also check the FW version to see if we can do away with the whole "pen mode" workaround,
-		// as it's unnecessary since the Sage kernel (FW 4.29)...
-		// TODO: Actually install it on my Elipsa to check if the Elipsa got a fixed kernel ;p.
-		if (is_fw_recent_enough()) {
+		// On sunxi, see if we can do away with the whole "pen mode" workaround, as it's unnecessary on the Sage.
+		// NOTE: Unfortunately, it's *still* necessary on the Elipsa, even on FW >= 4.29 :/.
+		//       We keep the code just because I wrote it, damn it! (and for the logging ;p).
+		is_fw_recent_enough();
+		// But we actually check the device to make our decision...
+		if (fbinkState.device_id == DEVICE_KOBO_SAGE) {
 			need_pen_mode = false;
 		} else {
 			// On older kernels, we can only do away with the workaround when we can use fbdamage...
