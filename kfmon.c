@@ -1251,12 +1251,18 @@ static bool
 	//       and without a shared cache: we only do SQL from the main thread.
 	sqlite3* db;
 	if (update) {
-		CALL_SQLITE(open_v2(
-		    KOBO_DB_PATH, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
+		CALL_SQLITE(open_v2(KOBO_DB_PATH,
+				    &db,
+				    SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE |
+					SQLITE_OPEN_EXRESCODE,
+				    NULL));
 	} else {
 		// Open the DB ro to be extra-safe...
-		CALL_SQLITE(open_v2(
-		    KOBO_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE, NULL));
+		CALL_SQLITE(
+		    open_v2(KOBO_DB_PATH,
+			    &db,
+			    SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE | SQLITE_OPEN_EXRESCODE,
+			    NULL));
 	}
 
 	// Wait at most for Nms on OPEN & N*2ms on CLOSE if we ever hit a locked database during any of our proceedings.
