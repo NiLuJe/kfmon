@@ -38,7 +38,7 @@ if (-NOT (Test-Path $KOBO_DIR)) {
 # Ask the user what they want to install...
 # NOTE: Case is a joy on Windows (https://github.com/PowerShell/PowerShell/issues/7578),
 #       so we simply prefix our package names to avoid accepting stock packages here...
-$VALID_GLOBS=@("OCP-KOReader-v*.zip", "OCP-Plato-*.zip", "KFMon-v*.zip", "KFMon-Uninstaller*.zip")
+$VALID_GLOBS=@("OCP-KOReader-v*.zip", "OCP-Plato-*.zip", "OCP-KFMon-*.zip", "KFMon-Uninstaller*.zip")
 $AVAILABLE_PKGS=@()
 foreach ($pat in $VALID_GLOBS) {
 	foreach ($file in Get-ChildItem -File -Name $pat) {
@@ -70,9 +70,9 @@ Write-PackageOptions
 # Valid byte values are tested against size of $AVAILABLE_PKGS
 # $j is used in local logic for tests and feedback
 # loop exits when a valid option is assigned to $PKG_INDEX which is used later
-while ( -not (Get-Variable -Name PKG_INDEX -ErrorAction SilentlyContinue)) { 
+while ( -not (Get-Variable -Name PKG_INDEX -ErrorAction SilentlyContinue)) {
 	try {
-		[byte]$j = Read-Host -Prompt "* Enter the number corresponding to the one you want to install" 
+		[byte]$j = Read-Host -Prompt "* Enter the number corresponding to the one you want to install"
 	} catch {}
 	if ( -not (Get-Variable -Name j -ErrorAction SilentlyContinue) -or ($j -ge $AVAILABLE_PKGS.Length)) {
 		Write-Host("`r`n")

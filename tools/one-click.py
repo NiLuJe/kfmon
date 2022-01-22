@@ -21,6 +21,7 @@ import logging
 from natsort import natsorted
 import os
 from pathlib import Path
+import re
 import requests
 import shutil
 from tempfile import gettempdir
@@ -41,6 +42,8 @@ for kfmon in kfm.glob("KFMon-v*.zip"):
 	kfmon_package = kfmon.resolve(strict=True)
 	# Remember its mtime
 	kfmon_date = kfmon.stat().st_mtime
+	# And the version
+	kfmon_version = re.search(r"KFMon-v(.+?)\.zip", kfmon.name).group(1)
 
 if kfmon_package is None:
 	raise SystemExit("Couldn't find a KFMon install package!")
@@ -346,10 +349,42 @@ os.utime(pk_zip, times=(kfmon_date, kfmon_date))
 # Cleanup behind us
 shutil.rmtree(pk)
 pk = None
-shutil.rmtree(nm)
-nm = None
+
+# Also filter the KFMon standalone package for post-update OCP fixups (i.e., without any configs).
+print("\n* Creating a one-click package for KFMon . . .")
+kf = Path(t / "OCP-KFMon")
+
+# Stage KFMon
+print("* Staging it . . .")
+shutil.unpack_archive(kfmon_package, kf)
+# Use the KFMon + NM KoboRoot
+shutil.copyfile(merged_koboroot, kf / ".kobo/KoboRoot.tgz")
+# Filter out configs & icons
+Path(kf / ".adds/kfmon/config/koreader.ini").unlink()
+Path(kf / "koreader.png").unlink()
+Path(kf / ".adds/kfmon/config/plato.ini").unlink()
+Path(kf / "icons/plato.png").unlink()
+Path(kf / "icons").rmdir()
+# For the odd duck out there that also removes those...
+Path(kf / ".adds/kfmon/config/kfmon-log.ini").unlink()
+Path(kf / "kfmon.png").unlink()
+
+# Finally, zip it up!
+print("* Bundling it . . .")
+kf_basename = "OCP-KFMon-{}".format(kfmon_version)
+kf_zip = Path(t / kf_basename)
+shutil.make_archive(kf_zip, format="zip", root_dir=kf, base_dir=".", logger=logger)
+# And restore KFMon's original mtime...
+kf_zip = kf_zip.with_name("{}.zip".format(kf_basename))
+os.utime(kf_zip, times=(kfmon_date, kfmon_date))
+
+# Cleanup behind us
+shutil.rmtree(kf)
+kf = None
 
 # Final cleanup
+shutil.rmtree(nm)
+nm = None
 ko_main.unlink()
 pl_main.unlink()
 

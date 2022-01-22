@@ -253,7 +253,7 @@ EOF
 		OCP-Plato-*.zip )
 			mr_file="PLATO"
 		;;
-		KFMon-*.zip )
+		OCP-KFMon-*.zip )
 			mr_file="KFMON"
 		;;
 		* )
