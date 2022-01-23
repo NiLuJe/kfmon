@@ -3020,6 +3020,8 @@ int
 
 	// Now that the welcome message has been shown, on sunxi, try to follow Nickel's rotation, if we can...
 	if (fbinkState.is_sunxi) {
+		// NOTE: The fun new races unearthed by FW 4.31.19086 mean that we usually init *before* the fbdamage
+		//       module has finished its own bringup, making the fbdamage codepaths unusable...
 		if (fbinkState.sunxi_has_fbdamage) {
 			if (fbink_sunxi_ntx_enforce_rota(FBFD_AUTO, FORCE_ROTA_WORKBUF, &fbinkConfig) < 0) {
 				LOG(LOG_NOTICE, "Unable to force FBInk to follow the working buffer's rotation!");
