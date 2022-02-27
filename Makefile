@@ -292,7 +292,8 @@ sqlite.built:
 	-DSQLITE_OMIT_AUTOINIT \
 	-DSQLITE_OMIT_UTF16 \
 	-DSQLITE_NEED_ERR_NAME \
-	-DSQLITE_OMIT_DESERIALIZE" \
+	-DSQLITE_OMIT_DESERIALIZE \
+	-DSQLITE_OMIT_JSON" \
 	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
 	--disable-amalgamation \
 	--enable-static \
