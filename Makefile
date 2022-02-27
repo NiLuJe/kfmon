@@ -187,7 +187,7 @@ $(SOCK_OBJS): | outdir
 
 all: kfmon
 
-vendored: sqlite.built fbink.built
+vendored: fbink.built | sqlite.built
 	$(MAKE) kfmon SQLITE=true
 
 kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS)
@@ -322,10 +322,10 @@ fbink.built:
 	touch fbink.built
 endif
 
-release: sqlite.built fbink.built shim kfmon-ipc
+release: fbink.built shim kfmon-ipc | sqlite.built
 	$(MAKE) strip SQLITE=true
 
-debug: sqlite.built
+debug: | sqlite.built
 	cd FBInk && \
 	$(MAKE) debug KOBO=true MINIMAL=true BITMAP=true
 	touch fbink.built
