@@ -279,11 +279,11 @@ bool          need_pen_mode          = false;
 	({                                                                                                               \
 		if (need_pen_mode) {                                                                                     \
 			int fbfd = fbink_open();                                                                         \
-			fbink_toggle_sunxi_ntx_pen_mode(fbfd, true);                                                     \
+			fbink_sunxi_toggle_ntx_pen_mode(fbfd, true);                                                     \
                                                                                                                          \
 			fbink_print(fbfd, msg, &fbinkConfig);                                                            \
                                                                                                                          \
-			fbink_toggle_sunxi_ntx_pen_mode(fbfd, false);                                                    \
+			fbink_sunxi_toggle_ntx_pen_mode(fbfd, false);                                                    \
                                                                                                                          \
 			fbink_close(fbfd);                                                                               \
 		} else {                                                                                                 \
@@ -295,11 +295,11 @@ bool          need_pen_mode          = false;
 	({                                                                                                               \
 		if (need_pen_mode) {                                                                                     \
 			int fbfd = fbink_open();                                                                         \
-			fbink_toggle_sunxi_ntx_pen_mode(fbfd, true);                                                     \
+			fbink_sunxi_toggle_ntx_pen_mode(fbfd, true);                                                     \
                                                                                                                          \
 			fbink_printf(fbfd, NULL, &fbinkConfig, fmt, ##__VA_ARGS__);                                      \
                                                                                                                          \
-			fbink_toggle_sunxi_ntx_pen_mode(fbfd, false);                                                    \
+			fbink_sunxi_toggle_ntx_pen_mode(fbfd, false);                                                    \
                                                                                                                          \
 			fbink_close(fbfd);                                                                               \
 		} else {                                                                                                 \
