@@ -297,7 +297,6 @@ shutil.copy2(nm_cfg / "koreader", nm_dir / "koreader")
 shutil.unpack_archive(ko_main, ko / ".adds")
 # Filter out some extraneous stuff (old fmon relics)
 Path(ko / ".adds" / "koreader.png").unlink()
-Path(ko / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
 print("* Bundling it . . .")
@@ -335,7 +334,6 @@ shutil.unpack_archive(pl_main, pl_dir)
 shutil.unpack_archive(ko_main, pk / ".adds")
 # Filter out some extraneous stuff
 Path(pk / ".adds" / "koreader.png").unlink()
-Path(pk / ".adds" / "README_kobo.txt").unlink()
 
 # Finally, zip it up!
 print("* Bundling it . . .")
