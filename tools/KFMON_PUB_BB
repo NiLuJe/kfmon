@@ -7,7 +7,7 @@ If you're curious as to what this actually [I]does[/I] to original KOreader/Plat
 
 Now that this is out of the way, on to the good stuff!
 
-As mentioned earlier, the installation instructions are dead simple:
+As mentioned earlier, the installation instructions are dead simple, and can be [COLOR="Green"]automated by the script found in [url=https://www.mobileread.com/forums/showpost.php?p=3797096&postcount=2]post #2[/url][/COLOR]:
 [LIST=1]
 [*] Choose what you want to install: KOReader, Plato, or both, and download the appropriate ZIP from the listing below.
 [*] Plug your Kobo eReader to your computer over USB.
@@ -23,7 +23,7 @@ As mentioned earlier, the installation instructions are dead simple:
 
 [COLOR="Red"][B]NOTE:[/B][/COLOR] Another thing that bears repeating is that on FW >= 4.17, you'll probably also want to [url=https://github.com/NiLuJe/kfmon/blob/afd320d572e250315c0a0d1110cf8b1b321c4a27/tools/install.sh#L114-L130]prevent Nickel from scanning *nix hidden folders[/url]. And you'll want to tweak your config [i]before[/i] unplugging your device (i.e., before installing this; or, if you've just upgraded your FW, during the first USB connection after the update).
 
-[B]NOTE:[/B] Please see the next post for an automated installation script, which I heartily recommend using instead of doing all this manually!
+[COLOR="Green"][B]NOTE:[/B][/COLOR] Please see the [url=https://www.mobileread.com/forums/showpost.php?p=3797096&postcount=2]next post[/url] for an automated installation script, which I heartily recommend using instead of doing all this manually!
 
 
 The listing follows this format:
