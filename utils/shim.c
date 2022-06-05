@@ -1,6 +1,6 @@
 /*
 	KFMon: Kobo inotify-based launcher
-	Copyright (C) 2016-2021 NiLuJe <ninuje@gmail.com>
+	Copyright (C) 2016-2022 NiLuJe <ninuje@gmail.com>
 	SPDX-License-Identifier: GPL-3.0-or-later
 
 	This program is free software: you can redistribute it and/or modify
