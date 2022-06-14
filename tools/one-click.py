@@ -365,7 +365,8 @@ Path(kf / "icons/plato.png").unlink()
 Path(kf / "icons").rmdir()
 # For the odd duck out there that also removes those...
 Path(kf / ".adds/kfmon/config/kfmon-log.ini").unlink()
-Path(kf / "kfmon.png").unlink()
+# NOTE: Can't remove that, as it's used by the install script as a sentinel file for the safety checks!
+#Path(kf / "kfmon.png").unlink()
 
 # Finally, zip it up!
 print("* Bundling it . . .")
