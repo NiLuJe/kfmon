@@ -1238,8 +1238,9 @@ static bool
 {
 #ifdef DEBUG
 	// Bypass DB checks on demand for debugging purposes...
-	if (watchConfig[watch_idx].skip_db_checks)
+	if (watchConfig[watch_idx].skip_db_checks) {
 		return true;
+	}
 #endif
 
 	// Did the user want to try to update the DB for this icon?
