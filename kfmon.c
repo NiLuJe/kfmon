@@ -253,7 +253,7 @@ static int
 	errno                 = 0;    // To distinguish success/failure after call
 	unsigned long int val = strtoul(str, &endptr, 10);
 
-	if ((errno == ERANGE && val == ULONG_MAX) || (errno != 0 && val == 0)) {
+	if (errno != 0) {
 		PFLOG(LOG_WARNING, "strtoul: %m");
 		return -EINVAL;
 	}
