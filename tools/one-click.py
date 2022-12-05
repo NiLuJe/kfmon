@@ -24,13 +24,45 @@ from pathlib import Path
 import re
 import requests
 import shutil
+import tarfile
 from tempfile import gettempdir
 from time import mktime
 from tqdm import tqdm
+import zipfile
 
 # Set up a logger for shutil.make_archive
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("KFMon")
+
+# Half-assed attempt at sanitizing tar members, at least until https://github.com/python/cpython/issues/73974 goes somewhere...
+# Based on https://gist.github.com/Kasimir123/9bdc38f2eac9a19f83ef6cc52c7ce82e
+def is_within_directory(directory, target):
+	abs_directory = os.path.abspath(directory)
+	abs_target = os.path.abspath(target)
+
+	prefix = os.path.commonprefix([abs_directory, abs_target])
+
+	return prefix == abs_directory
+
+def checked_tar_extractall(tar, path=".", members=None, *, numeric_owner=False):
+	for member in tar.getmembers():
+		member_path = os.path.join(path, member.name)
+		if not is_within_directory(path, member_path):
+			raise Exception("Path traversal in tarball")
+
+	return tar.extractall(path, members, numeric_owner=numeric_owner)
+
+# Mimic shutil.unpack_archive's signature
+def checked_unpack_archive(filename, extract_dir):
+	# We use Pathlib everywhere
+	if filename.suffix == ".zip":
+		with zipfile.ZipFile(filename) as zipf:
+			# zipfile doesn't raise an error, but will silently strip leading / & ..
+			zipf.extractall(extract_dir)
+	else:
+		tar = tarfile.open(filename)
+		checked_tar_extractall(tar, extract_dir)
+		tar.close()
 
 # We'll need the current KFMon install package first
 print("* Looking for the latest KFMon install package . . .")
@@ -185,11 +217,11 @@ with requests.get(nickelmenu_url, stream=True) as r:
 
 # Unpack both KFMon & NM
 print("* Merging NickelMenu with KFMon")
-shutil.unpack_archive(kfmon_package, nm)
+checked_unpack_archive(kfmon_package, nm)
 # Merge both KoboRoot tarballs...
 nm_kobo = Path(nm / "KOBOROOT")
-shutil.unpack_archive(nm / ".kobo/KoboRoot.tgz", nm_kobo)
-shutil.unpack_archive(nm_main, nm_kobo)
+checked_unpack_archive(nm / ".kobo/KoboRoot.tgz", nm_kobo)
+checked_unpack_archive(nm_main, nm_kobo)
 merged_koboroot = Path(nm / "KoboRoot")
 shutil.make_archive(merged_koboroot, format="gztar", root_dir=nm_kobo, base_dir=".", owner="root", group="root", logger=logger)
 # Update to the actual filename created by make_archive
@@ -224,7 +256,7 @@ with requests.get(plato_url, stream=True) as r:
 
 # Stage KFMon first
 print("* Staging it . . .")
-shutil.unpack_archive(kfmon_package, pl)
+checked_unpack_archive(kfmon_package, pl)
 # Filter out KOReader config & icons
 Path(pl / ".adds/kfmon/config/koreader.ini").unlink()
 Path(pl / "koreader.png").unlink()
@@ -239,7 +271,7 @@ shutil.copy2(nm_cfg / "plato", nm_dir / "plato")
 # Then stage Plato
 pl_dir = Path(pl / ".adds/plato")
 pl_dir.mkdir(parents=True, exist_ok=True)
-shutil.unpack_archive(pl_main, pl_dir)
+checked_unpack_archive(pl_main, pl_dir)
 
 # Finally, zip it up!
 print("* Bundling it . . .")
@@ -280,7 +312,7 @@ with requests.get(koreader_url, stream=True) as r:
 
 # Stage KFMon first
 print("* Staging it . . .")
-shutil.unpack_archive(kfmon_package, ko)
+checked_unpack_archive(kfmon_package, ko)
 # Filter out Plato config & icons
 Path(ko / ".adds/kfmon/config/plato.ini").unlink()
 Path(ko / "icons/plato.png").unlink()
@@ -294,7 +326,7 @@ shutil.copy2(nm_cfg / "kfmon", nm_dir / "kfmon")
 shutil.copy2(nm_cfg / "koreader", nm_dir / "koreader")
 
 # Then stage KOReader
-shutil.unpack_archive(ko_main, ko / ".adds")
+checked_unpack_archive(ko_main, ko / ".adds")
 # Filter out some extraneous stuff (old fmon relics)
 Path(ko / ".adds" / "koreader.png").unlink()
 
@@ -317,7 +349,7 @@ pk = Path(t / "Both")
 
 # Stage KFMon first
 print("* Staging it . . .")
-shutil.unpack_archive(kfmon_package, pk)
+checked_unpack_archive(kfmon_package, pk)
 # Use the KFMon + NM KoboRoot
 shutil.copyfile(merged_koboroot, pk / ".kobo/KoboRoot.tgz")
 # Add the relevant NM configs
@@ -329,9 +361,9 @@ shutil.copy2(nm_cfg / "plato", nm_dir / "plato")
 # Then Plato
 pl_dir = Path(pk / ".adds/plato")
 pl_dir.mkdir(parents=True, exist_ok=True)
-shutil.unpack_archive(pl_main, pl_dir)
+checked_unpack_archive(pl_main, pl_dir)
 # Then KOReader
-shutil.unpack_archive(ko_main, pk / ".adds")
+checked_unpack_archive(ko_main, pk / ".adds")
 # Filter out some extraneous stuff
 Path(pk / ".adds" / "koreader.png").unlink()
 
@@ -354,7 +386,7 @@ kf = Path(t / "OCP-KFMon")
 
 # Stage KFMon
 print("* Staging it . . .")
-shutil.unpack_archive(kfmon_package, kf)
+checked_unpack_archive(kfmon_package, kf)
 # Use the KFMon + NM KoboRoot
 shutil.copyfile(merged_koboroot, kf / ".kobo/KoboRoot.tgz")
 # Filter out configs & icons
