@@ -64,7 +64,7 @@ extern const char* sqlite3ErrName(int);
 
 // Fallback version tag...
 #ifndef KFMON_VERSION
-#	define KFMON_VERSION "v1.4.5"
+#	define KFMON_VERSION "v1.4.6"
 #endif
 // Fallback timestamp...
 #ifndef KFMON_TIMESTAMP
