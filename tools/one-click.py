@@ -57,9 +57,8 @@ def checked_unpack_archive(filename, extract_dir):
 			# zipfile doesn't raise an error, but will silently strip leading / & ..
 			zipf.extractall(extract_dir)
 	else:
-		tar = tarfile.open(filename)
-		checked_tar_extractall(tar, extract_dir)
-		tar.close()
+		with tarfile.open(filename) as tarf:
+			checked_tar_extractall(tarf, extract_dir)
 
 # We'll need the current KFMon install package first
 print("* Looking for the latest KFMon install package . . .")
