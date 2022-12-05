@@ -39,18 +39,15 @@ logger = logging.getLogger("KFMon")
 def is_within_directory(directory, target):
 	abs_directory = os.path.abspath(directory)
 	abs_target = os.path.abspath(target)
-
 	prefix = os.path.commonprefix([abs_directory, abs_target])
-
 	return prefix == abs_directory
 
-def checked_tar_extractall(tar, path=".", members=None, *, numeric_owner=False):
+def checked_tar_extractall(tar, path=".", **kwargs):
 	for member in tar.getmembers():
 		member_path = os.path.join(path, member.name)
 		if not is_within_directory(path, member_path):
 			raise Exception("Path traversal in tarball")
-
-	return tar.extractall(path, members, numeric_owner=numeric_owner)
+	return tar.extractall(path, **kwargs)
 
 # Mimic shutil.unpack_archive's signature
 def checked_unpack_archive(filename, extract_dir):
