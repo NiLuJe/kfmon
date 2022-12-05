@@ -46,7 +46,7 @@ def checked_tar_extractall(tar, path=".", **kwargs):
 	for member in tar.getmembers():
 		member_path = os.path.join(path, member.name)
 		if not is_within_directory(path, member_path):
-			raise Exception("Path traversal in tarball")
+			raise RuntimeError("Path traversal in tarball")
 	return tar.extractall(path, **kwargs)
 
 # Mimic shutil.unpack_archive's signature
