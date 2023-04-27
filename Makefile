@@ -345,4 +345,7 @@ distclean: clean sqliteclean fbinkclean
 	rm -rf sqlite.built
 	rm -rf fbink.built
 
-.PHONY: default outdir all vendored kfmon shim kfmon-ipc strip armcheck kobo debug niluje nilujed clean release fbinkclean sqliteclean distclean
+format:
+	clang-format -style=file -i *.c *.h openssh/*.c openssh/*.h str5/*.c str5/*.h utils/*.c utils/*.h
+
+.PHONY: default outdir all vendored kfmon shim kfmon-ipc strip armcheck kobo debug niluje nilujed clean release fbinkclean sqliteclean distclean format
