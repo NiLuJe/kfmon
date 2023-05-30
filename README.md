@@ -1,5 +1,5 @@
 # KFMon
-[![License](https://img.shields.io/github/license/NiLuJe/kfmon.svg)](/LICENSE) [![Total alerts](https://img.shields.io/lgtm/alerts/g/NiLuJe/kfmon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NiLuJe/kfmon/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/NiLuJe/kfmon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/NiLuJe/kfmon/context:cpp) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/10fc7906b51c4aba94967d4c63098ebe)](https://www.codacy.com/app/NiLuJe/kfmon?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=NiLuJe/kfmon&amp;utm_campaign=Badge_Grade) [![Latest tag](https://img.shields.io/github/tag-date/NiLuJe/kfmon.svg)](https://github.com/NiLuJe/kfmon/releases/)
+[![License](https://img.shields.io/github/license/NiLuJe/kfmon.svg)](/LICENSE) (https://www.codacy.com/app/NiLuJe/kfmon?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=NiLuJe/kfmon&amp;utm_campaign=Badge_Grade) [![Latest tag](https://img.shields.io/github/tag-date/NiLuJe/kfmon.svg)](https://github.com/NiLuJe/kfmon/releases/)
 
 Kute File Monitor
 
