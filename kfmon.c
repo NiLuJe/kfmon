@@ -71,8 +71,8 @@ static int
 	origStderr = dup(fileno(stderr));
 
 	// Redirect stdin & stdout to /dev/null
-	int fd = -1;
-	if ((fd = open("/dev/null", O_RDWR)) != -1) {
+	int fd = open("/dev/null", O_RDWR);
+	if (fd != -1) {
 		dup2(fd, fileno(stdin));
 		dup2(fd, fileno(stdout));
 		if (fd > 2 + 3) {
@@ -2963,10 +2963,10 @@ int
 	}
 
 	// Setup the IPC socket
-	int conn_fd = -1;
 	// NOTE: We want it non-blocking because we handle incoming connections via poll,
 	//       and CLOEXEC not to pollute our spawns.
-	if ((conn_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
+	int conn_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+	if (conn_fd == -1) {
 		PFLOG(LOG_ERR, "Failed to create IPC socket (socket: %m), aborting!");
 		exit(EXIT_FAILURE);
 	}

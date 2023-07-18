@@ -151,8 +151,8 @@ int
     main(void)
 {
 	// Setup the local socket
-	int data_fd = -1;
-	if ((data_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0)) == -1) {
+	int data_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+	if (data_fd == -1) {
 		fprintf(stderr, "Failed to create local IPC socket (socket: %m), aborting!\n");
 		exit(EXIT_FAILURE);
 	}
