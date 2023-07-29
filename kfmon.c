@@ -207,7 +207,6 @@ static void
 	pfd.events          = POLLERR | POLLPRI;
 	pfd.revents         = 0;
 	uint8_t changes     = 0U;
-	// FIXME: Might be a tad low on MTK... (try something like fbinkState.is_mtk ? 12U : 6U)
 	uint8_t max_changes = 6U;
 
 	while (poll(&pfd, 1, -1) >= 0) {
