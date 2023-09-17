@@ -101,6 +101,12 @@ ifndef NILUJE
 	EXTRA_CFLAGS+=-Wno-null-dereference
 endif
 
+# Match the harmless part of FBInk's enforced optimizations
+ifndef DEBUG
+	SQLITE_CFLAGS+=-fno-semantic-interposition
+	EXTRA_CFLAGS+=-fno-semantic-interposition
+endif
+
 # A version tag...
 KFMON_VERSION:=$(shell git describe)
 EXTRA_CFLAGS+=-DKFMON_VERSION='"$(KFMON_VERSION)"'
@@ -294,6 +300,7 @@ sqlite.built:
 	-DSQLITE_NEED_ERR_NAME \
 	-DSQLITE_OMIT_DESERIALIZE \
 	-DSQLITE_OMIT_JSON" \
+	CFLAGS="$(CFLAGS) $(SQLITE_CFLAGS)" \
 	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
 	--disable-amalgamation \
 	--enable-static \
