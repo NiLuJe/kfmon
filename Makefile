@@ -197,14 +197,14 @@ vendored: fbink.built | sqlite.built
 	$(MAKE) kfmon SQLITE=true
 
 kfmon: $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@$(BINEXT) $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS) $(LIBS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/$@ $(OBJS) $(INIH_OBJS) $(STR5_OBJS) $(SSH_OBJS) $(LIBS)
 
 shim: | outdir
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/shim$(BINEXT) utils/shim.c
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/shim utils/shim.c
 	$(STRIP) --strip-unneeded $(OUT_DIR)/shim
 
 kfmon-ipc: | outdir $(STR5_OBJS) $(SSH_OBJS)
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/kfmon-ipc$(BINEXT) utils/kfmon-ipc.c $(STR5_OBJS) $(SSH_OBJS)
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o$(OUT_DIR)/kfmon-ipc utils/kfmon-ipc.c $(STR5_OBJS) $(SSH_OBJS)
 	$(STRIP) --strip-unneeded $(OUT_DIR)/kfmon-ipc
 
 strip: all
