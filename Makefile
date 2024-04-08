@@ -358,5 +358,7 @@ format:
 ocp:
 	./tools/one-click.py
 	./tools/upload.sh
+	cat /tmp/KFMon/KFMON_PUB_BB
+	rm -rf /tmp/KFMon
 
 .PHONY: default outdir all vendored kfmon shim kfmon-ipc strip armcheck kobo debug niluje nilujed clean release fbinkclean sqliteclean distclean format ocp
