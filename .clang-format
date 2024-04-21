@@ -4,17 +4,28 @@ Language:        Cpp
 AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
 AlignArrayOfStructures: Right
-AlignConsecutiveAssignments: AcrossComments
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossComments: true
+  AlignCompound: true
+  PadOperators: false
 AlignConsecutiveBitFields: AcrossComments
-AlignConsecutiveDeclarations: AcrossComments
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossComments: true
+  AlignFunctionPointers: false
 AlignConsecutiveMacros: AcrossComments
 AlignEscapedNewlines: Right
 AlignOperands: Align
-AlignTrailingComments: true
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: false
+AllowBreakBeforeNoexceptSpecifier: OnlyWithParen
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
+AllowShortCompoundRequirementOnASingleLine: true
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
@@ -48,10 +59,15 @@ BraceWrapping:
   SplitEmptyFunction: true
   SplitEmptyRecord: false
   SplitEmptyNamespace: true
+BracedInitializerIndentWidth: 4
+BreakAdjacentStringLiterals: true
+BreakAfterAttributes: Never
 BreakAfterJavaFieldAnnotations: false
+BreakArrays: false
 BreakBeforeBinaryOperators: None
 BreakBeforeInheritanceComma: false
 BreakBeforeConceptDeclarations: Allowed
+BreakBeforeInlineASMColon: OnlyMultiline
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
 BreakConstructorInitializers: AfterColon
@@ -99,20 +115,28 @@ IndentWidth:     8
 IndentWrappedFunctionNames: true
 # NOTE: New as of Clang 15, may still misbehave
 InsertBraces: true
+InsertNewlineAtEOF: true
 InsertTrailingCommas: None
+# C++ only, which essentially means nope, because C headers ;).
+#IntegerLiteralSeparator:
+#  Binary: 8
 #JavaImportGroups: ['com.example', 'com', 'org']
 JavaScriptQuotes: Double
 JavaScriptWrapImports: true
+KeepEmptyLinesAtEOF: false
 KeepEmptyLinesAtTheStartOfBlocks: false
 LambdaBodyIndentation: Signature
+LineEnding: DeriveLF
 MacroBlockBegin: ''
 MacroBlockEnd:   ''
+#Macros:
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
 #NamespaceMacros: ['TESTSUITE']
 ObjCBinPackProtocolList: Auto
 ObjCBlockIndentWidth: 8
 ObjCBreakBeforeNestedBlockParam: true
+#ObjCPropertyAttributeOrder
 ObjCSpaceAfterProperty: true
 ObjCSpaceBeforeProtocolList: false
 PPIndentWidth: -1
@@ -122,6 +146,7 @@ PenaltyBreakBeforeFirstCallParameter: 19
 PenaltyBreakComment: 300
 PenaltyBreakFirstLessLess: 120
 #PenaltyBreakOpenParenthesis:
+#PenaltyBreakScopeResolution:
 PenaltyBreakString: 1000
 PenaltyBreakTemplateDeclaration: 10
 PenaltyExcessCharacter: 1000000
@@ -136,13 +161,18 @@ PointerAlignment: Left
 ReferenceAlignment: Pointer
 ReflowComments:  false
 RemoveBracesLLVM: false
+# NOTE: MultipleParentheses might be fun, but may misbehave
+RemoveParentheses: Leave
+RemoveSemicolon: true
 RequiresClausePosition: WithPreceding
+RequiresExpressionIndentation: OuterScope
 # NOTE: Nice in theory, but there can be exceptions in practice ;).
 SeparateDefinitionBlocks: Leave
 ShortNamespaceLines: 1
+SkipMacroDefinitionBody: false
 SortIncludes: CaseSensitive
 SortJavaStaticImport: Before
-SortUsingDeclarations: true
+SortUsingDeclarations: LexicographicNumeric
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: false
@@ -152,11 +182,11 @@ SpaceBeforeCaseColon: false
 SpaceBeforeCpp11BracedList: false
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeInheritanceColon: true
+SpaceBeforeJsonColon: false
 SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceBeforeSquareBrackets: false
 SpaceInEmptyBlock: false
-SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 4
 SpacesInAngles: Never
 SpacesInCStyleCastParentheses: false
@@ -165,7 +195,7 @@ SpacesInContainerLiterals: true
 SpacesInLineCommentPrefix:
   Minimum:         1
   Maximum:         -1
-SpacesInParentheses: false
+SpacesInParens: Never
 SpacesInSquareBrackets: false
 Standard:        Latest
 StatementAttributeLikeMacros: ['emit']
@@ -173,9 +203,10 @@ StatementMacros:
   - Q_UNUSED
   - QT_REQUIRE_VERSION
 TabWidth:        8
+#TypeNames: []
 TypenameMacros: ['STACK_OF', 'LIST_ENTRY']
-UseCRLF:         false
 UseTab:          ForContinuationAndIndentation
+VerilogBreakBetweenInstancePorts: true
 #WhitespaceSensitiveMacros: ['STRINGIZE', 'PP_STRINGIZE']
 ...
 

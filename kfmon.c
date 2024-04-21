@@ -763,10 +763,10 @@ static int
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
 	// We only need to walk a single directory...
-#pragma GCC diagnostic   push
-#pragma GCC diagnostic   ignored "-Wunknown-pragmas"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
-#pragma GCC diagnostic   ignored "-Wdiscarded-qualifiers"
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
@@ -943,10 +943,10 @@ static int
 	// Walk the config directory to pickup our ini files... (c.f.,
 	// https://keramida.wordpress.com/2009/07/05/fts3-or-avoiding-to-reinvent-the-wheel/)
 	// We only need to walk a single directory...
-#pragma GCC diagnostic   push
-#pragma GCC diagnostic   ignored "-Wunknown-pragmas"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
-#pragma GCC diagnostic   ignored "-Wdiscarded-qualifiers"
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
@@ -1185,8 +1185,8 @@ static int
 	if (notify_update) {
 		// Leave atime alone, update mtime to now
 		const struct timespec times[2] = {
-			{0, UTIME_OMIT},
-                        {0,  UTIME_NOW}
+			{ 0, UTIME_OMIT },
+                        { 0,  UTIME_NOW }
 		};
 		if (utimensat(0, KFMON_IPC_SOCKET, times, 0) == -1) {
 			PFLOG(LOG_WARNING, "utimensat: %m");
@@ -1224,7 +1224,7 @@ static unsigned int
 	unsigned int h = 0;
 
 	for (unsigned int i = 0; i < length; i++) {
-		h = (h << 4) + bytes[i];
+		h  = (h << 4) + bytes[i];
 		h ^= (h & 0xf0000000) >> 23;
 		h &= 0x0fffffff;
 	}
