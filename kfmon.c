@@ -970,10 +970,10 @@ static int
 
 	// Keep track of which watch indexes are up-to-date, so we can drop stale watches if some configs were deleted.
 	// NOTE: Init to -1 because 0 is a valid watch index ;).
-	int8_t  new_watch_list[] = { [0 ... WATCH_MAX - 1] = -1 };
-	uint8_t new_watch_count  = 0U;
+	int8_t  new_watch_list[WATCH_MAX] = { [0 ... WATCH_MAX - 1] = -1 };
+	uint8_t new_watch_count           = 0U;
 	// If there was a meaningful update, we'll update the IPC socket's mtime as a hint to clients that new data is available.
-	bool    notify_update    = false;
+	bool    notify_update             = false;
 
 	FTSENT* restrict p;
 	while ((p = fts_read(ftsp)) != NULL) {
