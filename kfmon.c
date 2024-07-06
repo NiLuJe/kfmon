@@ -771,10 +771,10 @@ static int
 	char* const cfg_path[] = { KFMON_CONFIGPATH, NULL };
 #pragma GCC diagnostic pop
 
-	// Don't chdir (because that mountpoint can go buh-bye), and don't stat (because we don't need to).
+	// Don't chdir (because that mountpoint can go buh-bye).
 	FTS* restrict ftsp;
 	if ((ftsp = fts_open(
-		 cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_NOSTAT | FTS_XDEV, &fts_alphasort)) == NULL) {
+		 cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_XDEV, &fts_alphasort)) == NULL) {
 		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
