@@ -772,9 +772,11 @@ static int
 #pragma GCC diagnostic pop
 
 	// Don't chdir (because that mountpoint can go buh-bye).
+	// NOTE: We *could* use FTS_NOSTAT, because we *do* get basic info about regular files this way...
+	//       ...because fts will actually stat those in FTS_LOGICAL mode (while you'd get a whole lot of FTS_NSOK w/ FTS_PHYSICAL).
+	//       Which means this wouldn't save us much, so *do* stat all the things so we get accurate info regardless.
 	FTS* restrict ftsp;
-	if ((ftsp = fts_open(
-		 cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_XDEV, &fts_alphasort)) == NULL) {
+	if ((ftsp = fts_open(cfg_path, FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR | FTS_XDEV, &fts_alphasort)) == NULL) {
 		PFLOG(LOG_CRIT, "fts_open: %m");
 		return -1;
 	}
