@@ -297,13 +297,13 @@ bool          need_pen_mode          = false;
 			int fbfd = fbink_open();                                                                         \
 			fbink_sunxi_toggle_ntx_pen_mode(fbfd, true);                                                     \
                                                                                                                          \
-			fbink_printf(fbfd, NULL, &fbinkConfig, fmt, ##__VA_ARGS__);                                      \
+			fbink_printf(fbfd, NULL, &fbinkConfig, NULL, fmt, ##__VA_ARGS__);                                \
                                                                                                                          \
 			fbink_sunxi_toggle_ntx_pen_mode(fbfd, false);                                                    \
                                                                                                                          \
 			fbink_close(fbfd);                                                                               \
 		} else {                                                                                                 \
-			fbink_printf(FBFD_AUTO, NULL, &fbinkConfig, fmt, ##__VA_ARGS__);                                 \
+			fbink_printf(FBFD_AUTO, NULL, &fbinkConfig, NULL, fmt, ##__VA_ARGS__);                           \
 		}                                                                                                        \
 	})
 
