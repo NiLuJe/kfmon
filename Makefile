@@ -292,6 +292,7 @@ clean:
 	rm -rf Release/shim
 	rm -rf Release/kfmon-ipc
 	rm -rf Release/KoboRoot.tgz
+	rm -rf Release/update.tar
 	rm -rf Debug/inih/*.o
 	rm -rf Debug/str5/*.o
 	rm -rf Debug/openssh/*.o
