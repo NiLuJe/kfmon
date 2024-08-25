@@ -13,8 +13,8 @@ rm -rf "/usr/local/kfmon"
 rm -f "/usr/bin/kfmon-ipc"
 
 # Kobo v5 startscript
-rm -rf "/etc/rcS.d/S99kfmon"
-rm -rf "/etc/init.d/kfmon"
+rm -f "/etc/rcS.d/S99kfmon"
+rm -f "/etc/init.d/kfmon"
 
 # NOTE: Delete our own icons & configs, but leave whatever else the user might have created alone.
 #       List based on what the full OCP deploys.
