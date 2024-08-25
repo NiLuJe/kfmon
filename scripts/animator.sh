@@ -7,7 +7,9 @@
 # NOTE: Unlike on v4, we run *juuuuust* before mount-userdata (S11mount-userdata vs. S10display-init.sh),
 #       so our trigger file *cannot* be on onboard...
 KFMON_BAR_FLAG="/usr/local/kfmon/BAR"
-if [ -f "${KFMON_BAR_FLAG}" ] && [ ! -d "/recovery" ] ; then
+# NOTE: Both display-init in recovery & ota use the update-spinner set of fb dumps,
+#       but let's whitelist the actual boot anim instead to leave those two alone ;).
+if [ -f "${KFMON_BAR_FLAG}" ] && echo "${1}" | grep -q -- '-on-0\.raw\.gz$' ; then
 	FBINK_SHIM_BIN="/usr/local/kfmon/bin/shim"
 	exec ${FBINK_SHIM_BIN} "animator.sh"
 else
