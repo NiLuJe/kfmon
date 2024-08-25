@@ -261,7 +261,7 @@ kobov5: armcheck release
 	ln -f $(CURDIR)/README.md KoboV5/usr/local/kfmon/README.md
 	ln -f $(CURDIR)/LICENSE KoboV5/usr/local/kfmon/LICENSE
 	ln -f $(CURDIR)/CREDITS KoboV5/usr/local/kfmon/CREDITS
-	ln -f $(CURDIR)/scripts/animator.sh Kobo/usr/bin/animator.sh
+	ln -f $(CURDIR)/scripts/animator.sh KoboV5/usr/bin/animator.sh
 	tar --exclude="./mnt" --exclude="KFMon-*.zip" --owner=root --group=root --hard-dereference -cvzf Release/kfmon.tgz -C KoboV5 .
 	tar --owner=root --group=root -cvhf Release/update.tar -C scripts driver.sh kfmon-install.sh
 	tar --owner=root --group=root -rvhf Release/update.tar -C Release kfmon.tgz
@@ -390,4 +390,4 @@ ocp:
 	cat /tmp/KFMon/KFMON_PUB_BB
 	rm -rf /tmp/KFMon
 
-.PHONY: default outdir all vendored kfmon shim kfmon-ipc strip armcheck kobo debug niluje nilujed clean release fbinkclean sqliteclean distclean format ocp
+.PHONY: default outdir all vendored kfmon shim kfmon-ipc strip armcheck kobo kobov5 debug niluje nilujed clean release fbinkclean sqliteclean distclean format ocp
