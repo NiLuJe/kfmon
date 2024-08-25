@@ -31,7 +31,7 @@ for my_dir in ".adds/kfmon/log" ".adds/kfmon/config" ".adds/kfmon/bin" ".adds/kf
 	[ -d "${my_dir}" ] && [ -z "$(ls -A -- "${my_dir}")" ] && rm -rf "${my_dir}"
 done
 
-# Restore the stock boot anim (v5, on v2/v3/v4, there was a KoboRoot.tgz that already took care of it)
+# Restore the stock boot anim (v5 only, on earlier versions, there was a KoboRoot.tgz that already took care of it)
 if [ -n "${1}" ] && [ -f "${1}" ] ; then
 	# When we run via a v5 OTA script, the first arg is the full path to the update.tar
 	tar -C /usr/bin -xf "${1}" "animator.sh"
