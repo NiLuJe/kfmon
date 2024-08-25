@@ -12,6 +12,10 @@ rm -rf "/usr/local/kfmon"
 # Also remove the kfmon-ipc symlink
 rm -f "/usr/bin/kfmon-ipc"
 
+# Kobo v5 startscript
+rm -rf "/etc/rcS.d/S99kfmon"
+rm -rf "/etc/init.d/kfmon"
+
 # NOTE: Delete our own icons & configs, but leave whatever else the user might have created alone.
 #       List based on what the full OCP deploys.
 for my_file in ".adds/kfmon/config/kfmon.ini" ".adds/kfmon/config/kfmon-log.ini" ".adds/kfmon/config/koreader.ini" ".adds/kfmon/config/plato.ini" ".adds/kfmon/bin/kfmon-printlog.sh" ".adds/kfmon/log/kfmon_dump.log" ".adds/nm/kfmon" ".adds/nm/koreader" ".adds/nm/plato" ".adds/nm/doc" "icons/plato.png" "koreader.png" "kfmon.png" ; do

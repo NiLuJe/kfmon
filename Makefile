@@ -241,6 +241,38 @@ kobo: armcheck release
 	ln -sf $(CURDIR)/scripts/kfmon-printlog.sh Kobo/mnt/onboard/.adds/kfmon/bin/kfmon-printlog.sh
 	pushd Kobo/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && popd
 
+kobov5: armcheck release
+	mkdir -p KoboV5/.kobo
+	tar --owner=root --group=root -cvhf KoboV5/.kobo/update.tar -C scripts/uninstall driver.sh kfmon-uninstall.sh
+	pushd KoboV5 && zip KFMon-Uninstaller.zip .kobo/update.tar && popd
+	rm -f Release/update.tar
+	mkdir -p KoboV5/usr/bin KoboV5/etc/init.d KoboV5/etc/rcS.d
+	mkdir -p KoboV5/usr/local/kfmon/bin KoboV5/mnt/onboard/.kobo KoboV5/mnt/onboard/.adds/kfmon/config KoboV5/mnt/onboard/.adds/kfmon/bin KoboV5/mnt/onboard/.adds/kfmon/log KoboV5/mnt/onboard/icons
+	ln -f $(CURDIR)/scripts/kfmon KoboV5/etc/init.d
+	ln -sf ../init.d/kfmon KoboV5/etc/rcS.d/S99kfmon
+	ln -f $(CURDIR)/resources/koreader.png KoboV5/mnt/onboard/koreader.png
+	ln -f $(CURDIR)/resources/plato.png KoboV5/mnt/onboard/icons/plato.png
+	ln -f $(CURDIR)/resources/kfmon.png KoboV5/mnt/onboard/kfmon.png
+	ln -f $(CURDIR)/Release/kfmon KoboV5/usr/local/kfmon/bin/kfmon
+	ln -f $(CURDIR)/Release/shim KoboV5/usr/local/kfmon/bin/shim
+	ln -f $(CURDIR)/Release/kfmon-ipc KoboV5/usr/local/kfmon/bin/kfmon-ipc
+	ln -sf /usr/local/kfmon/bin/kfmon-ipc KoboV5/usr/bin/kfmon-ipc
+	ln -f $(CURDIR)/FBInk/Release/fbink KoboV5/usr/local/kfmon/bin/fbink
+	ln -f $(CURDIR)/README.md KoboV5/usr/local/kfmon/README.md
+	ln -f $(CURDIR)/LICENSE KoboV5/usr/local/kfmon/LICENSE
+	ln -f $(CURDIR)/CREDITS KoboV5/usr/local/kfmon/CREDITS
+	tar --exclude="./mnt" --exclude="KFMon-*.zip" --owner=root --group=root --hard-dereference -cvzf Release/kfmon.tgz -C KoboV5 .
+	tar --owner=root --group=root -cvhf Release/update.tar -C scripts driver.sh kfmon-install.sh
+	tar --owner=root --group=root -rvhf Release/update.tar -C Release kfmon.tgz	
+	ln -sf $(CURDIR)/Release/update.tar KoboV5/mnt/onboard/.kobo/update.tar
+	ln -sf $(CURDIR)/config/kfmon.ini KoboV5/mnt/onboard/.adds/kfmon/config/kfmon.ini
+	ln -sf $(CURDIR)/config/koreader.ini KoboV5/mnt/onboard/.adds/kfmon/config/koreader.ini
+	ln -sf $(CURDIR)/config/plato.ini KoboV5/mnt/onboard/.adds/kfmon/config/plato.ini
+	ln -sf $(CURDIR)/config/kfmon-log.ini KoboV5/mnt/onboard/.adds/kfmon/config/kfmon-log.ini
+	ln -sf $(CURDIR)/scripts/kfmon-printlog.sh KoboV5/mnt/onboard/.adds/kfmon/bin/kfmon-printlog.sh
+	pushd KoboV5/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && popd
+
+
 niluje:
 	$(MAKE) fbink.built NILUJE=true
 	$(MAKE) all NILUJE=true
@@ -268,6 +300,7 @@ clean:
 	rm -rf Debug/shim
 	rm -rf Debug/kfmon-ipc
 	rm -rf Kobo
+	rm -rf KoboV5
 
 sqlite.built:
 	mkdir -p SQLiteBuild
