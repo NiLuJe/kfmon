@@ -4,7 +4,7 @@
 rm -f "/etc/udev/rules.d/99-kfmon.rules"
 
 # NOTE: Make sure we're not running, first...
-pkill -TERM kfmon
+killall -TERM kfmon
 
 # Uninstall: blow the full directroy tree away
 rm -rf "/usr/local/kfmon"
