@@ -1469,9 +1469,11 @@ static bool
 				is_processed = true;
 			}
 
+			// If we didn't find any thumbnails, try the v5 variant
 			if (thumbnails_count == 0U) {
-				char converted_book_path[CFG_SZ_MAX + 7];
-				strncpy(converted_book_path, book_path, sizeof(converted_book_path));
+				char converted_book_path[sizeof(book_path)];
+				// No error checking, we've already validated that string's length in `watch_handler`
+				str5cpy(converted_book_path, sizeof(converted_book_path), book_path, sizeof(book_path), NOTRUNC);
 				replace_invalid_chars(converted_book_path, CFG_SZ_MAX);
 				ret = snprintf(thumbnail_path,
 							sizeof(thumbnail_path),
@@ -1488,7 +1490,7 @@ static bool
 					LOG(LOG_INFO, "v5 Library thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
 				}
 
-				// Only give a greenlight if we got all three!
+				// Got it? Then we're good to go!
 				if (thumbnails_count == 1U) {
 					is_processed = true;
 				}
