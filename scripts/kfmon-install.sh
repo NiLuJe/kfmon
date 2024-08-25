@@ -1,3 +1,4 @@
+#!/bin/sh
 # Kobo v5 update script, gets called by OTA update script.
 
 set -e
