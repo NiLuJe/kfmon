@@ -13,11 +13,8 @@ mkdir -p /tmp/updater
 case $STAGE in
 	stage1)
 		# pull the actual script we want to run from the archive, and run it from here, making packaging multiple tools in one updater easy
-		tar -C /tmp/updater -xf "${ARCHIVE}" "kfmon-uninstall.sh" "animator.sh"
-		/tmp/updater/kfmon-uninstall.sh
-		# restore the stock boot anim
-		cp -f "/tmp/updater/animator.sh" "/usr/bin/animator.sh"
-		chmod a+x "/usr/bin/animator.sh"
+		tar -C /tmp/updater -xf "${ARCHIVE}" "kfmon-uninstall.sh"
+		/tmp/updater/kfmon-uninstall.sh "${ARCHIVE}"
 	;;
 	stage2)
 	;;
