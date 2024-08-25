@@ -1218,13 +1218,14 @@ static int
 	return 0;
 }
 
+// NOTE: This is essentially the list of invalid characters in FAT32 filenames, plus '.' & ' '
 static void
-	replace_invalid_chars(unsigned char *str, size_t length)
+    replace_invalid_chars(char* str)
 {
-	for (size_t i = 0; i < length; i++)	{
-		unsigned char c = str[i];
-		if (c == '.' || c == ' ' || c == ':' || c == '/' || c == '\\' || c == '*' || c == '<' || c == '>' || c == '"' || c == '?' || c == '|') {
-			str[i] = '_';
+	for (char* p = str; *p; p++) {
+		if (*p == '.' || *p == ' ' || *p == ':' || *p == '/' || *p == '\\' || *p == '*' || *p == '<' ||
+		    *p == '>' || *p == '"' || *p == '?' || *p == '|') {
+			*p = '_';
 		}
 	}
 }
@@ -1473,13 +1474,17 @@ static bool
 			if (thumbnails_count == 0U) {
 				char converted_book_path[sizeof(book_path)];
 				// No error checking, we've already validated that string's length in `watch_handler`
-				str5cpy(converted_book_path, sizeof(converted_book_path), book_path, sizeof(book_path), NOTRUNC);
-				replace_invalid_chars(converted_book_path, CFG_SZ_MAX);
+				str5cpy(converted_book_path,
+					sizeof(converted_book_path),
+					book_path,
+					sizeof(book_path),
+					NOTRUNC);
+				replace_invalid_chars(converted_book_path);
 				ret = snprintf(thumbnail_path,
-							sizeof(thumbnail_path),
-							"%s/.kobo-images/%s",
-							KFMON_TARGET_MOUNTPOINT,
-							converted_book_path);
+					       sizeof(thumbnail_path),
+					       "%s/.kobo-images/%s",
+					       KFMON_TARGET_MOUNTPOINT,
+					       converted_book_path);
 				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
 					LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
 				}
@@ -1487,14 +1492,15 @@ static bool
 				if (access(thumbnail_path, F_OK) == 0) {
 					thumbnails_count++;
 				} else {
-					LOG(LOG_INFO, "v5 Library thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+					LOG(LOG_INFO,
+					    "v5 Library thumbnail (%s) hasn't been parsed yet!",
+					    thumbnail_path);
 				}
 
 				// Got it? Then we're good to go!
 				if (thumbnails_count == 1U) {
 					is_processed = true;
 				}
-
 			}
 		}
 
