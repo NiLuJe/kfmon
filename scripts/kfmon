@@ -26,6 +26,8 @@ do_start() {
 
 do_stop() {
 	if start-stop-daemon -K -x "${KFMON_BIN}" -p "${KFMON_PID_FILE}" ; then
+		# KFMon doesn't have a SIGTERM handler, and busybox's ssd doesn't support --remove-pidfile,
+		# so, make sure we remove the pidfile ourselves on success.
 		rm -f "${KFMON_PID_FILE}"
 	fi
 }
