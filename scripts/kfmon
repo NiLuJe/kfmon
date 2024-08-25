@@ -25,7 +25,9 @@ do_start() {
 }
 
 do_stop() {
-	start-stop-daemon -K -x "${KFMON_BIN}" -p "${KFMON_PID_FILE}" --remove-pidfile
+	if start-stop-daemon -K -x "${KFMON_BIN}" -p "${KFMON_PID_FILE}" ; then
+		rm -f "${KFMON_PID_FILE}"
+	fi
 }
 
 case "$1" in
