@@ -16,6 +16,12 @@ KFMON_LOG="/usr/local/kfmon/kfmon.log"
 do_start() {
 	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Starting KFMon . . ." >> "${KFMON_LOG}"
 	if [ -x "${KFMON_BIN}" ] ; then
+		# NOTE: On v4, we used to guarantee providing PRODUCT & PLATFORM in the env.
+		#       The base system now provides us with a much neater way of having the whole Nickel env, so, let's use it ;).
+		. "/usr/libexec/platform/nickel-env.sh"
+		# Except for LD_LIBRARY_PATH, nobody wants that ;)
+		unset LD_LIBRARY_PATH
+
 		start-stop-daemon -S -x "${KFMON_BIN}" -p "${KFMON_PID_FILE}"
 		# NOTE: The PID shown here is not terribly helpful, since the first thing KFMon will do will be to fork twice to daemonize...
 		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Launched KFMon! (Initial PID: $!)" >> "${KFMON_LOG}"
