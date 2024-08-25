@@ -32,7 +32,7 @@
 #include <unistd.h>
 
 int
-    main(void)
+    main(int argc, char* argv[])
 {
 	// We can safely assume UR on sunxi...
 	setenv("FBINK_FORCE_ROTA", "0", 1);
@@ -48,7 +48,17 @@ int
 	//       execv(*argv, argv);
 	//       And finally, go back to a non-exec call in on-animator.sh ;).
 
-	// We'll launch our own FBInk binary under an assumed name, and with the options necessary to do on-animator's job ;).
+	// NOTE: The boot animation runs via on-animator.sh on Nickel v2/v3/v4, but via animator.sh on Nickel v5...
+	//       Since the way we're actually launched differs between those two, we can just take our assumed named from our first arg,
+	//       instead of having to reimplement a version check in here ;).
+	const char* assumed_name;
+	if (argc > 1) {
+		assumed_name = argv[1];
+	} else {
+		assumed_name = "on-animator.sh";
+	}
+
+	// We'll launch our own FBInk binary under an assumed name, and with the options necessary to do the animation's job ;).
 	// c.f., https://stackoverflow.com/a/31747301
 	// i.e., we just fudge argv[0] to be different from the actual binary filename...
 #pragma GCC diagnostic push
@@ -56,9 +66,9 @@ int
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
-	char* const argv[] = { "on-animator.sh", "-Z", NULL };
+	char* const new_argv[] = { assumed_name, "-Z", NULL };
 #pragma GCC diagnostic pop
-	execv("/usr/local/kfmon/bin/fbink", argv);
+	execv("/usr/local/kfmon/bin/fbink", new_argv);
 
 	return EXIT_SUCCESS;
 }

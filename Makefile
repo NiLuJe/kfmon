@@ -263,7 +263,7 @@ kobov5: armcheck release
 	ln -f $(CURDIR)/CREDITS KoboV5/usr/local/kfmon/CREDITS
 	tar --exclude="./mnt" --exclude="KFMon-*.zip" --owner=root --group=root --hard-dereference -cvzf Release/kfmon.tgz -C KoboV5 .
 	tar --owner=root --group=root -cvhf Release/update.tar -C scripts driver.sh kfmon-install.sh
-	tar --owner=root --group=root -rvhf Release/update.tar -C Release kfmon.tgz	
+	tar --owner=root --group=root -rvhf Release/update.tar -C Release kfmon.tgz
 	ln -sf $(CURDIR)/Release/update.tar KoboV5/mnt/onboard/.kobo/update.tar
 	ln -sf $(CURDIR)/config/kfmon.ini KoboV5/mnt/onboard/.adds/kfmon/config/kfmon.ini
 	ln -sf $(CURDIR)/config/koreader.ini KoboV5/mnt/onboard/.adds/kfmon/config/koreader.ini
