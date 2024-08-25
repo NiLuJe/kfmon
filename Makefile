@@ -261,6 +261,7 @@ kobov5: armcheck release
 	ln -f $(CURDIR)/README.md KoboV5/usr/local/kfmon/README.md
 	ln -f $(CURDIR)/LICENSE KoboV5/usr/local/kfmon/LICENSE
 	ln -f $(CURDIR)/CREDITS KoboV5/usr/local/kfmon/CREDITS
+	ln -f $(CURDIR)/scripts/animator.sh Kobo/usr/bin/animator.sh
 	tar --exclude="./mnt" --exclude="KFMon-*.zip" --owner=root --group=root --hard-dereference -cvzf Release/kfmon.tgz -C KoboV5 .
 	tar --owner=root --group=root -cvhf Release/update.tar -C scripts driver.sh kfmon-install.sh
 	tar --owner=root --group=root -rvhf Release/update.tar -C Release kfmon.tgz
