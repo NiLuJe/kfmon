@@ -2,6 +2,7 @@
 Release/
 Debug/
 Kobo/
+KoboV5/
 # Same, for our vendored SQLite
 SQLiteBuild/
 sqlite.built
