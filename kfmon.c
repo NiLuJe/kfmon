@@ -1218,6 +1218,17 @@ static int
 	return 0;
 }
 
+static void
+	replace_invalid_chars(unsigned char *str, size_t length)
+{
+	for (size_t i = 0; i < length; i++)	{
+		unsigned char c = str[i];
+		if (c == '.' || c == ' ' || c == ':' || c == '/' || c == '\\' || c == '*' || c == '<' || c == '>' || c == '"' || c == '?' || c == '|') {
+			str[i] = '_';
+		}
+	}
+}
+
 // Implementation of Qt4's QtHash, c.f., qhash @
 // https://github.com/kovidgoyal/calibre/blob/205754891e341e7f940e70057ac3a96a2443fdbd/src/calibre/devices/kobo/driver.py#L41-L59
 static unsigned int
@@ -1456,6 +1467,32 @@ static bool
 			// Only give a greenlight if we got all three!
 			if (thumbnails_count == 3U) {
 				is_processed = true;
+			}
+
+			if (thumbnails_count == 0U) {
+				char converted_book_path[CFG_SZ_MAX + 7];
+				strncpy(converted_book_path, book_path, sizeof(converted_book_path));
+				replace_invalid_chars(converted_book_path, CFG_SZ_MAX);
+				ret = snprintf(thumbnail_path,
+							sizeof(thumbnail_path),
+							"%s/.kobo-images/%s",
+							KFMON_TARGET_MOUNTPOINT,
+							converted_book_path);
+				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+					LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
+				}
+				DBGLOG("Checking for v5 library thumbnail '%s' . . .", thumbnail_path);
+				if (access(thumbnail_path, F_OK) == 0) {
+					thumbnails_count++;
+				} else {
+					LOG(LOG_INFO, "v5 Library thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+				}
+
+				// Only give a greenlight if we got all three!
+				if (thumbnails_count == 1U) {
+					is_processed = true;
+				}
+
 			}
 		}
 

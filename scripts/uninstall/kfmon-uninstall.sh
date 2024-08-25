@@ -4,13 +4,17 @@
 rm -f "/etc/udev/rules.d/99-kfmon.rules"
 
 # NOTE: Make sure we're not running, first...
-pkill -TERM kfmon
+killall -TERM kfmon
 
 # Uninstall: blow the full directroy tree away
 rm -rf "/usr/local/kfmon"
 
 # Also remove the kfmon-ipc symlink
 rm -f "/usr/bin/kfmon-ipc"
+
+# Kobo v5 startscript
+rm -rf "/etc/rcS.d/S99kfmon"
+rm -rf "/etc/init.d/kfmon"
 
 # NOTE: Delete our own icons & configs, but leave whatever else the user might have created alone.
 #       List based on what the full OCP deploys.
