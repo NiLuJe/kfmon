@@ -2917,6 +2917,11 @@ static bool
 			// NOTE: strverscmp will essentially only check the final field here,
 			//       e.g., 1.0.99999 would sort as *more* recent...
 			is_okay = !!(strverscmp(fw, "4.29.18730") >= 0);
+
+			// In case we ever need to deal with FW 5.x quirks separately...
+			if (!!(strverscmp(fw, "5.0.111111") >= 0)) {
+				PFLOG(LOG_INFO, "This device runs Nickel v5");
+			}
 		} else {
 			PFLOG(LOG_WARNING, "Failed to read the Kobo version tag (%zu)", size);
 		}
