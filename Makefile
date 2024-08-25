@@ -243,7 +243,7 @@ kobo: armcheck release
 
 kobov5: armcheck release
 	mkdir -p KoboV5/.kobo
-	tar --owner=root --group=root -cvhf KoboV5/.kobo/update.tar -C scripts/uninstall driver.sh kfmon-uninstall.sh
+	tar --owner=root --group=root -cvhf KoboV5/.kobo/update.tar -C scripts/uninstall driver.sh kfmon-uninstall.sh animator.sh
 	pushd KoboV5 && zip KFMon-Uninstaller.zip .kobo/update.tar && popd
 	rm -f Release/update.tar
 	mkdir -p KoboV5/usr/bin KoboV5/etc/init.d KoboV5/etc/rcS.d
