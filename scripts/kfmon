@@ -5,7 +5,7 @@
 # Required-Stop:
 # Default-Start:     S
 # Default-Stop:
-# Short-Description: Run /etc/rc.local if it exist
+# Short-Description: KFMon init script
 ### END INIT INFO
 
 # Check if arg is an int
@@ -24,7 +24,7 @@ KFMON_LOG="/usr/local/kfmon/kfmon.log"
 
 
 do_start() {
-    echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Starting KFMon . . ." >> "${KFMON_LOG}"
+	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Starting KFMon . . ." >> "${KFMON_LOG}"
 	KFMON_BIN="/usr/local/kfmon/bin/kfmon"
 	if [ -x "${KFMON_BIN}" ] ; then
 		LIBC_FATAL_STDERR_=1 "${KFMON_BIN}" &
@@ -33,26 +33,25 @@ do_start() {
 	else
 		echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [ERR!] [PID: $$] KFMon binary '${KFMON_BIN}' cannot be executed!" >> "${KFMON_LOG}"
 	fi
-   
 }
 
 do_stop() {
-    pkill kfmon
+	pkill kfmon
 }
 
 case "$1" in
-    start)
-        do_start
-        ;;
-    restart|reload|force-reload)
-        do_stop
-        do_start
-        ;;
-    stop)
-        do_stop
-        ;;
-    *)
-        echo "Usage: $0 start|stop|restart" >&2
-        exit 3
-        ;;
+	start)
+		do_start
+	;;
+	restart|reload|force-reload)
+		do_stop
+		do_start
+	;;
+	stop)
+		do_stop
+	;;
+	*)
+		echo "Usage: $0 start|stop|restart" >&2
+		exit 3
+	;;
 esac
