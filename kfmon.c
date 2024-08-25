@@ -1488,13 +1488,11 @@ static bool
 				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
 					LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
 				}
-				DBGLOG("Checking for v5 library thumbnail '%s' . . .", thumbnail_path);
+				DBGLOG("Checking for v5 thumbnail '%s' . . .", thumbnail_path);
 				if (access(thumbnail_path, F_OK) == 0) {
 					thumbnails_count++;
 				} else {
-					LOG(LOG_INFO,
-					    "v5 Library thumbnail (%s) hasn't been parsed yet!",
-					    thumbnail_path);
+					LOG(LOG_INFO, "v5 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
 				}
 
 				// Got it? Then we're good to go!
