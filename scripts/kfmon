@@ -8,21 +8,13 @@
 # Short-Description: KFMon init script
 ### END INIT INFO
 
-# Check if arg is an int
-is_integer()
-{
-	# Cheap trick ;)
-	[ "${1}" -eq "${1}" ] 2>/dev/null
-	return $?
-}
-
 # Launch KFMon if it isn't already running...
+KFMON_BIN="/usr/local/kfmon/bin/kfmon"
 KFMON_PID_FILE="/var/run/kfmon.pid"
 KFMON_LOG="/usr/local/kfmon/kfmon.log"
 
 do_start() {
 	echo "[START] [$(date +'%Y-%m-%d @ %H:%M:%S')] [INFO] [PID: $$] Starting KFMon . . ." >> "${KFMON_LOG}"
-	KFMON_BIN="/usr/local/kfmon/bin/kfmon"
 	if [ -x "${KFMON_BIN}" ] ; then
 		start-stop-daemon -S -x "${KFMON_BIN}" -p "${KFMON_PID_FILE}"
 		# NOTE: The PID shown here is not terribly helpful, since the first thing KFMon will do will be to fork twice to daemonize...
