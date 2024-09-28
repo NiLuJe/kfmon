@@ -62,7 +62,7 @@ EXTRA_CFLAGS+=-Wall
 EXTRA_CFLAGS+=-Wextra -Wunused
 EXTRA_CFLAGS+=-Wformat=2
 EXTRA_CFLAGS+=-Wformat-signedness
-# NOTE: -Wformat-truncation=2 is still a tad too aggressive w/ GCC 9, so, tone it down to avoid false-positives...
+# NOTE: -Wformat-truncation=2 is still a tad too aggressive w/ GCC 14, so, tone it down to avoid false-positives...
 EXTRA_CFLAGS+=-Wformat-truncation=1
 EXTRA_CFLAGS+=-Wnull-dereference
 EXTRA_CFLAGS+=-Wuninitialized
