@@ -6,6 +6,7 @@
 #       https://github.com/koreader/koxtoolchain
 # NOTE: We want the "bare" variant of the TC env, to make sure we vendor the right stuff...
 #       i.e., source ~SVN/Configs/trunk/Kindle/Misc/x-compile.sh kobo env bare
+SHELL := /bin/bash
 ifdef CROSS_TC
 	CC:=$(CROSS_TC)-gcc
 	STRIP:=$(CROSS_TC)-strip
