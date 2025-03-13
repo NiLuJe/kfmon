@@ -1471,6 +1471,8 @@ static bool
 			}
 
 			// If we didn't find any thumbnails, try the v5 variant
+			// FIXME: Implement the 5.6 variant, which preserves the dot for the file extension...
+			//        c.f., https://github.com/kovidgoyal/calibre/pull/2687
 			if (thumbnails_count == 0U) {
 				char converted_book_path[sizeof(book_path)];
 				// No error checking, we've already validated that string's length in `watch_handler`
