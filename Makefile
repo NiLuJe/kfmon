@@ -123,7 +123,7 @@ LDFLAGS?=-Wl,--as-needed
 # Pick up our vendored build of SQLite when asked to
 ifdef SQLITE
 	EXTRA_CPPFLAGS:=-ISQLiteBuild
-	EXTRA_LDFLAGS:=-LSQLiteBuild/.libs
+	EXTRA_LDFLAGS:=-LSQLiteBuild
 endif
 
 # And pick up FBInk, too.
@@ -313,7 +313,6 @@ sqlite.built:
 	mkdir -p SQLiteBuild
 	cd sqlite && \
 	patch -p1 < ../tools/sqlite-need_err_name.patch && \
-	autoreconf -fi && \
 	cd ../SQLiteBuild && \
 	env CPPFLAGS="$(CPPFLAGS) \
 	-DNDEBUG \
@@ -337,7 +336,6 @@ sqlite.built:
 	../sqlite/configure $(if $(CROSS_TC),--host=$(CROSS_TC),) \
 	--disable-amalgamation \
 	--enable-static \
-	--disable-static-shell \
 	--disable-shared \
 	--disable-threadsafe \
 	--disable-load-extension \
@@ -345,9 +343,8 @@ sqlite.built:
 	--disable-readline \
 	--disable-tcl \
 	--disable-math \
-	--enable-tempstore=yes \
-	--disable-releasemode && \
-	$(MAKE) sqlite3.h libsqlite3.la
+	--with-tempstore=yes && \
+	$(MAKE) sqlite3.h libsqlite3.a
 	touch sqlite.built
 
 ifdef NILUJE
