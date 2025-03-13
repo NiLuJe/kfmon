@@ -1,8 +1,8 @@
 diff --git a/src/sqliteInt.h b/src/sqliteInt.h
-index 1c46183312..3c444bff81 100644
+index f47009c158..398d693d8e 100644
 --- a/src/sqliteInt.h
 +++ b/src/sqliteInt.h
-@@ -498,8 +498,6 @@
+@@ -594,8 +594,6 @@
  #if defined(SQLITE_HAVE_OS_TRACE) || defined(SQLITE_TEST) || \
      (defined(SQLITE_DEBUG) && SQLITE_OS_WIN)
  # define SQLITE_NEED_ERR_NAME
