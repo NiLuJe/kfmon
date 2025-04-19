@@ -34,7 +34,7 @@ import zipfile
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("KFMon")
 
-# Half-assed attempt at sanitizing tar members, at least until https://github.com/python/cpython/issues/73974 goes somewhere...
+# Half-assed attempt at sanitizing tar members, for Python versions without https://github.com/python/cpython/issues/73974...
 # Based on https://gist.github.com/Kasimir123/9bdc38f2eac9a19f83ef6cc52c7ce82e
 def is_within_directory(directory, target):
 	abs_directory = os.path.abspath(directory)
@@ -47,7 +47,7 @@ def checked_tar_extractall(tar, path=".", **kwargs):
 		member_path = os.path.join(path, member.name)
 		if not is_within_directory(path, member_path):
 			raise RuntimeError("Path traversal in tarball")
-	return tar.extractall(path, **kwargs)
+	return tar.extractall(path, filter="data", **kwargs)
 
 # Mimic shutil.unpack_archive's signature
 def checked_unpack_archive(filename, extract_dir):
