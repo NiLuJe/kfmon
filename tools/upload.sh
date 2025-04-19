@@ -192,7 +192,7 @@ for file in *.zip ; do
 
 	echo "* Parsing file ${file} . . ."
 	# Get the mimetype
-	mimetype="$(mimetype -b "${file}")"
+	mimetype="$(file --mime-type -b "${file}")"
 	# Get the modification date
 	rawmoddate="$(stat -c "%Y" "${file}")"
 	moddate="$(date -d "@${rawmoddate}" +"%Y-%b-%d %H:%M:%S")"
