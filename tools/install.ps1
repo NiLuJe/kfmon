@@ -1,9 +1,13 @@
 ##
 #
-# Quick'n dirty helper to pickup a Kobo's USBMS mountpoint...
+# Quick'n dirty helper to pickup a Kobo's USBMS mountpoint and install one-click zip files
+# For more information, see https://github.com/NiLuJe/kfmon/tree/master/tools
 # Spoiler alert: I've never written anything in PowerShell before :D
 # NOTE: Requires PowerShell 5+ (Expand-Archive. ALso, I only have a Win10 box to test this anyway ;p).
-#
+# If this script has been downloaded, it will require unblocking; In Microsoft Windows File Explorer, Select the file, Right Click, then Tick/Check "Unblock" in the bottom-right corner.
+# NOTE Some machines will block PowerShell, in PowerShell issue:
+#	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+#	.\install.ps1
 ##
 
 # Do a version check manually instead of relying on require, so we can keep the window open...
