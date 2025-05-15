@@ -1470,9 +1470,7 @@ static bool
 				is_processed = true;
 			}
 
-			// If we didn't find any thumbnails, try the v5 variant
-			// FIXME: Implement the 5.6 variant, which preserves the dot for the file extension...
-			//        c.f., https://github.com/kovidgoyal/calibre/pull/2687
+			// If we didn't find any thumbnails, try the v5 / v5.6 variant
 			if (thumbnails_count == 0U) {
 				char converted_book_path[sizeof(book_path)];
 				// No error checking, we've already validated that string's length in `watch_handler`
@@ -1481,20 +1479,51 @@ static bool
 					book_path,
 					sizeof(book_path),
 					NOTRUNC);
-				replace_invalid_chars(converted_book_path);
+
+				// Check the database version to decide whether to preserve the dot for the file extension
+				int db_version = 0;
+				CALL_SQLITE(prepare_v2(db, "SELECT version FROM DbVersion LIMIT 1;", -1, &stmt, NULL));
+				rc = sqlite3_step(stmt);
+				if (rc == SQLITE_ROW) {
+					db_version = sqlite3_column_int(stmt, 0);
+					DBGLOG("Database version: %d", db_version);
+				}
+				sqlite3_finalize(stmt);
+
+				if (db_version >= 191) {
+					// Implement the 5.6 variant, which preserves the dot for the file extension
+
+					// Separate the extension from the base path
+					char* ext = strrchr(converted_book_path, '.');
+					if (ext) {
+						*ext = '\0'; // Temporarily terminate the string to isolate the base path
+					}
+
+					// Replace invalid characters in the base path
+					replace_invalid_chars(converted_book_path);
+
+					// Reattach the extension if it exists
+					if (ext) {
+						*ext = '.'; // Restore the dot
+					}
+				} else {
+					// Fallback to the v5 variant
+					replace_invalid_chars(converted_book_path);
+				}
+
 				ret = snprintf(thumbnail_path,
 					       sizeof(thumbnail_path),
 					       "%s/.kobo-images/%s",
 					       KFMON_TARGET_MOUNTPOINT,
 					       converted_book_path);
 				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-					LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
+					LOG(LOG_WARNING, "Couldn't build the thumbnail path string");
 				}
-				DBGLOG("Checking for v5 thumbnail '%s' . . .", thumbnail_path);
+				DBGLOG("Checking for thumbnail '%s' . . .", thumbnail_path);
 				if (access(thumbnail_path, F_OK) == 0) {
 					thumbnails_count++;
 				} else {
-					LOG(LOG_INFO, "v5 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+					LOG(LOG_INFO, "Thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
 				}
 
 				// Got it? Then we're good to go!
