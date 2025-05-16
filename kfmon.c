@@ -1488,8 +1488,6 @@ static bool
 					db_version = sqlite3_column_int(stmt, 0);
 					DBGLOG("Database version: %d", db_version);
 				}
-				sqlite3_finalize(stmt);
-
 				if (db_version >= 191) {
 					// Implement the 5.6 variant, which preserves the dot for the file extension
 
@@ -1510,6 +1508,7 @@ static bool
 					// Fallback to the v5 variant
 					replace_invalid_chars(converted_book_path);
 				}
+				sqlite3_finalize(stmt);
 
 				ret = snprintf(thumbnail_path,
 					       sizeof(thumbnail_path),
