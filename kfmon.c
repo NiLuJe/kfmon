@@ -1470,9 +1470,52 @@ static bool
 				is_processed = true;
 			}
 
-			// If we didn't find any thumbnails, try the v5 variant
-			// FIXME: Implement the 5.6 variant, which preserves the dot for the file extension...
-			//        c.f., https://github.com/kovidgoyal/calibre/pull/2687
+			// If we didn't find any thumbnails, try the v5.6 variant, which preserves the dot before the file extension
+			if (thumbnails_count == 0U) {
+				char converted_book_path[sizeof(book_path)];
+				// No error checking, we've already validated that string's length in `watch_handler`
+				str5cpy(converted_book_path,
+					sizeof(converted_book_path),
+					book_path,
+					sizeof(book_path),
+					NOTRUNC);
+
+				// Separate the extension from the base path
+				char* ext = strrchr(converted_book_path, '.');
+				if (ext) {
+					*ext = '\0'; // Temporarily terminate the string to isolate the base path
+				}
+
+				// Replace invalid characters in the base path
+				replace_invalid_chars(converted_book_path);
+
+				// Reattach the extension if it exists
+				if (ext) {
+					*ext = '.'; // Restore the dot
+				}
+
+				ret = snprintf(thumbnail_path,
+					       sizeof(thumbnail_path),
+					       "%s/.kobo-images/%s",
+					       KFMON_TARGET_MOUNTPOINT,
+					       converted_book_path);
+				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+					LOG(LOG_WARNING, "Couldn't build the v5.6 thumbnail path string");
+				}
+
+				DBGLOG("Checking for v5.6 thumbnail '%s' . . .", thumbnail_path);
+				if (access(thumbnail_path, F_OK) == 0) {
+					thumbnails_count++;
+				} else {
+					LOG(LOG_INFO, "v5.6 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+				}
+
+				// Got it? Then we're good to go!
+				if (thumbnails_count == 1U) {
+					is_processed = true;
+				}
+			}
+			// If no v5.6 thumbnails were found, we try the v5 variant, which DOES NOT preserve the dot for the file extension
 			if (thumbnails_count == 0U) {
 				char converted_book_path[sizeof(book_path)];
 				// No error checking, we've already validated that string's length in `watch_handler`
