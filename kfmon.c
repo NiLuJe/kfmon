@@ -1248,14 +1248,29 @@ static unsigned int
 
 // Thumbnail filepatth munging on FW 4.x
 static bool
-    check_fw_4x_thumbnails(const unsigned char* image_id, const char* images_path)
+    check_fw_4x_thumbnails(const unsigned char* image_id, size_t image_id_len)
 {
+	// Then we need the proper hashes Nickel devises...
+	// c.f., images_path @
+	// https://github.com/kovidgoyal/calibre/blob/205754891e341e7f940e70057ac3a96a2443fdbd/src/calibre/devices/kobo/driver.py#L2584-L2600
+	unsigned int hash = qhash(image_id, image_id_len);
+	unsigned int dir1 = hash & (0xff * 1);
+	unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
+
+	char images_path[KFMON_PATH_MAX];
+	int  ret =
+	    snprintf(images_path, sizeof(images_path), "%s/.kobo-images/%u/%u", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
+	if (ret < 0 || (size_t) ret >= sizeof(images_path)) {
+		LOG(LOG_WARNING, "Couldn't build the image path string!");
+	}
+	DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
+
 	// Count the number of processed thumbnails we find...
 	uint8_t thumbnails_count = 0U;
 	char    thumbnail_path[KFMON_PATH_MAX];
 
 	// Start with the full-size screensaver...
-	int ret = snprintf(thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
+	ret = snprintf(thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
 	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
 		LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
 	}
@@ -1517,32 +1532,13 @@ static bool
 
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
-			const unsigned char* image_id = sqlite3_column_text(stmt, 0);
-			size_t               len      = (size_t) sqlite3_column_bytes(stmt, 0);
-			DBGLOG("SELECT SQL query returned: %s", image_id);
-
-			// Then we need the proper hashes Nickel devises...
-			// c.f., images_path @
-			// https://github.com/kovidgoyal/calibre/blob/205754891e341e7f940e70057ac3a96a2443fdbd/src/calibre/devices/kobo/driver.py#L2584-L2600
-			unsigned int hash = qhash(image_id, len);
-			unsigned int dir1 = hash & (0xff * 1);
-			unsigned int dir2 = (hash & (0xff00 * 1)) >> 8;
-
-			char images_path[KFMON_PATH_MAX];
-			int  ret = snprintf(images_path,
-                                           sizeof(images_path),
-                                           "%s/.kobo-images/%u/%u",
-                                           KFMON_TARGET_MOUNTPOINT,
-                                           dir1,
-                                           dir2);
-			if (ret < 0 || (size_t) ret >= sizeof(images_path)) {
-				LOG(LOG_WARNING, "Couldn't build the image path string!");
-			}
-			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
-
 			// The implementation differs between FW 4.x and FW 5.x...
 			if (fwVersion < 50) {
-				is_processed = check_fw_4x_thumbnails(image_id, images_path);
+				const unsigned char* image_id = sqlite3_column_text(stmt, 0);
+				size_t               len      = (size_t) sqlite3_column_bytes(stmt, 0);
+				DBGLOG("SELECT SQL query returned: %s", image_id);
+
+				is_processed = check_fw_4x_thumbnails(image_id, len);
 			} else {
 				is_processed = check_fw_5x_thumbnails(book_path, sizeof(book_path));
 			}
