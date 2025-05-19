@@ -312,6 +312,8 @@ uint8_t       fwVersion              = 0U;
 #define BOOL2STR(X) ({ ("false\0\0\0true" + 8 * !!(X)); })
 
 static unsigned int qhash(const unsigned char* restrict, size_t);
+static bool         check_fw_4x_thumbnails(const unsigned char*, const char*);
+static bool         check_fw_5x_thumbnails(const char*, size_t);
 static bool         is_target_processed(uint8_t, bool);
 
 static void* reaper_thread(void*);

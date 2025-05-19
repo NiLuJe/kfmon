@@ -879,7 +879,7 @@ static int
 						if (is_watch_valid) {
 							watchConfig[watch_count++].is_active = true;
 						} else {
-							watchConfig[watch_count] = (const WatchConfig){ 0 };
+							watchConfig[watch_count] = (const WatchConfig) { 0 };
 						}
 					}
 				}
@@ -1079,7 +1079,7 @@ static int
 
 										// Clear the slot
 										watchConfig[watch_idx] =
-										    (const WatchConfig){ 0 };
+										    (const WatchConfig) { 0 };
 									}
 								}
 							} else {
@@ -1128,7 +1128,7 @@ static int
 										// Don't keep the previous state around,
 										// clear the slot.
 										watchConfig[watch_idx] =
-										    (const WatchConfig){ 0 };
+										    (const WatchConfig) { 0 };
 										LOG(LOG_NOTICE,
 										    "Released watch slot %hhu.",
 										    watch_idx);
@@ -1175,7 +1175,7 @@ static int
 
 			FB_PRINTF("[KFMon] Dropped the watch on %s!", basename(watchConfig[watch_idx].filename));
 
-			watchConfig[watch_idx] = (const WatchConfig){ 0 };
+			watchConfig[watch_idx] = (const WatchConfig) { 0 };
 			LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
 
 			// Stale stuff!
@@ -1244,6 +1244,137 @@ static unsigned int
 	}
 
 	return h;
+}
+
+// Thumbnail filepatth munging on FW 4.x
+static bool
+    check_fw_4x_thumbnails(const unsigned char* image_id, const char* images_path)
+{
+	// Count the number of processed thumbnails we find...
+	uint8_t thumbnails_count = 0U;
+	char    thumbnail_path[KFMON_PATH_MAX];
+
+	// Start with the full-size screensaver...
+	int ret = snprintf(thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
+	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+		LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
+	}
+	DBGLOG("Checking for full-size screensaver '%s' . . .", thumbnail_path);
+	if (access(thumbnail_path, F_OK) == 0) {
+		thumbnails_count++;
+	} else {
+		LOG(LOG_INFO, "Full-size screensaver hasn't been parsed yet!");
+	}
+
+	// Then the Homescreen tile...
+	// NOTE: This one might be a tad confusing...
+	//       If the icon has never been processed,
+	//       this will only happen the first time we *close* the PNG's "book"...
+	//       (i.e., the moment it pops up as the 'last opened' tile).
+	//       And *that* processing triggers a set of OPEN & CLOSE,
+	//       meaning we can quite possibly run on book *exit* that first time,
+	//       (and only that first time), if database locking permits...
+	ret = snprintf(thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
+	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+		LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
+	}
+	DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
+	if (access(thumbnail_path, F_OK) == 0) {
+		thumbnails_count++;
+	} else {
+		LOG(LOG_INFO, "Homescreen tile hasn't been parsed yet!");
+	}
+
+	// And finally the Library thumbnail...
+	ret = snprintf(thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
+	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+		LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
+	}
+	DBGLOG("Checking for library thumbnail '%s' . . .", thumbnail_path);
+	if (access(thumbnail_path, F_OK) == 0) {
+		thumbnails_count++;
+	} else {
+		LOG(LOG_INFO, "Library thumbnail hasn't been parsed yet!");
+	}
+
+	// Only give a greenlight if we got all three!
+	return thumbnails_count == 3U;
+}
+
+// Thumbnail filepatth munging on FW 5.x
+static bool
+    check_fw_5x_thumbnails(const char* book_path, size_t book_path_len)
+{
+	// Count the number of processed thumbnails we find...
+	uint8_t thumbnails_count = 0U;
+	char    thumbnail_path[KFMON_PATH_MAX];
+	bool    is_processed = false;
+
+	// v5.6 variant, which preserves the dot before the file extension
+	char converted_book_path[book_path_len];
+	// No error checking, we've already validated that string's length in `watch_handler`
+	str5cpy(converted_book_path, sizeof(converted_book_path), book_path, book_path_len, NOTRUNC);
+
+	// Separate the extension from the base path
+	char* ext = strrchr(converted_book_path, '.');
+	if (ext) {
+		*ext = '\0';    // Temporarily terminate the string to isolate the base path
+	}
+
+	// Replace invalid characters in the base path
+	replace_invalid_chars(converted_book_path);
+
+	// Reattach the extension if it exists
+	if (ext) {
+		*ext = '.';    // Restore the dot
+	}
+
+	int ret = snprintf(
+	    thumbnail_path, sizeof(thumbnail_path), "%s/.kobo-images/%s", KFMON_TARGET_MOUNTPOINT, converted_book_path);
+	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+		LOG(LOG_WARNING, "Couldn't build the v5.6 thumbnail path string");
+	}
+
+	DBGLOG("Checking for v5.6 thumbnail '%s' . . .", thumbnail_path);
+	if (access(thumbnail_path, F_OK) == 0) {
+		thumbnails_count++;
+	} else {
+		LOG(LOG_INFO, "v5.6 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+	}
+
+	// Got it? Then we're good to go!
+	if (thumbnails_count == 1U) {
+		is_processed = true;
+	}
+
+	// If no v5.6 thumbnails were found, we try the v5 variant, which DOES NOT preserve the dot for the file extension
+	if (thumbnails_count == 0U) {
+		char converted_book_path[book_path_len];
+		// No error checking, we've already validated that string's length in `watch_handler`
+		str5cpy(converted_book_path, sizeof(converted_book_path), book_path, book_path_len, NOTRUNC);
+		replace_invalid_chars(converted_book_path);
+		ret = snprintf(thumbnail_path,
+			       sizeof(thumbnail_path),
+			       "%s/.kobo-images/%s",
+			       KFMON_TARGET_MOUNTPOINT,
+			       converted_book_path);
+		if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+			LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
+		}
+		DBGLOG("Checking for v5 thumbnail '%s' . . .", thumbnail_path);
+		if (access(thumbnail_path, F_OK) == 0) {
+			thumbnails_count++;
+		} else {
+			LOG(LOG_INFO, "v5 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+		}
+
+		// Got it? Then we're good to go!
+		if (thumbnails_count == 1U) {
+			is_processed = true;
+		}
+	}
+
+	return is_processed;
 }
 
 // Check if our target file has been processed by Nickel...
@@ -1409,144 +1540,11 @@ static bool
 			}
 			DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
-			// Count the number of processed thumbnails we find...
-			uint8_t thumbnails_count = 0U;
-			char    thumbnail_path[KFMON_PATH_MAX];
-
 			// The implementation differs between FW 4.x and FW 5.x...
 			if (fwVersion < 50) {
-				// Start with the full-size screensaver...
-				ret = snprintf(
-				thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
-				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-					LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-				}
-				DBGLOG("Checking for full-size screensaver '%s' . . .", thumbnail_path);
-				if (access(thumbnail_path, F_OK) == 0) {
-					thumbnails_count++;
-				} else {
-					LOG(LOG_INFO, "Full-size screensaver hasn't been parsed yet!");
-				}
-
-				// Then the Homescreen tile...
-				// NOTE: This one might be a tad confusing...
-				//       If the icon has never been processed,
-				//       this will only happen the first time we *close* the PNG's "book"...
-				//       (i.e., the moment it pops up as the 'last opened' tile).
-				//       And *that* processing triggers a set of OPEN & CLOSE,
-				//       meaning we can quite possibly run on book *exit* that first time,
-				//       (and only that first time), if database locking permits...
-				ret = snprintf(thumbnail_path,
-					sizeof(thumbnail_path),
-					"%s/%s - N3_LIBRARY_FULL.parsed",
-					images_path,
-					image_id);
-				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-					LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-				}
-				DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
-				if (access(thumbnail_path, F_OK) == 0) {
-					thumbnails_count++;
-				} else {
-					LOG(LOG_INFO, "Homescreen tile hasn't been parsed yet!");
-				}
-
-				// And finally the Library thumbnail...
-				ret = snprintf(thumbnail_path,
-					sizeof(thumbnail_path),
-					"%s/%s - N3_LIBRARY_GRID.parsed",
-					images_path,
-					image_id);
-				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-					LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-				}
-				DBGLOG("Checking for library thumbnail '%s' . . .", thumbnail_path);
-				if (access(thumbnail_path, F_OK) == 0) {
-					thumbnails_count++;
-				} else {
-					LOG(LOG_INFO, "Library thumbnail hasn't been parsed yet!");
-				}
-
-				// Only give a greenlight if we got all three!
-				if (thumbnails_count == 3U) {
-					is_processed = true;
-				}
+				is_processed = check_fw_4x_thumbnails(image_id, images_path);
 			} else {
-				// If we didn't find any thumbnails, try the v5.6 variant, which preserves the dot before the file extension
-				if (thumbnails_count == 0U) {
-					char converted_book_path[sizeof(book_path)];
-					// No error checking, we've already validated that string's length in `watch_handler`
-					str5cpy(converted_book_path,
-						sizeof(converted_book_path),
-						book_path,
-						sizeof(book_path),
-						NOTRUNC);
-
-					// Separate the extension from the base path
-					char* ext = strrchr(converted_book_path, '.');
-					if (ext) {
-						*ext = '\0'; // Temporarily terminate the string to isolate the base path
-					}
-
-					// Replace invalid characters in the base path
-					replace_invalid_chars(converted_book_path);
-
-					// Reattach the extension if it exists
-					if (ext) {
-						*ext = '.'; // Restore the dot
-					}
-
-					ret = snprintf(thumbnail_path,
-						sizeof(thumbnail_path),
-						"%s/.kobo-images/%s",
-						KFMON_TARGET_MOUNTPOINT,
-						converted_book_path);
-					if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-						LOG(LOG_WARNING, "Couldn't build the v5.6 thumbnail path string");
-					}
-
-					DBGLOG("Checking for v5.6 thumbnail '%s' . . .", thumbnail_path);
-					if (access(thumbnail_path, F_OK) == 0) {
-						thumbnails_count++;
-					} else {
-						LOG(LOG_INFO, "v5.6 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
-					}
-
-					// Got it? Then we're good to go!
-					if (thumbnails_count == 1U) {
-						is_processed = true;
-					}
-				}
-				// If no v5.6 thumbnails were found, we try the v5 variant, which DOES NOT preserve the dot for the file extension
-				if (thumbnails_count == 0U) {
-					char converted_book_path[sizeof(book_path)];
-					// No error checking, we've already validated that string's length in `watch_handler`
-					str5cpy(converted_book_path,
-						sizeof(converted_book_path),
-						book_path,
-						sizeof(book_path),
-						NOTRUNC);
-					replace_invalid_chars(converted_book_path);
-					ret = snprintf(thumbnail_path,
-						sizeof(thumbnail_path),
-						"%s/.kobo-images/%s",
-						KFMON_TARGET_MOUNTPOINT,
-						converted_book_path);
-					if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-						LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
-					}
-					DBGLOG("Checking for v5 thumbnail '%s' . . .", thumbnail_path);
-					if (access(thumbnail_path, F_OK) == 0) {
-						thumbnails_count++;
-					} else {
-						LOG(LOG_INFO, "v5 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
-					}
-
-					// Got it? Then we're good to go!
-					if (thumbnails_count == 1U) {
-						is_processed = true;
-					}
-				}
+				is_processed = check_fw_5x_thumbnails(book_path, sizeof(book_path));
 			}
 		}
 
@@ -2976,7 +2974,7 @@ static bool
 					fwVersion = 50U;
 				}
 			} else {
-				fwVersion = is_okay? 42U : 40U;
+				fwVersion = is_okay ? 42U : 40U;
 			}
 		} else {
 			PFLOG(LOG_WARNING, "Failed to read the Kobo version tag (%zu)", size);
@@ -3262,7 +3260,7 @@ int
 						    basename(watchConfig[watch_idx].filename),
 						    basename(watchConfig[watch_idx].action));
 					} else {
-						watchConfig[watch_idx] = (const WatchConfig){ 0 };
+						watchConfig[watch_idx] = (const WatchConfig) { 0 };
 						// NOTE: This should essentially come down to:
 						//memset(&watchConfig[watch_idx], 0, sizeof(WatchConfig));
 						LOG(LOG_NOTICE, "Released watch slot %hhu.", watch_idx);
