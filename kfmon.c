@@ -1322,11 +1322,13 @@ static bool
 {
 	// Count the number of processed thumbnails we find...
 	uint8_t thumbnails_count = 0U;
-	char    thumbnail_path[KFMON_PATH_MAX];
-	bool    is_processed = false;
+
+	// Because everything is terrible, FW 5.6.209315 uses a slightly different logic...
+	char thumbnail_path_v56[KFMON_PATH_MAX];
+	char thumbnail_path_v50[KFMON_PATH_MAX];
+	char converted_book_path[book_path_len];
 
 	// v5.6 variant, which preserves the dot before the file extension
-	char converted_book_path[book_path_len];
 	// No error checking, we've already validated that string's length in `watch_handler`
 	str5cpy(converted_book_path, sizeof(converted_book_path), book_path, book_path_len, NOTRUNC);
 
@@ -1335,61 +1337,55 @@ static bool
 	if (ext) {
 		*ext = '\0';    // Temporarily terminate the string to isolate the base path
 	}
-
 	// Replace invalid characters in the base path
 	replace_invalid_chars(converted_book_path);
-
 	// Reattach the extension if it exists
 	if (ext) {
 		*ext = '.';    // Restore the dot
 	}
 
-	int ret = snprintf(
-	    thumbnail_path, sizeof(thumbnail_path), "%s/.kobo-images/%s", KFMON_TARGET_MOUNTPOINT, converted_book_path);
-	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+	int ret = snprintf(thumbnail_path_v56,
+			   sizeof(thumbnail_path_v56),
+			   "%s/.kobo-images/%s",
+			   KFMON_TARGET_MOUNTPOINT,
+			   converted_book_path);
+	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path_v56)) {
 		LOG(LOG_WARNING, "Couldn't build the v5.6 thumbnail path string");
 	}
 
-	DBGLOG("Checking for v5.6 thumbnail '%s' . . .", thumbnail_path);
-	if (access(thumbnail_path, F_OK) == 0) {
-		thumbnails_count++;
-	} else {
-		LOG(LOG_INFO, "v5.6 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+	// v5.0 variant
+	// No error checking, we've already validated that string's length in `watch_handler`
+	str5cpy(converted_book_path, sizeof(converted_book_path), book_path, book_path_len, NOTRUNC);
+	replace_invalid_chars(converted_book_path);
+	ret = snprintf(thumbnail_path_v50,
+		       sizeof(thumbnail_path_v50),
+		       "%s/.kobo-images/%s",
+		       KFMON_TARGET_MOUNTPOINT,
+		       converted_book_path);
+	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path_v50)) {
+		LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
+	}
+
+	// Given that even on FW 5.6, if the file was indexed on a prior FW release, the old munging persists,
+	// we need to check for both variants...
+	const char* const thumbnails[]         = { thumbnail_path_v56, thumbnail_path_v50 };
+	const char* const thumbnails_variant[] = { "v5.6", "v5" };
+	for (size_t i = 0U; i < ARRAY_SIZE(thumbnails); i++) {
+		const char* thumbnail_path    = thumbnails[i];
+		const char* thumbnail_variant = thumbnails_variant[i];
+
+		DBGLOG("Checking for %s thumbnail '%s' . . .", thumbnail_variant, thumbnail_path);
+		if (access(thumbnail_path, F_OK) == 0) {
+			thumbnails_count++;
+			// First match wins
+			break;
+		} else {
+			LOG(LOG_INFO, "%s thumbnail (%s) hasn't been parsed yet!", thumbnail_variant, thumbnail_path);
+		}
 	}
 
 	// Got it? Then we're good to go!
-	if (thumbnails_count == 1U) {
-		is_processed = true;
-	}
-
-	// If no v5.6 thumbnails were found, we try the v5 variant, which DOES NOT preserve the dot for the file extension
-	if (thumbnails_count == 0U) {
-		char converted_book_path[book_path_len];
-		// No error checking, we've already validated that string's length in `watch_handler`
-		str5cpy(converted_book_path, sizeof(converted_book_path), book_path, book_path_len, NOTRUNC);
-		replace_invalid_chars(converted_book_path);
-		ret = snprintf(thumbnail_path,
-			       sizeof(thumbnail_path),
-			       "%s/.kobo-images/%s",
-			       KFMON_TARGET_MOUNTPOINT,
-			       converted_book_path);
-		if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-			LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
-		}
-		DBGLOG("Checking for v5 thumbnail '%s' . . .", thumbnail_path);
-		if (access(thumbnail_path, F_OK) == 0) {
-			thumbnails_count++;
-		} else {
-			LOG(LOG_INFO, "v5 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
-		}
-
-		// Got it? Then we're good to go!
-		if (thumbnails_count == 1U) {
-			is_processed = true;
-		}
-	}
-
-	return is_processed;
+	return thumbnails_count == 1U;
 }
 
 // Check if our target file has been processed by Nickel...
@@ -1533,7 +1529,7 @@ static bool
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			// The implementation differs between FW 4.x and FW 5.x...
-			if (fwVersion < 50) {
+			if (fwVersion < 50U) {
 				const unsigned char* image_id = sqlite3_column_text(stmt, 0);
 				size_t               len      = (size_t) sqlite3_column_bytes(stmt, 0);
 				DBGLOG("SELECT SQL query returned: %s", image_id);
