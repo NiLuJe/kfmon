@@ -1413,136 +1413,139 @@ static bool
 			uint8_t thumbnails_count = 0U;
 			char    thumbnail_path[KFMON_PATH_MAX];
 
-			// Start with the full-size screensaver...
-			ret = snprintf(
-			    thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
-			if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-			}
-			DBGLOG("Checking for full-size screensaver '%s' . . .", thumbnail_path);
-			if (access(thumbnail_path, F_OK) == 0) {
-				thumbnails_count++;
-			} else {
-				LOG(LOG_INFO, "Full-size screensaver hasn't been parsed yet!");
-			}
-
-			// Then the Homescreen tile...
-			// NOTE: This one might be a tad confusing...
-			//       If the icon has never been processed,
-			//       this will only happen the first time we *close* the PNG's "book"...
-			//       (i.e., the moment it pops up as the 'last opened' tile).
-			//       And *that* processing triggers a set of OPEN & CLOSE,
-			//       meaning we can quite possibly run on book *exit* that first time,
-			//       (and only that first time), if database locking permits...
-			ret = snprintf(thumbnail_path,
-				       sizeof(thumbnail_path),
-				       "%s/%s - N3_LIBRARY_FULL.parsed",
-				       images_path,
-				       image_id);
-			if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-			}
-			DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
-			if (access(thumbnail_path, F_OK) == 0) {
-				thumbnails_count++;
-			} else {
-				LOG(LOG_INFO, "Homescreen tile hasn't been parsed yet!");
-			}
-
-			// And finally the Library thumbnail...
-			ret = snprintf(thumbnail_path,
-				       sizeof(thumbnail_path),
-				       "%s/%s - N3_LIBRARY_GRID.parsed",
-				       images_path,
-				       image_id);
-			if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-				LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-			}
-			DBGLOG("Checking for library thumbnail '%s' . . .", thumbnail_path);
-			if (access(thumbnail_path, F_OK) == 0) {
-				thumbnails_count++;
-			} else {
-				LOG(LOG_INFO, "Library thumbnail hasn't been parsed yet!");
-			}
-
-			// Only give a greenlight if we got all three!
-			if (thumbnails_count == 3U) {
-				is_processed = true;
-			}
-
-			// If we didn't find any thumbnails, try the v5.6 variant, which preserves the dot before the file extension
-			if (thumbnails_count == 0U) {
-				char converted_book_path[sizeof(book_path)];
-				// No error checking, we've already validated that string's length in `watch_handler`
-				str5cpy(converted_book_path,
-					sizeof(converted_book_path),
-					book_path,
-					sizeof(book_path),
-					NOTRUNC);
-
-				// Separate the extension from the base path
-				char* ext = strrchr(converted_book_path, '.');
-				if (ext) {
-					*ext = '\0'; // Temporarily terminate the string to isolate the base path
-				}
-
-				// Replace invalid characters in the base path
-				replace_invalid_chars(converted_book_path);
-
-				// Reattach the extension if it exists
-				if (ext) {
-					*ext = '.'; // Restore the dot
-				}
-
-				ret = snprintf(thumbnail_path,
-					       sizeof(thumbnail_path),
-					       "%s/.kobo-images/%s",
-					       KFMON_TARGET_MOUNTPOINT,
-					       converted_book_path);
+			// The implementation differs between FW 4.x and FW 5.x...
+			if (fwVersion < 50) {
+				// Start with the full-size screensaver...
+				ret = snprintf(
+				thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
 				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-					LOG(LOG_WARNING, "Couldn't build the v5.6 thumbnail path string");
+					LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
 				}
-
-				DBGLOG("Checking for v5.6 thumbnail '%s' . . .", thumbnail_path);
+				DBGLOG("Checking for full-size screensaver '%s' . . .", thumbnail_path);
 				if (access(thumbnail_path, F_OK) == 0) {
 					thumbnails_count++;
 				} else {
-					LOG(LOG_INFO, "v5.6 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+					LOG(LOG_INFO, "Full-size screensaver hasn't been parsed yet!");
 				}
 
-				// Got it? Then we're good to go!
-				if (thumbnails_count == 1U) {
-					is_processed = true;
-				}
-			}
-			// If no v5.6 thumbnails were found, we try the v5 variant, which DOES NOT preserve the dot for the file extension
-			if (thumbnails_count == 0U) {
-				char converted_book_path[sizeof(book_path)];
-				// No error checking, we've already validated that string's length in `watch_handler`
-				str5cpy(converted_book_path,
-					sizeof(converted_book_path),
-					book_path,
-					sizeof(book_path),
-					NOTRUNC);
-				replace_invalid_chars(converted_book_path);
+				// Then the Homescreen tile...
+				// NOTE: This one might be a tad confusing...
+				//       If the icon has never been processed,
+				//       this will only happen the first time we *close* the PNG's "book"...
+				//       (i.e., the moment it pops up as the 'last opened' tile).
+				//       And *that* processing triggers a set of OPEN & CLOSE,
+				//       meaning we can quite possibly run on book *exit* that first time,
+				//       (and only that first time), if database locking permits...
 				ret = snprintf(thumbnail_path,
-					       sizeof(thumbnail_path),
-					       "%s/.kobo-images/%s",
-					       KFMON_TARGET_MOUNTPOINT,
-					       converted_book_path);
+					sizeof(thumbnail_path),
+					"%s/%s - N3_LIBRARY_FULL.parsed",
+					images_path,
+					image_id);
 				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-					LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
+					LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
 				}
-				DBGLOG("Checking for v5 thumbnail '%s' . . .", thumbnail_path);
+				DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
 				if (access(thumbnail_path, F_OK) == 0) {
 					thumbnails_count++;
 				} else {
-					LOG(LOG_INFO, "v5 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+					LOG(LOG_INFO, "Homescreen tile hasn't been parsed yet!");
 				}
 
-				// Got it? Then we're good to go!
-				if (thumbnails_count == 1U) {
+				// And finally the Library thumbnail...
+				ret = snprintf(thumbnail_path,
+					sizeof(thumbnail_path),
+					"%s/%s - N3_LIBRARY_GRID.parsed",
+					images_path,
+					image_id);
+				if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+					LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
+				}
+				DBGLOG("Checking for library thumbnail '%s' . . .", thumbnail_path);
+				if (access(thumbnail_path, F_OK) == 0) {
+					thumbnails_count++;
+				} else {
+					LOG(LOG_INFO, "Library thumbnail hasn't been parsed yet!");
+				}
+
+				// Only give a greenlight if we got all three!
+				if (thumbnails_count == 3U) {
 					is_processed = true;
+				}
+			} else {
+				// If we didn't find any thumbnails, try the v5.6 variant, which preserves the dot before the file extension
+				if (thumbnails_count == 0U) {
+					char converted_book_path[sizeof(book_path)];
+					// No error checking, we've already validated that string's length in `watch_handler`
+					str5cpy(converted_book_path,
+						sizeof(converted_book_path),
+						book_path,
+						sizeof(book_path),
+						NOTRUNC);
+
+					// Separate the extension from the base path
+					char* ext = strrchr(converted_book_path, '.');
+					if (ext) {
+						*ext = '\0'; // Temporarily terminate the string to isolate the base path
+					}
+
+					// Replace invalid characters in the base path
+					replace_invalid_chars(converted_book_path);
+
+					// Reattach the extension if it exists
+					if (ext) {
+						*ext = '.'; // Restore the dot
+					}
+
+					ret = snprintf(thumbnail_path,
+						sizeof(thumbnail_path),
+						"%s/.kobo-images/%s",
+						KFMON_TARGET_MOUNTPOINT,
+						converted_book_path);
+					if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+						LOG(LOG_WARNING, "Couldn't build the v5.6 thumbnail path string");
+					}
+
+					DBGLOG("Checking for v5.6 thumbnail '%s' . . .", thumbnail_path);
+					if (access(thumbnail_path, F_OK) == 0) {
+						thumbnails_count++;
+					} else {
+						LOG(LOG_INFO, "v5.6 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+					}
+
+					// Got it? Then we're good to go!
+					if (thumbnails_count == 1U) {
+						is_processed = true;
+					}
+				}
+				// If no v5.6 thumbnails were found, we try the v5 variant, which DOES NOT preserve the dot for the file extension
+				if (thumbnails_count == 0U) {
+					char converted_book_path[sizeof(book_path)];
+					// No error checking, we've already validated that string's length in `watch_handler`
+					str5cpy(converted_book_path,
+						sizeof(converted_book_path),
+						book_path,
+						sizeof(book_path),
+						NOTRUNC);
+					replace_invalid_chars(converted_book_path);
+					ret = snprintf(thumbnail_path,
+						sizeof(thumbnail_path),
+						"%s/.kobo-images/%s",
+						KFMON_TARGET_MOUNTPOINT,
+						converted_book_path);
+					if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+						LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
+					}
+					DBGLOG("Checking for v5 thumbnail '%s' . . .", thumbnail_path);
+					if (access(thumbnail_path, F_OK) == 0) {
+						thumbnails_count++;
+					} else {
+						LOG(LOG_INFO, "v5 thumbnail (%s) hasn't been parsed yet!", thumbnail_path);
+					}
+
+					// Got it? Then we're good to go!
+					if (thumbnails_count == 1U) {
+						is_processed = true;
+					}
 				}
 			}
 		}
@@ -2964,6 +2967,16 @@ static bool
 			// In case we ever need to deal with FW 5.x quirks separately...
 			if (!!(strverscmp(fw, "5.0.111111") >= 0)) {
 				PFLOG(LOG_INFO, "This device runs Nickel v5");
+
+				// Case in point: the thumbnail munging changed in 5.6...
+				if (!!(strverscmp(fw, "5.6.209315") >= 0)) {
+					PFLOG(LOG_INFO, "This device runs Nickel v5.6+");
+					fwVersion = 56U;
+				} else {
+					fwVersion = 50U;
+				}
+			} else {
+				fwVersion = is_okay? 42U : 40U;
 			}
 		} else {
 			PFLOG(LOG_WARNING, "Failed to read the Kobo version tag (%zu)", size);
