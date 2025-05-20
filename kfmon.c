@@ -3118,6 +3118,8 @@ int
 		FB_PRINT("[KFMon] Successfully initialized. :)");
 	}
 
+	is_fw_recent_enough();
+
 	// Now that the welcome message has been shown, on sunxi, try to follow Nickel's rotation, if we can...
 	if (fbinkState.is_sunxi) {
 		// NOTE: The fun new races unearthed by FW 4.31.19086 mean that we usually init *before* the fbdamage
@@ -3144,7 +3146,7 @@ int
 		// On sunxi, see if we can do away with the whole "pen mode" workaround, as it's unnecessary on the Sage.
 		// NOTE: Unfortunately, it's *still* necessary on the Elipsa, even on FW >= 4.29 :/.
 		//       We keep the code just because I wrote it, damn it! (and for the logging ;p).
-		is_fw_recent_enough();
+
 		// But we actually check the device to make our decision...
 		if (fbinkState.device_id == DEVICE_KOBO_SAGE) {
 			need_pen_mode = false;
