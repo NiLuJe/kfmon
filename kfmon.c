@@ -1267,49 +1267,43 @@ static bool
 
 	// Count the number of processed thumbnails we find...
 	uint8_t thumbnails_count = 0U;
-	char    thumbnail_path[KFMON_PATH_MAX];
 
-	// Start with the full-size screensaver...
-	ret = snprintf(thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_FULL.parsed", images_path, image_id);
-	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-		LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-	}
-	DBGLOG("Checking for full-size screensaver '%s' . . .", thumbnail_path);
-	if (access(thumbnail_path, F_OK) == 0) {
-		thumbnails_count++;
-	} else {
-		LOG(LOG_INFO, "Full-size screensaver hasn't been parsed yet!");
-	}
-
-	// Then the Homescreen tile...
-	// NOTE: This one might be a tad confusing...
+	// We'll loop over the whole thing
+	// NOTE: The homescreen tile might be a tad confusing...
 	//       If the icon has never been processed,
 	//       this will only happen the first time we *close* the PNG's "book"...
 	//       (i.e., the moment it pops up as the 'last opened' tile).
 	//       And *that* processing triggers a set of OPEN & CLOSE,
 	//       meaning we can quite possibly run on book *exit* that first time,
 	//       (and only that first time), if database locking permits...
-	ret = snprintf(thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_LIBRARY_FULL.parsed", images_path, image_id);
-	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-		LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-	}
-	DBGLOG("Checking for homescreen tile '%s' . . .", thumbnail_path);
-	if (access(thumbnail_path, F_OK) == 0) {
-		thumbnails_count++;
-	} else {
-		LOG(LOG_INFO, "Homescreen tile hasn't been parsed yet!");
-	}
+	const ThumbnailV4 thumbnails[] = {
+		{         "N3_FULL", "full-size screensaver" },
+		{ "N3_LIBRARY_FULL",       "homescreen tile" },
+		{ "N3_LIBRARY_GRID",     "library thumbnail" },
+		{              NULL,                    NULL },
+	};
+	for (const ThumbnailV4* thumbnail = thumbnails; thumbnail->suffix && thumbnail->description; thumbnail++) {
+		char thumbnail_path[KFMON_PATH_MAX];
 
-	// And finally the Library thumbnail...
-	ret = snprintf(thumbnail_path, sizeof(thumbnail_path), "%s/%s - N3_LIBRARY_GRID.parsed", images_path, image_id);
-	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-		LOG(LOG_WARNING, "Couldn't build the thumbnail path string!");
-	}
-	DBGLOG("Checking for library thumbnail '%s' . . .", thumbnail_path);
-	if (access(thumbnail_path, F_OK) == 0) {
-		thumbnails_count++;
-	} else {
-		LOG(LOG_INFO, "Library thumbnail hasn't been parsed yet!");
+		ret = snprintf(thumbnail_path,
+			       sizeof(thumbnail_path),
+			       "%s/%s - %s.parsed",
+			       images_path,
+			       image_id,
+			       thumbnail->suffix);
+		if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+			LOG(LOG_WARNING, "Couldn't build the %s path string!", thumbnail->description);
+
+			// Don't bother checking that, then ;)
+			continue;
+		}
+
+		DBGLOG("Checking for %s '%s' . . .", thumbnail->description, thumbnail_path);
+		if (access(thumbnail_path, F_OK) == 0) {
+			thumbnails_count++;
+		} else {
+			LOG(LOG_INFO, "Thumbnail for %s hasn't been parsed yet!", thumbnail->description);
+		}
 	}
 
 	// Only give a greenlight if we got all three!
