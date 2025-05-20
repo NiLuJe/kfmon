@@ -1327,11 +1327,10 @@ static bool
 	char thumbnail_path_v56[KFMON_PATH_MAX];
 	char thumbnail_path_v50[KFMON_PATH_MAX];
 	char converted_book_path[book_path_len];
-
-	// v5.6 variant, which preserves the dot before the file extension
 	// No error checking, we've already validated that string's length in `watch_handler`
 	str5cpy(converted_book_path, sizeof(converted_book_path), book_path, book_path_len, NOTRUNC);
 
+	// v5.6 variant, which preserves the dot before the file extension
 	// Separate the extension from the base path
 	char* ext = strrchr(converted_book_path, '.');
 	if (ext) {
@@ -1354,9 +1353,10 @@ static bool
 	}
 
 	// v5.0 variant
-	// No error checking, we've already validated that string's length in `watch_handler`
-	str5cpy(converted_book_path, sizeof(converted_book_path), book_path, book_path_len, NOTRUNC);
-	replace_invalid_chars(converted_book_path);
+	if (ext) {
+		// No need to rerun replace_invalid_chars on the full string, only swap the dot
+		*ext = '_';
+	}
 	ret = snprintf(thumbnail_path_v50,
 		       sizeof(thumbnail_path_v50),
 		       "%s/.kobo-images/%s",
@@ -1371,12 +1371,13 @@ static bool
 	const char* const thumbnails[]         = { thumbnail_path_v56, thumbnail_path_v50 };
 	const char* const thumbnails_variant[] = { "v5.6", "v5" };
 	for (size_t i = 0U; i < ARRAY_SIZE(thumbnails); i++) {
-		const char* thumbnail_path    = thumbnails[i];
-		const char* thumbnail_variant = thumbnails_variant[i];
+		const char* const thumbnail_path    = thumbnails[i];
+		const char* const thumbnail_variant = thumbnails_variant[i];
 
 		DBGLOG("Checking for %s thumbnail '%s' . . .", thumbnail_variant, thumbnail_path);
 		if (access(thumbnail_path, F_OK) == 0) {
 			thumbnails_count++;
+
 			// First match wins
 			break;
 		} else {
