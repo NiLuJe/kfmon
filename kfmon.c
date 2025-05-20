@@ -1295,7 +1295,7 @@ static bool
 			       image_id,
 			       thumbnail->suffix);
 		if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
-			LOG(LOG_WARNING, "Couldn't build the %s path string!", thumbnail->description);
+			LOG(LOG_WARNING, "Couldn't build the %s thumbnail path string!", thumbnail->description);
 
 			// Don't bother checking that, then ;)
 			continue;
