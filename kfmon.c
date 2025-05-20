@@ -1262,6 +1262,9 @@ static bool
 	    snprintf(images_path, sizeof(images_path), "%s/.kobo-images/%u/%u", KFMON_TARGET_MOUNTPOINT, dir1, dir2);
 	if (ret < 0 || (size_t) ret >= sizeof(images_path)) {
 		LOG(LOG_WARNING, "Couldn't build the image path string!");
+
+		// Which means the rest of this is definitely not gonna work ;)
+		return false;
 	}
 	DBGLOG("Checking for thumbnails in '%s' . . .", images_path);
 
