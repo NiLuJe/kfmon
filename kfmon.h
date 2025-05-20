@@ -351,12 +351,14 @@ static bool  are_spawns_blocked(void);
 static pid_t get_spawn_pid_for_watch(uint8_t);
 
 static bool handle_events(int);
+static bool handle_ipc(int);
 static void get_process_name(const pid_t, char*);
 static void get_user_name(const uid_t, char*);
 static void get_group_name(const gid_t, char*);
 static void handle_connection(int);
-static bool handle_ipc(int);
 
 static void sql_errorlogcb(void* __attribute__((unused)), int, const char*);
+
+static bool fw_version_check(void);
 
 #endif

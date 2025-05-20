@@ -2914,7 +2914,7 @@ static void
 }
 
 static bool
-    is_fw_recent_enough(void)
+    fw_version_check(void)
 {
 	// Get the model from Nickel's version tag file...
 	FILE* fp = fopen("/mnt/onboard/.kobo/version", "re");
@@ -3118,7 +3118,8 @@ int
 		FB_PRINT("[KFMon] Successfully initialized. :)");
 	}
 
-	is_fw_recent_enough();
+	// Poke at Nickel's version file to check on which FW version we're running
+	fw_version_check();
 
 	// Now that the welcome message has been shown, on sunxi, try to follow Nickel's rotation, if we can...
 	if (fbinkState.is_sunxi) {
