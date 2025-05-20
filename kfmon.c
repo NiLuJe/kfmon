@@ -1370,7 +1370,7 @@ static bool
 	// we need to check for both variants...
 	const char* const thumbnails[]         = { thumbnail_path_v56, thumbnail_path_v50 };
 	const char* const thumbnails_variant[] = { "v5.6", "v5" };
-	for (size_t i = 0U; i < ARRAY_SIZE(thumbnails); i++) {
+	for (size_t i = fwVersion >= 56U ? 0U : 1U; i < ARRAY_SIZE(thumbnails); i++) {
 		const char* const thumbnail_path    = thumbnails[i];
 		const char* const thumbnail_variant = thumbnails_variant[i];
 
