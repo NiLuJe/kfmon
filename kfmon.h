@@ -234,6 +234,19 @@ typedef struct
 	bool   is_active;
 } WatchConfig;
 
+// Used for thumbnail munging shenanigans
+typedef struct
+{
+	const char* const suffix;
+	const char* const description;
+} ThumbnailV4;
+
+typedef struct
+{
+	const char* const munged_file_path;
+	const char* const variant;
+} ThumbnailV5;
+
 // Hardcode the max amount of watches we handle
 // NOTE: Cannot exceed INT8_MAX!
 #define WATCH_MAX 16

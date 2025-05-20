@@ -1246,7 +1246,7 @@ static unsigned int
 	return h;
 }
 
-// Thumbnail filepatth munging on FW 4.x
+// Thumbnail filepath munging on FW 4.x
 static bool
     check_fw_4x_thumbnails(const unsigned char* image_id, size_t image_id_len)
 {
@@ -1323,65 +1323,62 @@ static bool
 	// Count the number of processed thumbnails we find...
 	uint8_t thumbnails_count = 0U;
 
-	// Because everything is terrible, FW 5.6.209315 uses a slightly different logic...
-	char thumbnail_path_v56[KFMON_PATH_MAX];
-	char thumbnail_path_v50[KFMON_PATH_MAX];
-	char converted_book_path[book_path_len];
+	// Because everything is terrible, FW 5.6.209315 started using a slightly different logic...
+	char munged_book_path[book_path_len];
 	// No error checking, we've already validated that string's length in `watch_handler`
-	str5cpy(converted_book_path, sizeof(converted_book_path), book_path, book_path_len, NOTRUNC);
+	str5cpy(munged_book_path, sizeof(munged_book_path), book_path, book_path_len, NOTRUNC);
 
 	// v5.6 variant, which preserves the dot before the file extension
 	// Separate the extension from the base path
-	char* ext = strrchr(converted_book_path, '.');
+	char* ext = strrchr(munged_book_path, '.');
 	if (ext) {
 		*ext = '\0';    // Temporarily terminate the string to isolate the base path
 	}
 	// Replace invalid characters in the base path
-	replace_invalid_chars(converted_book_path);
+	replace_invalid_chars(munged_book_path);
 	// Reattach the extension if it exists
 	if (ext) {
 		*ext = '.';    // Restore the dot
 	}
 
-	int ret = snprintf(thumbnail_path_v56,
-			   sizeof(thumbnail_path_v56),
-			   "%s/.kobo-images/%s",
-			   KFMON_TARGET_MOUNTPOINT,
-			   converted_book_path);
-	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path_v56)) {
-		LOG(LOG_WARNING, "Couldn't build the v5.6 thumbnail path string");
-	}
-
 	// v5.0 variant
+	char* munged_book_path_v56 = strdupa(munged_book_path);
 	if (ext) {
 		// No need to rerun replace_invalid_chars on the full string, only swap the dot
 		*ext = '_';
 	}
-	ret = snprintf(thumbnail_path_v50,
-		       sizeof(thumbnail_path_v50),
-		       "%s/.kobo-images/%s",
-		       KFMON_TARGET_MOUNTPOINT,
-		       converted_book_path);
-	if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path_v50)) {
-		LOG(LOG_WARNING, "Couldn't build the v5 thumbnail path string");
-	}
 
 	// Given that even on FW 5.6, if the file was indexed on a prior FW release, the old munging persists,
 	// we need to check for both variants...
-	const char* const thumbnails[]         = { thumbnail_path_v56, thumbnail_path_v50 };
-	const char* const thumbnails_variant[] = { "v5.6", "v5" };
+	const ThumbnailV5 thumbnails[] = {
+		{ munged_book_path_v56, "v5.6" },
+		{     munged_book_path,   "v5" },
+	};
+	// Skip the v5.6+ variant when running an older FW version
 	for (size_t i = fwVersion >= 56U ? 0U : 1U; i < ARRAY_SIZE(thumbnails); i++) {
-		const char* const thumbnail_path    = thumbnails[i];
-		const char* const thumbnail_variant = thumbnails_variant[i];
+		const ThumbnailV5 thumbnail = thumbnails[i];
+		char              thumbnail_path[KFMON_PATH_MAX];
 
-		DBGLOG("Checking for %s thumbnail '%s' . . .", thumbnail_variant, thumbnail_path);
+		int ret = snprintf(thumbnail_path,
+				   sizeof(thumbnail_path),
+				   "%s/.kobo-images/%s",
+				   KFMON_TARGET_MOUNTPOINT,
+				   thumbnail.munged_file_path);
+		if (ret < 0 || (size_t) ret >= sizeof(thumbnail_path)) {
+			LOG(LOG_WARNING, "Couldn't build the %s thumbnail path string", thumbnail.variant);
+
+			// Don't bother checking that, then ;)
+			continue;
+		}
+
+		DBGLOG("Checking for %s thumbnail '%s' . . .", thumbnail.variant, thumbnail_path);
 		if (access(thumbnail_path, F_OK) == 0) {
 			thumbnails_count++;
 
 			// First match wins
 			break;
 		} else {
-			LOG(LOG_INFO, "%s thumbnail (%s) hasn't been parsed yet!", thumbnail_variant, thumbnail_path);
+			LOG(LOG_INFO, "%s thumbnail (%s) hasn't been parsed yet!", thumbnail.variant, thumbnail_path);
 		}
 	}
 
