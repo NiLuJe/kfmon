@@ -86,8 +86,12 @@ latest_nickelmenu = nickelmenu.get_latest_release()
 nickelmenu_version = latest_nickelmenu.tag_name
 nickelmenu_url = None
 print("Looking at NickelMenu {} ...".format(nickelmenu_version))
-# NOTE: We're using customized builds w/ the auto-uninstaller built-in
-nickelmenu_url = "https://nm.storage.pgaskin.net/artifacts/tag/{}/with-NM_UNINSTALL_CONFIGDIR/KoboRoot.tgz".format(nickelmenu_version)
+# NOTE: Before 0.6.0, we were using customized builds w/ the auto-uninstaller built-in
+# nickelmenu_url = "https://nm.storage.pgaskin.net/artifacts/tag/{}/with-NM_UNINSTALL_CONFIGDIR/KoboRoot.tgz".format(nickelmenu_version)
+for asset in latest_nickelmenu.get_assets():
+	if asset.name == "KoboRoot.tgz":
+		nickelmenu_url = asset.browser_download_url
+		break
 
 if nickelmenu_url is None:
 	raise SystemExit("Couldn't find the latest NickelMenu package!")
