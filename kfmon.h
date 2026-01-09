@@ -311,7 +311,6 @@ FBInkConfig   fbinkConfig            = { 0 };
 FBInkState    fbinkState             = { 0 };
 bool          need_pen_mode          = false;
 uint8_t       fwVersion              = 0U;
-bool          isTolino               = false;
 
 // NOTE: Unless we're able to tell FBInk to follow the wb's rotation (i.e., with fbdamage's help),
 //       we want to bracket our refreshes in "pen" mode on older sunxi kernels (c.f., FBInk/#64 for more details),
