@@ -1524,7 +1524,8 @@ static bool
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			// The implementation differs between FW 4.x and FW 5.x...
-			if (fwVersion < 50U) {
+			// ...but FW 5.x devices in so-called "Kobo" mode behaves like actual v4 Kobo devices...
+			if (fwVersion < 50U || !isTolino) {
 				const unsigned char* image_id = sqlite3_column_text(stmt, 0);
 				size_t               len      = (size_t) sqlite3_column_bytes(stmt, 0);
 				DBGLOG("SELECT SQL query returned: %s", image_id);
@@ -3114,6 +3115,12 @@ int
 
 	// Poke at Nickel's version file to check on which FW version we're running
 	fw_version_check();
+
+	// NOTE: Check the device codename, as Tolino devices in "Kobo mode" no longer identify as Tolinos,
+	//       and behave as v4 devices, even on v5.x...
+	// FIXME: Add a proper flag in FBInk instead of this dirty string match...
+	// c.f., #20
+	isTolino = strstr(fbinkState.device_codename, " Tolino") != NULL;
 
 	// Now that the welcome message has been shown, on sunxi, try to follow Nickel's rotation, if we can...
 	if (fbinkState.is_sunxi) {
