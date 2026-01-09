@@ -1525,7 +1525,13 @@ static bool
 		if (rc == SQLITE_ROW) {
 			// The implementation differs between FW 4.x and FW 5.x...
 			// ...but FW 5.x devices in so-called "Kobo" mode behave like actual v4 Kobo devices...
-			// c.f., #20
+			// So basically, instead of relying only on the FW version,
+			// also check whether the device runs in "Tolino" mode,
+			// i.e., it was detected as a Tolino and not a Kobo...
+			// NOTE: This works because Tolinos in Kobo mode actually shapeshift their device code!
+			// NOTE: I'm not sure we actually have/support Tolinos running FW 4.x,
+			//       so the test could *probably* be simplified to just !tolino...
+			//       c.f., #20
 			if (fwVersion < 50U || !fbinkState.is_tolino) {
 				const unsigned char* image_id = sqlite3_column_text(stmt, 0);
 				size_t               len      = (size_t) sqlite3_column_bytes(stmt, 0);
