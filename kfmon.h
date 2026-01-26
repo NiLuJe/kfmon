@@ -212,6 +212,7 @@ typedef struct
 	unsigned short int db_timeout;
 	bool               use_syslog;
 	bool               with_notifications;
+	bool               with_storage_notifications;
 } DaemonConfig;
 
 // What a watch config should look like
