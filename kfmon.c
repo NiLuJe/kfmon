@@ -227,7 +227,7 @@ static void
 			close(mfd);
 			// NOTE: We have to hide this behind a slightly crappy check, because this runs during load_config,
 			//       at which point FBInk is not yet initialized...
-			if (fbinkConfig.row != 0) {
+			if (fbinkConfig.row != 0 && daemonConfig.with_storage_notifications) {
 				FB_PRINT("[KFMon] Internal storage unavailable, bye!");
 			}
 			exit(EXIT_FAILURE);
@@ -408,6 +408,11 @@ static int
 	} else if (MATCH("daemon", "with_notifications")) {
 		if (strtobool(value, &pconfig->with_notifications) < 0) {
 			LOG(LOG_CRIT, "Passed an invalid value for with_notifications!");
+			return 0;
+		}
+	} else if (MATCH("daemon", "with_storage_notifications")) {
+		if (strtobool(value, &pconfig->with_storage_notifications) < 0) {
+			LOG(LOG_CRIT, "Passed an invalid value for with_storage_notifications!");
 			return 0;
 		}
 	} else {
@@ -819,11 +824,12 @@ static int
 							rval = -1;
 						} else {
 							LOG(LOG_NOTICE,
-							    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%s, with_notifications=%s",
+							    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%s, with_notifications=%s, with_storage_notifications=%s",
 							    p->fts_name,
 							    daemonConfig.db_timeout,
 							    BOOL2STR(daemonConfig.use_syslog),
-							    BOOL2STR(daemonConfig.with_notifications));
+							    BOOL2STR(daemonConfig.with_notifications),
+							    BOOL2STR(daemonConfig.with_storage_notifications));
 						}
 					} else if (strcasecmp(p->fts_name, "kfmon.user.ini") == 0) {
 						// NOTE: Skip the user config for now,
@@ -903,20 +909,22 @@ static int
 			rval = -1;
 		} else {
 			LOG(LOG_NOTICE,
-			    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%s, with_notifications=%s",
+			    "Daemon config loaded from '%s': db_timeout=%hu, use_syslog=%s, with_notifications=%s, with_storage_notifications=%s",
 			    "kfmon.user.ini",
 			    daemonConfig.db_timeout,
 			    BOOL2STR(daemonConfig.use_syslog),
-			    BOOL2STR(daemonConfig.with_notifications));
+			    BOOL2STR(daemonConfig.with_notifications),
+			    BOOL2STR(daemonConfig.with_storage_notifications));
 		}
 	}
 
 #ifdef DEBUG
 	// Let's recap (including failures)...
-	DBGLOG("Daemon config recap: db_timeout=%hu, use_syslog=%s, with_notifications=%s",
+	DBGLOG("Daemon config recap: db_timeout=%hu, use_syslog=%s, with_notifications=%s, with_storage_notifications=%s",
 	       daemonConfig.db_timeout,
 	       BOOL2STR(daemonConfig.use_syslog),
-	       BOOL2STR(daemonConfig.with_notifications));
+	       BOOL2STR(daemonConfig.with_notifications),
+	       BOOL2STR(daemonConfig.with_storage_notifications));
 	for (uint8_t watch_idx = 0U; watch_idx < WATCH_MAX; watch_idx++) {
 		DBGLOG(
 		    "Watch config @ index %hhu recap: active=%s, filename=%s, action=%s, label=%s, hidden=%s, block_spawns=%s, skip_db_checks=%s, do_db_update=%s, db_title=%s, db_author=%s, db_comment=%s",
