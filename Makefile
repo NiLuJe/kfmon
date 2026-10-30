@@ -278,6 +278,11 @@ kobov5: armcheck release
 	pushd KoboV5/mnt/onboard && zip -r ../../KFMon-$(KFMON_VERSION).zip . && popd
 
 
+# Independent OTA package for Nickelite (firmware 5.x/6.x).
+nickelite: armcheck release
+	./scripts/nickelite-package.sh
+
+
 niluje:
 	$(MAKE) fbink.built NILUJE=true
 	$(MAKE) all NILUJE=true
@@ -391,4 +396,4 @@ ocp:
 	cat /tmp/KFMon/KFMON_PUB_BB
 	rm -rf /tmp/KFMon
 
-.PHONY: default outdir all vendored kfmon shim kfmon-ipc strip armcheck kobo kobov5 debug niluje nilujed clean release fbinkclean sqliteclean distclean format ocp
+.PHONY: default outdir all vendored kfmon shim kfmon-ipc strip armcheck kobo kobov5 nickelite debug niluje nilujed clean release fbinkclean sqliteclean distclean format ocp
